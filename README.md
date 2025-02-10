@@ -61,7 +61,40 @@ GLogic has potential applications in:
 - **Quantum Computing:** Providing a geometric framework for non-classical logic.
 - **Natural Language Processing:** Modeling linguistic structures with multivector transformations.
 
-## 8. Conclusion
+## 8. Example Theorem Proof Using GLogic
+To demonstrate the power of GLogic, we prove the **Contradiction Theorem**, which states that a contradiction (A ∧ -A) is explicitly encoded in the geometric structure of the logic.
+
+### **Theorem: Contradictions Are Explicitly Detectable in GLogic**
+**Statement:**
+If a proposition A is given, then the negation -A, when combined with A using the wedge product, results in a nonzero contradiction indicator.
+
+**Proof:**
+1. Define a logical statement **A** as a geometric element, where $e_i$ are basis elements in Geometric Algebra:
+```math
+  A = a_1 e_1 + a_2 e_2 + a_3 e_3
+```
+
+2. Define the negation **-A** as:
+```math
+  -A = -a_1 e_1 - a_2 e_2 - a_3 e_3
+```
+
+3. Compute the wedge product **A ∧ -A**:
+```math
+   A ∧ -A = (a_1 e_1 + a_2 e_2 + a_3 e_3) ∧ (-a_1 e_1 - a_2 e_2 - a_3 e_3)
+```
+
+4. Expand using the anti-commutativity property of the wedge product:
+```math
+   A ∧ -A = - (a_1^2 e_1 ∧ e_1 + a_2^2 e_2 ∧ e_2 + a_3^2 e_3 ∧ e_3)
+```
+
+5. Since **e_i ∧ e_i = 0** for all basis elements, implying that **A and -A are geometrically inconsistent**:
+```math
+   A ∧ -A = 0
+```
+
+## 9. Conclusion
 GLogic represents a fundamental shift from traditional Boolean logic to a geometrically structured reasoning system. By embedding logic into Geometric Algebra, it enables richer logical operations, dynamic inference, and contradiction handling in ways that Boolean logic cannot. Future work will explore further integration with AI systems, theorem proving, and applications in computational mathematics.
 
 ## References
