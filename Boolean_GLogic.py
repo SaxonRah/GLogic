@@ -262,26 +262,29 @@ def theorem_1_injection_well_defined(n: int = 2) -> Proof:
     print("="*70)
 
     alg = CliffordAlgebra(n)
-    boolean = BooleanCone(alg)  # CORRECTED: was BooleanSubspace
+    boolean = BooleanCone(alg)
 
+    # FIX: Use *args to accept variable number of arguments
     # Test: Same formula → same multivector
-    formula1 = lambda p1, p2: p1 and p2
-    formula2 = lambda p1, p2: p1 and p2
+    formula1 = lambda *args: args[0] and args[1] if len(args) >= 2 else args[0]
+    formula2 = lambda *args: args[0] and args[1] if len(args) >= 2 else args[0]
 
     mv1 = boolean.embed(formula1)
     mv2 = boolean.embed(formula2)
     same = np.allclose(mv1, mv2)
 
     print(f"\nSame formula → same multivector: {same}")
-    alg.print_mv(mv1, "ι(P₁ ∧ P₂)")
+    if n == 2:  # Only print details for n=2 to avoid clutter
+        alg.print_mv(mv1, "ι(P₁ ∧ P₂)")
 
     # Test: Different formulas → different multivectors
-    formula3 = lambda p1, p2: p1 or p2
+    formula3 = lambda *args: args[0] or args[1] if len(args) >= 2 else args[0]
     mv3 = boolean.embed(formula3)
     different = not np.allclose(mv1, mv3)
 
-    print(f"\nDifferent formulas → different multivectors: {different}")
-    alg.print_mv(mv3, "ι(P₁ ∨ P₂)")
+    print(f"Different formulas → different multivectors: {different}")
+    if n == 2:
+        alg.print_mv(mv3, "ι(P₁ ∨ P₂)")
 
     verified = same and different
 
@@ -307,10 +310,11 @@ def theorem_2_not_recovered(n: int = 2) -> Proof:
     alg = CliffordAlgebra(n)
     boolean = BooleanCone(alg)
 
+    # FIX: Use *args for variable arguments
     test_cases = [
-        (lambda p1, p2: p1, "P₁"),
-        (lambda p1, p2: p1 and p2, "P₁ ∧ P₂"),
-        (lambda p1, p2: p1 or p2, "P₁ ∨ P₂"),
+        (lambda *args: args[0] if len(args) > 0 else False, "P₁"),
+        (lambda *args: args[0] and args[1] if len(args) >= 2 else (args[0] if len(args) > 0 else False), "P₁ ∧ P₂"),
+        (lambda *args: args[0] or args[1] if len(args) >= 2 else (args[0] if len(args) > 0 else False), "P₁ ∨ P₂"),
     ]
 
     all_correct = True
@@ -338,16 +342,6 @@ def theorem_2_not_recovered(n: int = 2) -> Proof:
 def theorem_3_and_or_via_projection(n: int = 2) -> Proof:
     """
     Theorem 3: Boolean AND/OR are recovered after projection.
-
-    CRITICAL CAVEAT: We demonstrate this empirically but do NOT
-    implement an explicit projection operator π: Cl(n,0) → C(n).
-
-    We show that for embedded Boolean formulas:
-    - Geometric product gives a result
-    - Re-embedding the Boolean AND gives the same result
-    - This suggests π(ι(F)·ι(G)) = ι(F∧G) but doesn't prove it generally
-
-    SCOPE: This is illustrative, not a complete proof.
     """
 
     print("\n" + "="*70)
@@ -360,39 +354,39 @@ def theorem_3_and_or_via_projection(n: int = 2) -> Proof:
     alg = CliffordAlgebra(n)
     boolean = BooleanCone(alg)
 
-    P1 = boolean.embed(lambda p1, p2: p1)
-    P2 = boolean.embed(lambda p1, p2: p2)
+    # FIX: Use *args with explicit indexing
+    P1 = boolean.embed(lambda *args: args[0] if len(args) > 0 else False)
+    P2 = boolean.embed(lambda *args: args[1] if len(args) > 1 else False)
 
     # Boolean AND
-    P1_and_P2_bool = boolean.embed(lambda p1, p2: p1 and p2)
+    P1_and_P2_bool = boolean.embed(
+        lambda *args: (args[0] if len(args) > 0 else False) and
+                      (args[1] if len(args) > 1 else False)
+    )
 
     # GLogic geometric product
     P1_gp_P2 = alg.gp(P1, P2)
 
     print("\nBoolean AND via Geometric Product:")
-    alg.print_mv(P1, "ι(P₁)")
-    alg.print_mv(P2, "ι(P₂)")
-    alg.print_mv(P1_gp_P2, "ι(P₁) · ι(P₂)  [geometric product]")
-    alg.print_mv(P1_and_P2_bool, "ι(P₁ ∧ P₂)  [re-embedded Boolean AND]")
+    if n == 2:  # Only print details for n=2
+        alg.print_mv(P1, "ι(P₁)")
+        alg.print_mv(P2, "ι(P₂)")
+        alg.print_mv(P1_gp_P2, "ι(P₁) · ι(P₂)  [geometric product]")
+        alg.print_mv(P1_and_P2_bool, "ι(P₁ ∧ P₂)  [re-embedded Boolean AND]")
 
     # In this special case they match
     match = np.allclose(P1_gp_P2, P1_and_P2_bool)
 
-    print(f"\nEmpirical match: {match}")
+    print(f"\nEmpirical match for n={n}: {match}")
 
     if match:
         print("This suggests geometric product coincides with Boolean AND")
         print("for these embedded formulas, but this is NOT a general law.")
 
-    # Show the grade structure
-    grade0 = alg.grade(P1_gp_P2, 0)
-    print("\nGrade-0 part:")
-    alg.print_mv(grade0, "⟨ι(P₁) · ι(P₂)⟩₀")
-
     return Proof(
         statement="Boolean AND/OR are recovered after projection to cone",
         verified=match,
-        details="Empirical correspondence shown for specific examples",
+        details=f"Empirical correspondence shown for n={n}",
         caveats="Explicit projection operator π: Cl(n,0) → C(n) not implemented. "
                 "This is illustrative evidence, not a complete algebraic proof."
     )
@@ -1034,13 +1028,13 @@ def analyze_geometric_product_structure():
 
     # All Boolean operations
     formulas = {
-        "P₁": lambda p1, p2: p1,
-        "P₂": lambda p1, p2: p2,
-        "P₁ ∧ P₂": lambda p1, p2: p1 and p2,
-        "P₁ ∨ P₂": lambda p1, p2: p1 or p2,
-        "P₁ ⊕ P₂": lambda p1, p2: p1 != p2,
-        "P₁ → P₂": lambda p1, p2: (not p1) or p2,
-        "P₁ ↔ P₂": lambda p1, p2: p1 == p2,
+        "P₁": lambda *args: args[0] if len(args) > 0 else False,
+        "P₂": lambda *args: args[1] if len(args) > 1 else False,
+        "P₁ ∧ P₂": lambda *args: (args[0] and args[1]) if len(args) >= 2 else False,
+        "P₁ ∨ P₂": lambda *args: (args[0] or args[1]) if len(args) >= 2 else False,
+        "P₁ ⊕ P₂": lambda *args: (args[0] != args[1]) if len(args) >= 2 else False,
+        "P₁ → P₂": lambda *args: ((not args[0]) or args[1]) if len(args) >= 2 else False,
+        "P₁ ↔ P₂": lambda *args: (args[0] == args[1]) if len(args) >= 2 else False,
     }
 
     print("\nEmbeddings and their bivector components:")
@@ -1395,14 +1389,14 @@ TOTAL STRUCTURE:
     print("=" * 70)
 
     examples = {
-        "⊤ (tautology)": lambda p1, p2: True,
-        "⊥ (contradiction)": lambda p1, p2: False,
-        "P₁": lambda p1, p2: p1,
-        "P₂": lambda p1, p2: p2,
-        "P₁ ∧ P₂": lambda p1, p2: p1 and p2,
-        "P₁ ∨ P₂": lambda p1, p2: p1 or p2,
-        "P₁ ⊕ P₂": lambda p1, p2: p1 != p2,
-        "P₁ ↔ P₂": lambda p1, p2: p1 == p2,
+        "⊤ (tautology)": lambda *args: True,
+        "⊥ (contradiction)": lambda *args: False,
+        "P₁": lambda *args: args[0] if len(args) > 0 else False,
+        "P₂": lambda *args: args[1] if len(args) > 1 else False,
+        "P₁ ∧ P₂": lambda *args: (args[0] and args[1]) if len(args) >= 2 else False,
+        "P₁ ∨ P₂": lambda *args: (args[0] or args[1]) if len(args) >= 2 else False,
+        "P₁ ⊕ P₂": lambda *args: (args[0] != args[1]) if len(args) >= 2 else False,
+        "P₁ ↔ P₂": lambda *args: (args[0] == args[1]) if len(args) >= 2 else False,
     }
 
     print("\nFormula      | Scalar | e₁    | e₂    | e₁₂   | Interpretation")
@@ -1432,9 +1426,10 @@ TOTAL STRUCTURE:
         print(f"{name:12} | {F[0]:6.2f} | {F[1]:5.2f} | {F[2]:5.2f} | {F[3]:5.2f} | {interp}")
 
 
-if __name__ == "__main__":
+def fully_completed_proof(n=2):
+
     # Run core proof first
-    complete_proof(n=2)
+    complete_proof(n=n)
 
     # Then run extensions
     run_all_extensions()
@@ -1448,555 +1443,246 @@ if __name__ == "__main__":
     geometric_meaning_of_components()
 
 
-"""
-======================================================================
-COMPLETE PROOF: Boolean Logic ⊂ GLogic
-======================================================================
-
-Working in Cl(2,0) with 4 dimensions
-
-KEY CORRECTIONS FROM REVIEWER:
-  • Boolean 'subspace' → 'cone' (not closed under negation)
-  • Boolean ops 'recovered' not 'preserved'
-  • Projection π not fully implemented (acknowledged)
-  • Membership test is numerical (acknowledged)
-
-======================================================================
-THEOREM 1: Injection is Well-Defined
-======================================================================
-
-Same formula → same multivector: True
-ι(P₁ ∧ P₂): 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-
-Different formulas → different multivectors: True
-ι(P₁ ∨ P₂): 0.750 + 0.250·e1 + 0.250·e2 - 0.250·e12
-
-======================================================================
-THEOREM 2: NOT is Recovered via Scalar Complement
-======================================================================
-
-P₁:
-  ι(¬P₁) = 1 - ι(P₁): True
-
-P₁ ∧ P₂:
-  ι(¬P₁ ∧ P₂) = 1 - ι(P₁ ∧ P₂): True
-
-P₁ ∨ P₂:
-  ι(¬P₁ ∨ P₂) = 1 - ι(P₁ ∨ P₂): True
-
-======================================================================
-THEOREM 3: AND/OR Recovered After Restriction
-======================================================================
-
-CAVEAT: Projection operator π not explicitly implemented.
-This demonstrates empirical correspondence, not algebraic identity.
-----------------------------------------------------------------------
+def verify_bivector_formula(n=2):
+    """
+    Verify: e₁₂(ι(F)) = (1/2^n) · Σ sign(p₁)·sign(p₂)
+    """
+    alg = CliffordAlgebra(n)
+    boolean = BooleanCone(alg)
+
+    # Test case: XOR on first two variables
+    xor = lambda *args: (args[0] != args[1]) if len(args) >= 2 else False
+    F = boolean.embed(xor)
+
+    # FIX: Find the correct index for e₁₂
+    # e₁₂ corresponds to blade frozenset({0, 1})
+    e12_blade = frozenset({0, 1})
+    e12_index = alg.blades.index(e12_blade)
+
+    e12_actual = F[e12_index]  # Use correct index!
+
+    # Manual calculation:
+    # For XOR on p₁, p₂ (with p₃, p₄, ... free):
+    # Satisfying assignments have p₁ != p₂
+    # Each contributes sign(p₁)·sign(p₂) = -1
+    # Total satisfying: 2^(n-2) with (T,F,...) + 2^(n-2) with (F,T,...)
+    # Sum = 2^(n-2)·(-1) + 2^(n-2)·(-1) = -2^(n-1)
+    # Coefficient = -2^(n-1) / 2^n = -1/2
+
+    e12_expected = -0.5  # Always -0.5 for XOR, regardless of n!
+
+    print(f"XOR bivector (n={n}):")
+    print(f"  e₁₂ at index: {e12_index}")
+    print(f"  Expected: {e12_expected:.3f}")
+    print(f"  Actual:   {e12_actual:.3f}")
+    print(f"  Match: {abs(e12_actual - e12_expected) < 1e-10}")
+
+
+def check_precision(n=4):
+    alg = CliffordAlgebra(n)
+    boolean = BooleanCone(alg)
+
+    # Create a simple multivector
+    simple = alg.multivector(0.5) + 0.3 * alg.basis_vector(0)
+
+    # Check if cone membership introduces errors
+    is_in = boolean.is_in_cone(simple)
+    coeffs = boolean._extract_cone_coords(simple)
+
+    print(f"Numerical precision (n={n}):")
+
+    # Statistics on coefficients
+    coeffs_array = np.array(coeffs)
+    print(f"  Coefficient range: [{coeffs_array.min():.6f}, {coeffs_array.max():.6f}]")
+    print(f"  Number of coefficients: {len(coeffs)}")
 
-Boolean AND via Geometric Product:
-ι(P₁): 0.500 + 0.500·e1
-ι(P₂): 0.500 + 0.500·e2
-ι(P₁) · ι(P₂)  [geometric product]: 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-ι(P₁ ∧ P₂)  [re-embedded Boolean AND]: 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-
-Empirical match: True
-This suggests geometric product coincides with Boolean AND
-for these embedded formulas, but this is NOT a general law.
-
-Grade-0 part:
-⟨ι(P₁) · ι(P₂)⟩₀: 0.250
-
-======================================================================
-THEOREM 4: Boolean ⊊ GLogic (Proper Subset)
-======================================================================
-
-Elements in Cl(n,0) but NOT in Boolean cone C(n):
-----------------------------------------------------------------------
-
-1. Pure basis vector e₁:
-e₁: 1.000·e1
-   In Boolean cone: False
-   ✓ Cannot be written as non-negative combination of Π(α)
-
-2. Pure bivector e₁₂:
-e₁e₂: 1.000·e12
-   In Boolean cone: False
-   ✓ Cannot be written as non-negative combination
-
-3. Difference of generators:
-Π(T,T) - Π(T,F): 0.500·e2 + 0.500·e12
-   In Boolean cone: False
-   ✓ Has negative coefficient (outside convex cone)
-
-4. Example of element IN Boolean cone:
-mixed-grade: 0.500 + 0.300·e1 + 0.200·e12
-   In Boolean cone: True
-   ✓ Coefficients: ['1.00', '0.60', '-0.00', '0.40'] (all ≥ 0)
-   This shows Boolean cone includes mixed-grade elements!
-
-======================================================================
-GEOMETRIC STRUCTURE:
-======================================================================
-Boolean cone C(n) is a convex cone in Cl(n,0):
-  • Generators: {Π(α)} for truth assignments α
-  • Closure: Non-negative linear combinations only
-  • Contains: Mixed-grade elements (NOT grade-0 only!)
-  • Excludes: Pure basis blades, negative combinations
-
-GLogic = Cl(n,0) is strictly larger:
-  • Full vector space (all real linear combinations)
-  • Negative coefficients (quantum amplitudes)
-  • Richer algebraic structure (geometric product, rotations)
-
-======================================================================
-PROOF SUMMARY
-======================================================================
-
-✓ Theorem 1: The embedding ι: Bool(n) → Cl(n,0) is well-defined
-   Tested on 2 variables
-
-✓ Theorem 2: ι(¬F) = 1 - ι(F) for all Boolean formulas F
-   Boolean NOT = GLogic scalar complement
-
-✓ Theorem 3: Boolean AND/OR are recovered after projection to cone
-   Empirical correspondence shown for specific examples
-   ⚠ Caveat: Explicit projection operator π: Cl(n,0) → C(n) not implemented. This is illustrative evidence, not a complete algebraic proof.
-
-✓ Theorem 4: Boolean ⊊ GLogic (proper subset)
-   Boolean cone = convex cone; Cl(n,0) = full vector space
-   ⚠ Caveat: Membership tested numerically via least-squares (basis-dependent)
-
-======================================================================
-CONCLUSION: Boolean Logic ⊂ GLogic ✓
-======================================================================
-
-FINAL CLAIM (Tight and Defensible):
-
-Boolean logic embeds into geometric logic via a canonical injection
-ι: Bool(n) → Cl(n,0). The image of this embedding forms a CONVEX CONE
-generated by quasi-projectors Π(α).
-
-Boolean negation corresponds to scalar complement (1 - F), while
-conjunction and disjunction are RECOVERED after restriction to this
-cone and implicit projection.
-
-Since Cl(n,0) contains elements outside this cone (pure vectors,
-bivectors, negative combinations), Boolean logic is a PROPER SUBSET
-of GLogic.
-
-CAVEATS:
-  • Projection operator π: Cl(n,0) → C(n) not explicitly implemented
-  • Cone membership tested numerically (basis-dependent)
-  • Boolean ops recovered by re-embedding, not algebraic identities
-
-This matches exactly what the executable code demonstrates.
-
-
-======================================================================
-EXTENSIONS BEYOND CORE PROOF
-======================================================================
-
-These extensions strengthen but do not replace the core proof.
-They address three legitimate reviewer questions:
-  1. Explicit projection operator π
-  2. AND coincidence scaling
-  3. Cone geometry characterization
-
-======================================================================
-PROJECTION OPERATOR VERIFICATION
-======================================================================
-
-1. Idempotency test (π(x) = x for x ∈ C):
-   Element in cone, projection error: 0.00e+00
-   ✓ PASS
-
-2. Projection of exterior element:
-   Original in cone: False
-   Projected in cone: True
-   Residual: 0.707
-   ✓ PASS
-
-3. Projection of negative combination:
-   Original in cone: False
-   Projected in cone: True
-   Residual: 0.500
-   ✓ PASS
-
-======================================================================
-AND COINCIDENCE SCALING ANALYSIS
-======================================================================
-
-Testing: Does ι(P₁) · ι(P₂) = ι(P₁ ∧ P₂) for n = 1,2,3,4?
-----------------------------------------------------------------------
-
-======================================================================
-n = 1 variables
-======================================================================
-
-Summary for n=1:
-   1/1 pairs show geometric product = Boolean AND
-   Success rate: 100.0%
-   Working pairs: [(0, 0)]
-
-======================================================================
-n = 2 variables
-======================================================================
-   P2 · P1: Coincidence FAILS (error: 5.00e-01)
-
-Summary for n=2:
-   3/4 pairs show geometric product = Boolean AND
-   Success rate: 75.0%
-   Working pairs: [(0, 0), (0, 1), (1, 1)]
-   Failing pairs: [(1, 0)]
-
-======================================================================
-n = 3 variables
-======================================================================
-   P2 · P1: Coincidence FAILS (error: 5.00e-01)
-   P3 · P1: Coincidence FAILS (error: 5.00e-01)
-   P3 · P2: Coincidence FAILS (error: 5.00e-01)
-
-Summary for n=3:
-   6/9 pairs show geometric product = Boolean AND
-   Success rate: 66.7%
-   Working pairs: [(0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 2)]
-   Failing pairs: [(1, 0), (2, 0), (2, 1)]
-
-======================================================================
-n = 4 variables
-======================================================================
-   P2 · P1: Coincidence FAILS (error: 5.00e-01)
-   P3 · P1: Coincidence FAILS (error: 5.00e-01)
-   P3 · P2: Coincidence FAILS (error: 5.00e-01)
-   P4 · P1: Coincidence FAILS (error: 5.00e-01)
-   P4 · P2: Coincidence FAILS (error: 5.00e-01)
-   P4 · P3: Coincidence FAILS (error: 5.00e-01)
-
-Summary for n=4:
-   10/16 pairs show geometric product = Boolean AND
-   Success rate: 62.5%
-   Working pairs: [(0, 0), (0, 1), (0, 2), (0, 3), (1, 1), (1, 2), (1, 3), (2, 2), (2, 3), (3, 3)]
-   Failing pairs: [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2)]
-
-======================================================================
-SCALING SUMMARY
-======================================================================
-
-n | Success | Total | Rate
-------------------------------
-1 |       1 |     1 | 100.0%
-2 |       3 |     4 |  75.0%
-3 |       6 |     9 |  66.7%
-4 |      10 |    16 |  62.5%
-
-CONCLUSION:
-The geometric product coincides with Boolean AND for
-INDEPENDENT variables (disjoint support). This coincidence
-is structural, not accidental - it follows from the
-multiplicative structure when variables don't interact.
-
-======================================================================
-CONE GEOMETRY CHARACTERIZATION (n=2)
-======================================================================
-
-1. Affine Independence of Generators:
-----------------------------------------------------------------------
-   Number of generators: 4 (= 2^2)
-   Dimension of Cl(2,0): 4 (= 2^2)
-   Rank of generator matrix: 4
-   ✓ Generators span the full space
-
-2. Pointed Cone Test:
-----------------------------------------------------------------------
-   A cone is pointed if C ∩ (-C) = {0}
-   ✓ Cone is pointed (no line through origin)
-
-3. Face Structure:
-----------------------------------------------------------------------
-   Vertices (0D faces): 4 generators Π(α)
-   Edges (1D faces): All pairs of generators
-   Facets (2D faces): Triangular faces of tetrahedron
-   Interior (3D): Positive span of all 4 generators
-
-   Number of edges: 6
-   ✓ Cone is SIMPLICIAL (4-simplex in ℝ⁴)
-
-4. Polyhedral Structure:
-----------------------------------------------------------------------
-   A cone is polyhedral if it's the intersection of
-   finitely many half-spaces.
-
-   The Boolean cone C(n) is generated by 2^n points,
-   and lies in 2^n dimensions.
-
-   ✓ C(n) is POLYHEDRAL (finitely generated convex cone)
-   ✓ C(n) is the positive hull of {Π(α)}
-
-5. Visualization (2D projection):
-----------------------------------------------------------------------
-   ✓ Saved visualization to 'boolean_cone_n2.png'
-
-======================================================================
-EXTENSIONS COMPLETE
-======================================================================
-
-SUMMARY OF FINDINGS:
-  1. Projection π implemented via NNLS (L² metric)
-  2. AND coincidence holds for independent variables
-  3. Boolean cone is polyhedral and simplicial for small n
-
-These results STRENGTHEN the core proof without changing
-the fundamental conclusion: Boolean Logic ⊊ GLogic
-
-======================================================================
-SYMMETRIZED GEOMETRIC PRODUCT TEST
-======================================================================
-
-Decomposition:
-P₁ · P₂: 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-P₂ · P₁: 0.250 + 0.250·e1 + 0.250·e2 - 0.250·e12
-Symmetric part: 0.250 + 0.250·e1 + 0.250·e2
-Antisymmetric part: 0.250·e12
-ι(P₁ ∧ P₂): 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-
-Symmetric part = Boolean AND: False
-
-======================================================================
-GEOMETRIC PRODUCT STRUCTURE ANALYSIS
-======================================================================
-
-Embeddings and their bivector components:
-----------------------------------------------------------------------
-
-P₁           = 0.50 + 0.50·e₁ + 0.00·e₂ + 0.00·e₁₂
-
-P₂           = 0.50 + 0.00·e₁ + 0.50·e₂ + 0.00·e₁₂
-
-P₁ ∧ P₂      = 0.25 + 0.25·e₁ + 0.25·e₂ + 0.25·e₁₂
-             Bivector: +0.25 (positive correlation)
-
-P₁ ∨ P₂      = 0.75 + 0.25·e₁ + 0.25·e₂ + -0.25·e₁₂
-             Bivector: -0.25 (negative correlation/anti-correlation)
-
-P₁ ⊕ P₂      = 0.50 + 0.00·e₁ + 0.00·e₂ + -0.50·e₁₂
-             Bivector: -0.50 (negative correlation/anti-correlation)
-
-P₁ → P₂      = 0.75 + -0.25·e₁ + 0.25·e₂ + 0.25·e₁₂
-             Bivector: +0.25 (positive correlation)
-
-P₁ ↔ P₂      = 0.50 + 0.00·e₁ + 0.00·e₂ + 0.50·e₁₂
-             Bivector: +0.50 (positive correlation)
-
-======================================================================
-BIVECTOR INTERPRETATION
-======================================================================
-
-Operation | Expected e₁₂ | Actual e₁₂ | Interpretation
-----------------------------------------------------------------------
-AND      |        +0.25 |       +0.25 | Agreement/correlation ✓
-OR       |        -0.25 |       -0.25 | Disagreement/anti-correlation ✓
-XOR      |        -0.25 |       -0.50 | Disagreement/anti-correlation ✗
-IFF      |        +0.25 |       +0.50 | Agreement/correlation ✗
-
-======================================================================
-KEY INSIGHT
-======================================================================
-
-The bivector e₁₂ encodes the RELATIONSHIP between P₁ and P₂:
-
-  +e₁₂ → Agreement operations (AND, IFF)
-         "P₁ and P₂ tend to be true together"
-
-  -e₁₂ → Disagreement operations (OR's complement, XOR)
-         "P₁ and P₂ tend to differ"
-
-This is WHY the geometric product is non-commutative:
-  P₁ · P₂ gives +e₁₂ (canonical orientation)
-  P₂ · P₁ gives -e₁₂ (reversed orientation)
-
-The bivector is fundamentally ORIENTED - it has a direction!
-This is a geometric feature that Boolean logic cannot capture.
-
-======================================================================
-GRADE STRUCTURE
-======================================================================
-
-All formulas decompose as:
-  F = (scalar) + (vector) + (bivector)
-     [truth]   [bias]      [correlation]
-
-Scalar part: Overall truth value
-Vector part: Individual variable biases
-Bivector part: Correlation between variables
-
-Boolean logic only sees the scalar!
-GLogic sees the full geometric structure!
-
-======================================================================
-INDEPENDENT VARIABLES TEST
-======================================================================
-
-Independent variables (disjoint support):
-ι(P₁): 0.500 + 0.500·e1
-ι(P₂): 0.500 + 0.500·e2
-ι(P₁) · ι(P₂): 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-ι(P₁ ∧ P₂): 0.250 + 0.250·e1 + 0.250·e2 + 0.250·e12
-
-Geometric product = Boolean AND: True
-✓ For independent variables, geometric product IS Boolean AND
-  This works because variables in different 'directions' don't interfere
-
-======================================================================
-BIVECTOR = CORRELATION THEOREM
-======================================================================
-
-Formula  | e₁₂ coeff | Empirical Correlation | Match?
-----------------------------------------------------------------------
-P₁ ∧ P₂  |     +0.25 |                 +0.50 | ✗
-P₁ ∨ P₂  |     -0.25 |                 -0.17 | ✗
-P₁ ⊕ P₂  |     -0.50 |                 -0.50 | ✓
-P₁ → P₂  |     +0.25 |                 +0.17 | ✗
-P₁ ↔ P₂  |     +0.50 |                 +0.50 | ✓
-
-======================================================================
-INTERPRETATION
-======================================================================
-
-The bivector e₁₂ coefficient measures correlation:
-
-  e₁₂ = (1/|SAT|) · ∑_{α ∈ SAT} sign(α₁ · α₂) / 2
-
-where:
-  - SAT = satisfying assignments of F
-  - α₁, α₂ ∈ {-1, +1} are truth values
-  - sign(α₁ · α₂) = +1 if same, -1 if different
-
-This explains:
-  • IFF: All assignments have same values → e₁₂ = +0.5
-  • XOR: All assignments have different values → e₁₂ = -0.5
-  • AND: 1 assignment (T,T) → e₁₂ = +1/4 = +0.25
-  • OR: 3 assignments, 2 same + 1 different → e₁₂ = (+1+1-1)/3/2 = -0.17? 
-
-Wait, let me recalculate OR...
-
-
-DETAILED CALCULATION FOR OR:
-----------------------------------------------------------------------
-Satisfying assignments: [(True, True), (True, False), (False, True)]
-  (True, True) → (+1, +1) → product = +1
-  (True, False) → (+1, -1) → product = -1
-  (False, True) → (-1, +1) → product = -1
-
-Average product: -0.33
-Normalized: -0.17
-Actual e₁₂: -0.25
-
-✓ The bivector encodes weighted correlation over satisfying assignments!
-
-======================================================================
-BIVECTOR COEFFICIENT FORMULA - THE REAL PATTERN
-======================================================================
-
-Formula | e₁₂ | Formula Check
-----------------------------------------------------------------------
-
-P₁ ∧ P₂  | +0.25 | e₁₂ = (1/4)·(+1) = +0.25 ✓
-         |       |   (    1,     1) → (+1, +1) contributes +1
-
-P₁ ∨ P₂  | -0.25 | e₁₂ = (1/4)·(-1) = -0.25 ✓
-         |       |   (    1,     1) → (+1, +1) contributes +1
-         |       |   (    1,     0) → (+1, -1) contributes -1
-         |       |   (    0,     1) → (-1, +1) contributes -1
-
-P₁ ⊕ P₂  | -0.50 | e₁₂ = (1/4)·(-2) = -0.50 ✓
-         |       |   (    1,     0) → (+1, -1) contributes -1
-         |       |   (    0,     1) → (-1, +1) contributes -1
-
-P₁ → P₂  | +0.25 | e₁₂ = (1/4)·(+1) = +0.25 ✓
-         |       |   (    1,     1) → (+1, +1) contributes +1
-         |       |   (    0,     1) → (-1, +1) contributes -1
-         |       |   (    0,     0) → (-1, -1) contributes +1
-
-P₁ ↔ P₂  | +0.50 | e₁₂ = (1/4)·(+2) = +0.50 ✓
-         |       |   (    1,     1) → (+1, +1) contributes +1
-         |       |   (    0,     0) → (-1, -1) contributes +1
-
-======================================================================
-DISCOVERY: BIVECTOR FORMULA
-======================================================================
-
-For a Boolean formula F on variables P₁, P₂:
-
-    e₁₂(ι(F)) = (1/4) · ∑_{(p₁,p₂) ⊨ F} sign(p₁) · sign(p₂)
-
-where sign(True) = +1, sign(False) = -1
-
-This is NOT an average - it's a RAW SUM scaled by 1/4.
-
-INTERPRETATION:
-  • Each satisfying assignment contributes ±1/4
-  • Agreement (T,T) or (F,F) contributes +1/4
-  • Disagreement (T,F) or (F,T) contributes -1/4
-  • The total encodes BOTH correlation AND cardinality
-
-EXAMPLES:
-  • IFF: {(T,T), (F,F)} → +1/4 + 1/4 = +0.50 (strong agreement)
-  • XOR: {(T,F), (F,T)} → -1/4 - 1/4 = -0.50 (strong disagreement)
-  • AND: {(T,T)}        → +1/4        = +0.25 (partial agreement)
-  • OR:  {(T,T), (T,F), (F,T)} → +1/4 - 1/4 - 1/4 = -0.25 (partial disagreement)
-
-The bivector encodes WEIGHTED correlation, not normalized correlation!
-
-
-======================================================================
-GEOMETRIC MEANING OF GRADE COMPONENTS
-======================================================================
-
-For formula F on variables P₁, P₂:
-----------------------------------------------------------------------
-
-ι(F) = α₀·1 + α₁·e₁ + α₂·e₂ + α₁₂·e₁₂
-
-where each coefficient has geometric meaning:
-
-GRADE 0 (Scalar α₀):
-  α₀ = |{assignments satisfying F}| / 4
-  = P(F is true)
-  = Fraction of truth space where F holds
-
-GRADE 1 (Vectors α₁, α₂):
-  α₁ = (1/4) · ∑_{α ⊨ F} sign(p₁)
-     = Bias toward P₁ being true
-     = "Net P₁ truthfulness in F"
-
-  α₂ = (1/4) · ∑_{α ⊨ F} sign(p₂)
-     = Bias toward P₂ being true
-     = "Net P₂ truthfulness in F"
-
-GRADE 2 (Bivector α₁₂):
-  α₁₂ = (1/4) · ∑_{α ⊨ F} sign(p₁)·sign(p₂)
-      = Correlation between P₁ and P₂
-      = "Do P₁ and P₂ agree or disagree in F?"
-
-TOTAL STRUCTURE:
-  F encodes the DISTRIBUTION of satisfying assignments
-  in the geometric space spanned by {e₁, e₂, e₁₂}
-
-
-======================================================================
-EXAMPLES
-======================================================================
-
-Formula      | Scalar | e₁    | e₂    | e₁₂   | Interpretation
--------------------------------------------------------------------------------------
-⊤ (tautology) |   1.00 |  0.00 |  0.00 |  0.00 | Always true
-⊥ (contradiction) |   0.00 |  0.00 |  0.00 |  0.00 | Always false
-P₁           |   0.50 |  0.50 |  0.00 |  0.00 | 50% true
-P₂           |   0.50 |  0.00 |  0.50 |  0.00 | 50% true
-P₁ ∧ P₂      |   0.25 |  0.25 |  0.25 |  0.25 | 25% true (rare)
-P₁ ∨ P₂      |   0.75 |  0.25 |  0.25 | -0.25 | 75% true (common)
-P₁ ⊕ P₂      |   0.50 |  0.00 |  0.00 | -0.50 | 50% true, strong disagreement
-P₁ ↔ P₂      |   0.50 |  0.00 |  0.00 |  0.50 | 50% true, strong agreement
-
-Process finished with exit code 0
-
-"""
+    # Count by magnitude
+    zero_coeffs = sum(1 for c in coeffs if abs(c) < 1e-10)
+    small_coeffs = sum(1 for c in coeffs if 1e-10 <= abs(c) < 0.01)
+    medium_coeffs = sum(1 for c in coeffs if 0.01 <= abs(c) < 0.1)
+    large_coeffs = sum(1 for c in coeffs if abs(c) >= 0.1)
+
+    print(f"  ~Zero (< 1e-10): {zero_coeffs}")
+    print(f"  Small (< 0.01):  {small_coeffs}")
+    print(f"  Medium (< 0.1):  {medium_coeffs}")
+    print(f"  Large (≥ 0.1):   {large_coeffs}")
+
+    # Check for problematic negative coefficients
+    negative_coeffs = [c for c in coeffs if c < -1e-6]
+    if negative_coeffs:
+        print(f"  WARNING: {len(negative_coeffs)} significantly negative coefficients!")
+        print(f"     Range: [{min(negative_coeffs):.6f}, {max(negative_coeffs):.6f}]")
+    else:
+        print(f"  ✓ No significantly negative coefficients")
+
+    # Check reconstruction error
+    reconstructed = np.zeros(alg.dim)
+    for c, assignment in zip(coeffs, boolean.assignments):
+        reconstructed += c * boolean.generators[assignment]
+
+    recon_error = np.linalg.norm(simple - reconstructed)
+    print(f"  Reconstruction error: {recon_error:.2e}")
+    print(f"  In cone: {is_in}")
+
+    return recon_error < 1e-9 and len(negative_coeffs) == 0
+
+
+def anticommutativity(n=3):
+    alg = CliffordAlgebra(n)
+
+    # Test all bivector pairs
+    errors = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            ei = alg.basis_vector(i)
+            ej = alg.basis_vector(j)
+
+            # Forward: ei · ej
+            forward = alg.gp(ei, ej)
+
+            # Backward: ej · ei
+            backward = alg.gp(ej, ei)
+
+            # Should be: forward = -backward
+            sum_should_be_zero = forward + backward
+
+            if np.linalg.norm(sum_should_be_zero) > 1e-10:
+                errors.append((i, j, sum_should_be_zero))
+
+    if errors:
+        print(f"Anticommutativity FAILED for n={n}:")
+        for i, j, err in errors:
+            print(f"   e{i}·e{j} + e{j}·e{i} = {err} (should be 0)")
+    else:
+        print(f"Anticommutativity verified for n={n}")
+
+
+def gp_precision(n=4):
+    alg = CliffordAlgebra(n)
+    boolean = BooleanCone(alg)
+
+    # Embed simple formulas
+    P1 = boolean.embed(lambda *args: args[0] if len(args) > 0 else False)
+    P2 = boolean.embed(lambda *args: args[1] if len(args) > 1 else False)
+
+    # Compute geometric product
+    result = alg.gp(P1, P2)
+
+    # Expected result
+    expected = boolean.embed(
+        lambda *args: (args[0] and args[1]) if len(args) >= 2 else False
+    )
+
+    # Check error
+    error = np.linalg.norm(result - expected)
+
+    print(f"GP precision test (n={n}):")
+    print(f"  Error: {error:.2e}")
+    print(f"  Pass: {error < 1e-9}")
+
+    # Check individual components
+    max_component_error = max(abs(result[i] - expected[i])
+                              for i in range(len(result)))
+    print(f"  Max component error: {max_component_error:.2e}")
+
+
+def verify_generator_properties(n=2):
+    """Verify generators have correct collective properties"""
+    alg = CliffordAlgebra(n)
+    boolean = BooleanCone(alg)
+
+    print(f"\nGenerator properties (n={n}):")
+
+    # Property 1: All generators collectively sum to scalar 1
+    total = np.zeros(alg.dim)
+    for assignment in boolean.assignments:
+        total += boolean.generators[assignment]
+
+    sum_is_scalar_one = (abs(total[0] - 1.0) < 1e-10 and
+                         np.linalg.norm(total[1:]) < 1e-10)
+    print(f"  Σ_α Π(α) = 1 (scalar): {sum_is_scalar_one}")
+    if not sum_is_scalar_one:
+        print(f"    Actual sum: {total}")
+
+    # Property 2: Tautology generator (all +1) sums to 1
+    tautology = boolean.generators[(1,) * n]
+    tau_sum = np.sum(tautology)
+    tau_correct = abs(tau_sum - 1.0) < 1e-10
+    print(f"  Π(+1,+1,...) component sum = 1: {tau_correct}")
+
+    # Property 3: Check a few individual generator magnitudes
+    print(f"  Individual generator component sums:")
+    for assignment in list(boolean.assignments)[:4]:
+        gen_sum = np.sum(boolean.generators[assignment])
+        sign_product = np.prod(assignment)
+        # For all +1: sum = 1
+        # For mixed signs: sum = 0 (components cancel)
+        expected = 1.0 if all(a == 1 for a in assignment) else 0.0
+        match = abs(gen_sum - expected) < 1e-10
+        status = "✓" if match else "✗"
+        print(f"    Π{assignment}: {gen_sum:.6f} (expected {expected}) {status}")
+
+    return sum_is_scalar_one and tau_correct
+
+
+if __name__ == "__main__":
+    test = False
+    n = 2
+
+    if not test:
+        print("\n" + "=" * 70)
+        print("PROOF")
+        print("=" * 70)
+        fully_completed_proof(n=n)
+
+    else:
+        print("\n" + "=" * 70)
+        print("VERIFICATION TESTS")
+        print("=" * 70)
+
+
+        alg = CliffordAlgebra(n)
+        boolean = BooleanCone(alg)
+
+        # Get Π(+1,+1,+1)
+        temp = ()
+        for i in range(n):
+            temp += (1,)
+        print(f"n={n}, {temp}")
+        gen = boolean.generators[temp]
+
+        print("Π(+1,...,+1) components:")
+        for i, name in enumerate(alg.blade_names):
+            if abs(gen[i]) > 1e-10:
+                print(f"  {name}: {gen[i]:.6f}")
+
+        # Should be: all components = 0.125
+
+        print("\n" + "=" * 70)
+        print("VERIFICATION TESTS")
+        print("=" * 70)
+
+        # Test 1: Generator formula
+        print("\nTest 1: Generator Formula")
+        for i in range(n):
+            verify_bivector_formula(n=n)
+
+        # Test 2: Anticommutativity
+        print("\nTest 2: Anticommutativity")
+        for i in range(n):
+            anticommutativity(n=n)
+
+        # Test 3: GP Precision
+        print("\nTest 3: Geometric Product Precision")
+        for i in range(n):
+            gp_precision(n=n)
+
+        # Test 4: Numerical errors
+        print("\nTest 4: Numerical Precision")
+        for i in range(n):
+            check_precision(n=n)
+
+        # Test 5: Verify Generator Properties
+        print("\nTest 5: Verify Generator Properties")
+        for i in range(n):
+            verify_generator_properties(n=n)
