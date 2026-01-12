@@ -7,7 +7,8 @@
 
 > **A rigorous proof that Boolean logic embeds into Geometric Logic through Clifford Algebra, revealing hidden correlations between logical propositions.**
 
-[White Paper](https://github.com/SaxonRah/GLogic/blob/main/Boolean_Embed.md) | [Examples](#examples) | [Citation](#citation)
+[White Paper](https://github.com/SaxonRah/GLogic/blob/main/Boolean_Embed.md) | [Examples](#examples) | [Citation](#citation) | 
+[GeoCPU: A Geometric Computer in HDL](https://github.com/SaxonRah/GLogic/blob/main/GeoCPU_GeometricComputer.md)
 
 ---
 
