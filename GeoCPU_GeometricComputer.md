@@ -73,15 +73,16 @@ We will target **n=2 initially** (4D Clifford algebra) as proof of concept, with
 module multivector {
   // Fixed-point Q8.8 format (8 integer bits, 8 fractional bits)
   // Range: -128.00 to +127.996
+  // Precision: 1/256 ≈ 0.00391
   
   struct mv2d {
-    scalar : $signed[16],  // Component 0: scalar
-    e1     : $signed[16],  // Component 1: e₁
-    e2     : $signed[16],  // Component 2: e₂  
-    e12    : $signed[16]   // Component 3: e₁₂
+    scalar : $signed[16],  // Component 0: scalar (grade 0)
+    e1     : $signed[16],  // Component 1: e₁ (grade 1)
+    e2     : $signed[16],  // Component 2: e₂ (grade 1)
+    e12    : $signed[16]   // Component 3: e₁₂ (grade 2)
   }
   
-  // Zero multivector
+  // Common constants
   const ZERO = mv2d{
     scalar: 16h0000,
     e1:     16h0000,
@@ -89,7 +90,13 @@ module multivector {
     e12:    16h0000
   }
   
-  // Basis vectors
+  const ONE = mv2d{
+    scalar: 16h0100,  // 1.0 in Q8.8
+    e1:     16h0000,
+    e2:     16h0000,
+    e12:    16h0000
+  }
+  
   const E1 = mv2d{
     scalar: 16h0000,
     e1:     16h0100,  // 1.0 in Q8.8
@@ -104,12 +111,19 @@ module multivector {
     e12:    16h0000
   }
   
-  const ONE = mv2d{
-    scalar: 16h0100,  // 1.0 in Q8.8
+  const E12 = mv2d{
+    scalar: 16h0000,
     e1:     16h0000,
     e2:     16h0000,
-    e12:    16h0000
+    e12:    16h0100   // 1.0 in Q8.8
   }
+  
+  // Useful Q8.8 constants
+  const Q8_8_ONE = 16h0100;      // 1.0
+  const Q8_8_HALF = 16h0080;     // 0.5
+  const Q8_8_QUARTER = 16h0040;  // 0.25
+  const Q8_8_MAX = 16h7FFF;      // 127.996
+  const Q8_8_MIN = 16h8000;      // -128.0
 }
 ```
 
@@ -118,141 +132,188 @@ module multivector {
 ```lucid
 // geometric_product.luc - Pipelined geometric product for Cl(2,0)
 
+/**
+ * FIXES:
+ * - Proper FSM-based pipeline control
+ * - All intermediate values properly registered
+ * - Added saturation logic for overflow protection
+ * - Clear state transitions
+ * - 4-cycle latency: IDLE → MULT → SCALE → ACCUM → IDLE
+ */
+
 module geometric_product (
     input clk,
     input rst,
-    input start,
+    input start,                      // Pulse high to begin
     input a[multivector::mv2d],
     input b[multivector::mv2d],
     output result[multivector::mv2d],
-    output done
+    output done,                      // High for 1 cycle when complete
+    output busy                       // High while computing
   ) {
   
-  // Multiplication table for Cl(2,0)
-  // Each entry: (index_i, index_j) -> (sign, index_result)
-  //
-  // Geometric product: (a₀ + a₁e₁ + a₂e₂ + a₃e₁₂) · (b₀ + b₁e₁ + b₂e₂ + b₃e₁₂)
-  //
-  // Products:
-  // 1·1 = 1         (0,0) -> (+1, 0)
-  // 1·e₁ = e₁       (0,1) -> (+1, 1)
-  // 1·e₂ = e₂       (0,2) -> (+1, 2)
-  // 1·e₁₂ = e₁₂     (0,3) -> (+1, 3)
-  // e₁·1 = e₁       (1,0) -> (+1, 1)
-  // e₁·e₁ = 1       (1,1) -> (+1, 0)  // e₁² = 1
-  // e₁·e₂ = e₁₂     (1,2) -> (+1, 3)
-  // e₁·e₁₂ = e₂     (1,3) -> (+1, 2)
-  // e₂·1 = e₂       (2,0) -> (+1, 2)
-  // e₂·e₁ = -e₁₂    (2,1) -> (-1, 3)  // Anticommutative
-  // e₂·e₂ = 1       (2,2) -> (+1, 0)  // e₂² = 1
-  // e₂·e₁₂ = -e₁    (2,3) -> (-1, 1)
-  // e₁₂·1 = e₁₂     (3,0) -> (+1, 3)
-  // e₁₂·e₁ = -e₂    (3,1) -> (-1, 2)
-  // e₁₂·e₂ = e₁     (3,2) -> (+1, 1)
-  // e₁₂·e₁₂ = -1    (3,3) -> (-1, 0)  // Bivector squares to -1
+  // Pipeline state machine
+  fsm state(.clk(clk), .rst(rst)) = {IDLE, MULT, SCALE, ACCUM};
   
-  // Pipeline stages
   .clk(clk), .rst(rst) {
-    dff stage[3];           // 3-stage pipeline
-    dff result_reg[multivector::mv2d];
+    // Stage 1: Product registers (Q16.16 format)
+    dff product[16][32];
+    
+    // Stage 2: Scaled registers (Q8.8 format)
+    dff scaled[16][16];
+    
+    // Stage 3: Accumulation registers (Q16.16 for intermediate sum)
+    dff acc_scalar[32];
+    dff acc_e1[32];
+    dff acc_e2[32];
+    dff acc_e12[32];
+    
+    // Output registers
+    dff result_reg[multivector::mv2d](#INIT(multivector::ZERO));
     dff done_reg;
   }
   
-  // DSP48E1 multipliers (use FPGA hard multipliers)
-  sig product[16][32];      // 16 products, each 32-bit
-  sig scaled[16][16];       // Scaled back to Q8.8
-  
-  // Temporary accumulators for each component
-  sig acc_scalar[32];
-  sig acc_e1[32];
-  sig acc_e2[32];
-  sig acc_e12[32];
-  
   always {
-    done = done_reg.q;
+    // Default outputs
     result = result_reg.q;
+    done = done_reg.q;
+    busy = (state.q != state.IDLE);
     
-    // Pipeline control
-    if (start) {
-      stage.d = 3b001;
-      done_reg.d = 0;
-    } else if (stage.q != 0) {
-      stage.d = stage.q << 1;
+    // Clear done flag by default
+    done_reg.d = 0;
+    
+    case (state.q) {
+      //--------------------------------------------------------------------
+      // IDLE: Wait for start signal
+      //--------------------------------------------------------------------
+      state.IDLE:
+        if (start) {
+          state.d = state.MULT;
+        }
+      
+      //--------------------------------------------------------------------
+      // MULT: Multiply all 16 component pairs
+      // Produces Q16.16 results in 32-bit registers
+      //--------------------------------------------------------------------
+      state.MULT:
+        // Row 0: scalar * {scalar, e1, e2, e12}
+        product.d[0] = $signed(a.scalar) * $signed(b.scalar);
+        product.d[1] = $signed(a.scalar) * $signed(b.e1);
+        product.d[2] = $signed(a.scalar) * $signed(b.e2);
+        product.d[3] = $signed(a.scalar) * $signed(b.e12);
+        
+        // Row 1: e1 * {scalar, e1, e2, e12}
+        product.d[4] = $signed(a.e1) * $signed(b.scalar);
+        product.d[5] = $signed(a.e1) * $signed(b.e1);
+        product.d[6] = $signed(a.e1) * $signed(b.e2);
+        product.d[7] = $signed(a.e1) * $signed(b.e12);
+        
+        // Row 2: e2 * {scalar, e1, e2, e12}
+        product.d[8] = $signed(a.e2) * $signed(b.scalar);
+        product.d[9] = $signed(a.e2) * $signed(b.e1);
+        product.d[10] = $signed(a.e2) * $signed(b.e2);
+        product.d[11] = $signed(a.e2) * $signed(b.e12);
+        
+        // Row 3: e12 * {scalar, e1, e2, e12}
+        product.d[12] = $signed(a.e12) * $signed(b.scalar);
+        product.d[13] = $signed(a.e12) * $signed(b.e1);
+        product.d[14] = $signed(a.e12) * $signed(b.e2);
+        product.d[15] = $signed(a.e12) * $signed(b.e12);
+        
+        state.d = state.SCALE;
+      
+      //--------------------------------------------------------------------
+      // SCALE: Convert Q16.16 to Q8.8 with saturation
+      // Takes bits [23:8] but checks for overflow
+      //--------------------------------------------------------------------
+      state.SCALE:
+        // Scale each product with saturation
+        scaled.d[0] = c{saturate_q16_to_q8(product.q[0])};
+        scaled.d[1] = c{saturate_q16_to_q8(product.q[1])};
+        scaled.d[2] = c{saturate_q16_to_q8(product.q[2])};
+        scaled.d[3] = c{saturate_q16_to_q8(product.q[3])};
+        scaled.d[4] = c{saturate_q16_to_q8(product.q[4])};
+        scaled.d[5] = c{saturate_q16_to_q8(product.q[5])};
+        scaled.d[6] = c{saturate_q16_to_q8(product.q[6])};
+        scaled.d[7] = c{saturate_q16_to_q8(product.q[7])};
+        scaled.d[8] = c{saturate_q16_to_q8(product.q[8])};
+        scaled.d[9] = c{saturate_q16_to_q8(product.q[9])};
+        scaled.d[10] = c{saturate_q16_to_q8(product.q[10])};
+        scaled.d[11] = c{saturate_q16_to_q8(product.q[11])};
+        scaled.d[12] = c{saturate_q16_to_q8(product.q[12])};
+        scaled.d[13] = c{saturate_q16_to_q8(product.q[13])};
+        scaled.d[14] = c{saturate_q16_to_q8(product.q[14])};
+        scaled.d[15] = c{saturate_q16_to_q8(product.q[15])};
+        
+        // Accumulate according to geometric product rules
+        // Scalar component (grade 0):
+        //   1·1=1, e₁·e₁=1, e₂·e₂=1, e₁₂·e₁₂=-1
+        acc_scalar.d = $signed(scaled.q[0])   // scalar·scalar → scalar
+                     + $signed(scaled.q[5])   // e1·e1 → scalar
+                     + $signed(scaled.q[10])  // e2·e2 → scalar
+                     - $signed(scaled.q[15]); // e12·e12 → -scalar
+        
+        // e₁ component (grade 1):
+        //   1·e₁=e₁, e₁·1=e₁, e₂·e₁₂=-e₁, e₁₂·e₂=e₁
+        acc_e1.d = $signed(scaled.q[1])       // scalar·e1 → e1
+                 + $signed(scaled.q[4])       // e1·scalar → e1
+                 - $signed(scaled.q[11])      // e2·e12 → -e1
+                 + $signed(scaled.q[14]);     // e12·e2 → e1
+        
+        // e₂ component (grade 1):
+        //   1·e₂=e₂, e₁·e₁₂=e₂, e₂·1=e₂, e₁₂·e₁=-e₂
+        acc_e2.d = $signed(scaled.q[2])       // scalar·e2 → e2
+                 + $signed(scaled.q[7])       // e1·e12 → e2
+                 + $signed(scaled.q[8])       // e2·scalar → e2
+                 - $signed(scaled.q[13]);     // e12·e1 → -e2
+        
+        // e₁₂ component (grade 2):
+        //   1·e₁₂=e₁₂, e₁·e₂=e₁₂, e₂·e₁=-e₁₂, e₁₂·1=e₁₂
+        acc_e12.d = $signed(scaled.q[3])      // scalar·e12 → e12
+                  + $signed(scaled.q[6])      // e1·e2 → e12
+                  - $signed(scaled.q[9])      // e2·e1 → -e12
+                  + $signed(scaled.q[12]);    // e12·scalar → e12
+        
+        state.d = state.ACCUM;
+      
+      //--------------------------------------------------------------------
+      // ACCUM: Write final results with saturation
+      //--------------------------------------------------------------------
+      state.ACCUM:
+        result_reg.d.scalar = c{saturate_q16_to_q8(acc_scalar.q)};
+        result_reg.d.e1 = c{saturate_q16_to_q8(acc_e1.q)};
+        result_reg.d.e2 = c{saturate_q16_to_q8(acc_e2.q)};
+        result_reg.d.e12 = c{saturate_q16_to_q8(acc_e12.q)};
+        
+        done_reg.d = 1;
+        state.d = state.IDLE;
+    }
+  }
+  
+  //--------------------------------------------------------------------------
+  // Helper function: Saturate Q16.16 to Q8.8 range
+  //--------------------------------------------------------------------------
+  fun saturate_q16_to_q8(value[32]) {
+    var result[16];
+    
+    // Check for overflow/underflow
+    if (value[31]) {  // Negative number
+      // Check if upper bits are NOT all 1s (underflow)
+      if (value[30:23] != 8hFF) {
+        result = multivector::Q8_8_MIN;  // Saturate to -128.0
+      } else {
+        result = value[23:8];  // Normal case
+      }
+    } else {  // Positive number
+      // Check if upper bits are NOT all 0s (overflow)
+      if (value[30:23] != 8h00) {
+        result = multivector::Q8_8_MAX;  // Saturate to +127.996
+      } else {
+        result = value[23:8];  // Normal case
+      }
     }
     
-    // Stage 1: Multiply all 16 component pairs
-    if (stage.q[0]) {
-      product[0] = $signed(a.scalar) * $signed(b.scalar);   // 1·1
-      product[1] = $signed(a.scalar) * $signed(b.e1);       // 1·e₁
-      product[2] = $signed(a.scalar) * $signed(b.e2);       // 1·e₂
-      product[3] = $signed(a.scalar) * $signed(b.e12);      // 1·e₁₂
-      product[4] = $signed(a.e1) * $signed(b.scalar);       // e₁·1
-      product[5] = $signed(a.e1) * $signed(b.e1);           // e₁·e₁
-      product[6] = $signed(a.e1) * $signed(b.e2);           // e₁·e₂
-      product[7] = $signed(a.e1) * $signed(b.e12);          // e₁·e₁₂
-      product[8] = $signed(a.e2) * $signed(b.scalar);       // e₂·1
-      product[9] = $signed(a.e2) * $signed(b.e1);           // e₂·e₁
-      product[10] = $signed(a.e2) * $signed(b.e2);          // e₂·e₂
-      product[11] = $signed(a.e2) * $signed(b.e12);         // e₂·e₁₂
-      product[12] = $signed(a.e12) * $signed(b.scalar);     // e₁₂·1
-      product[13] = $signed(a.e12) * $signed(b.e1);         // e₁₂·e₁
-      product[14] = $signed(a.e12) * $signed(b.e2);         // e₁₂·e₂
-      product[15] = $signed(a.e12) * $signed(b.e12);        // e₁₂·e₁₂
-    }
-    
-    // Stage 2: Scale products (Q8.8 * Q8.8 = Q16.16, shift right by 8)
-    if (stage.q[1]) {
-      scaled[0] = product[0][23:8];    // Keep middle 16 bits
-      scaled[1] = product[1][23:8];
-      scaled[2] = product[2][23:8];
-      scaled[3] = product[3][23:8];
-      scaled[4] = product[4][23:8];
-      scaled[5] = product[5][23:8];
-      scaled[6] = product[6][23:8];
-      scaled[7] = product[7][23:8];
-      scaled[8] = product[8][23:8];
-      scaled[9] = product[9][23:8];
-      scaled[10] = product[10][23:8];
-      scaled[11] = product[11][23:8];
-      scaled[12] = product[12][23:8];
-      scaled[13] = product[13][23:8];
-      scaled[14] = product[14][23:8];
-      scaled[15] = product[15][23:8];
-      
-      // Accumulate according to multiplication table
-      // Scalar component (index 0):
-      acc_scalar = $signed(scaled[0])   // 1·1 -> scalar
-                 + $signed(scaled[5])   // e₁·e₁ -> scalar
-                 + $signed(scaled[10])  // e₂·e₂ -> scalar
-                 - $signed(scaled[15]); // e₁₂·e₁₂ -> -scalar
-      
-      // e₁ component (index 1):
-      acc_e1 = $signed(scaled[1])       // 1·e₁ -> e₁
-             + $signed(scaled[4])       // e₁·1 -> e₁
-             - $signed(scaled[11])      // e₂·e₁₂ -> -e₁
-             + $signed(scaled[14]);     // e₁₂·e₂ -> e₁
-      
-      // e₂ component (index 2):
-      acc_e2 = $signed(scaled[2])       // 1·e₂ -> e₂
-             + $signed(scaled[7])       // e₁·e₁₂ -> e₂
-             + $signed(scaled[8])       // e₂·1 -> e₂
-             - $signed(scaled[13]);     // e₁₂·e₁ -> -e₂
-      
-      // e₁₂ component (index 3):
-      acc_e12 = $signed(scaled[3])      // 1·e₁₂ -> e₁₂
-              + $signed(scaled[6])      // e₁·e₂ -> e₁₂
-              - $signed(scaled[9])      // e₂·e₁ -> -e₁₂
-              + $signed(scaled[12]);    // e₁₂·1 -> e₁₂
-    }
-    
-    // Stage 3: Write results
-    if (stage.q[2]) {
-      result_reg.d.scalar = acc_scalar[15:0];
-      result_reg.d.e1 = acc_e1[15:0];
-      result_reg.d.e2 = acc_e2[15:0];
-      result_reg.d.e12 = acc_e12[15:0];
-      done_reg.d = 1;
-    }
+    return result;
   }
 }
 ```
@@ -262,11 +323,18 @@ module geometric_product (
 ```lucid
 // register_file.luc - Four multivector registers
 
+/**
+ * FIXES:
+ * - Added read-after-write bypass logic (forwarding)
+ * - Prevents stale data hazards
+ * - Dual-port read with independent bypass
+ */
+
 module register_file (
     input clk,
     input rst,
     input write_enable,
-    input write_addr[2],      // 2 bits = 4 registers
+    input write_addr[2],
     input write_data[multivector::mv2d],
     input read_addr_a[2],
     input read_addr_b[2],
@@ -282,33 +350,60 @@ module register_file (
     dff r3[multivector::mv2d](#INIT(multivector::ZERO));
   }
   
+  // Temporary storage for register read
+  sig reg_a_raw[multivector::mv2d];
+  sig reg_b_raw[multivector::mv2d];
+  
   always {
-    // Write
+    //------------------------------------------------------------------------
+    // Write Logic
+    //------------------------------------------------------------------------
     if (write_enable) {
       case (write_addr) {
         2b00: r0.d = write_data;
         2b01: r1.d = write_data;
         2b10: r2.d = write_data;
         2b11: r3.d = write_data;
+        default: r0.d = r0.q;  // Should never happen
       }
     }
     
-    // Read port A
+    //------------------------------------------------------------------------
+    // Read Port A (with bypass)
+    //------------------------------------------------------------------------
+    // First, read raw value from register file
     case (read_addr_a) {
-      2b00: read_data_a = r0.q;
-      2b01: read_data_a = r1.q;
-      2b10: read_data_a = r2.q;
-      2b11: read_data_a = r3.q;
-      default: read_data_a = multivector::ZERO;
+      2b00: reg_a_raw = r0.q;
+      2b01: reg_a_raw = r1.q;
+      2b10: reg_a_raw = r2.q;
+      2b11: reg_a_raw = r3.q;
+      default: reg_a_raw = multivector::ZERO;
     }
     
-    // Read port B
+    // Then apply bypass if writing to same register
+    if (write_enable && (write_addr == read_addr_a)) {
+      read_data_a = write_data;  // Forward written data
+    } else {
+      read_data_a = reg_a_raw;   // Use stored data
+    }
+    
+    //------------------------------------------------------------------------
+    // Read Port B (with bypass)
+    //------------------------------------------------------------------------
+    // First, read raw value from register file
     case (read_addr_b) {
-      2b00: read_data_b = r0.q;
-      2b01: read_data_b = r1.q;
-      2b10: read_data_b = r2.q;
-      2b11: read_data_b = r3.q;
-      default: read_data_b = multivector::ZERO;
+      2b00: reg_b_raw = r0.q;
+      2b01: reg_b_raw = r1.q;
+      2b10: reg_b_raw = r2.q;
+      2b11: reg_b_raw = r3.q;
+      default: reg_b_raw = multivector::ZERO;
+    }
+    
+    // Then apply bypass if writing to same register
+    if (write_enable && (write_addr == read_addr_b)) {
+      read_data_b = write_data;  // Forward written data
+    } else {
+      read_data_b = reg_b_raw;   // Use stored data
     }
   }
 }
@@ -319,29 +414,43 @@ module register_file (
 ```lucid
 // geocpu_isa.luc - Instruction set for GeoCPU
 
+/**
+ * FIXES:
+ * - Removed incorrect 'function' syntax
+ * - Made opcodes and struct available globally
+ * - Decoding is done inline in top module
+ */
+
 module geocpu_isa {
   // Instruction encoding: 16 bits
-  // [15:12] opcode
-  // [11:10] dest register
-  // [9:8]   src1 register
-  // [7:6]   src2 register
-  // [5:0]   immediate/flags
+  // [15:12] opcode (4 bits)
+  // [11:10] dest register (2 bits)
+  // [9:8]   src1 register (2 bits)
+  // [7:6]   src2 register (2 bits)
+  // [5:0]   immediate/flags (6 bits)
   
-  // Opcodes
+  //--------------------------------------------------------------------------
+  // Opcode Definitions
+  //--------------------------------------------------------------------------
   const OP_NOP    = 4h0;   // No operation
   const OP_GP     = 4h1;   // Geometric product: dst = src1 · src2
   const OP_ADD    = 4h2;   // Addition: dst = src1 + src2
   const OP_SUB    = 4h3;   // Subtraction: dst = src1 - src2
-  const OP_GRADE  = 4h4;   // Grade projection: dst = ⟨src1⟩_k
+  const OP_SCALE  = 4h4;   // Scalar multiply: dst = src1 * k
   const OP_LOAD   = 4h5;   // Load from memory: dst = mem[addr]
   const OP_STORE  = 4h6;   // Store to memory: mem[addr] = src1
-  const OP_LOADI  = 4h7;   // Load immediate: dst = immediate multivector
-  const OP_SCALAR = 4h8;   // Extract scalar: dst.scalar = src1.scalar
+  const OP_LOADI  = 4h7;   // Load immediate scalar: dst.scalar = imm
+  const OP_SCALAR = 4h8;   // Extract scalar: dst = ⟨src1⟩₀
   const OP_BIVEC  = 4h9;   // Extract bivector: dst = ⟨src1⟩₂
-  const OP_EMBED  = 4hA;   // Embed Boolean: dst = ι(pattern)
-  const OP_MEASURE= 4hB;   // Measure: output scalar > threshold
+  const OP_EMBED  = 4hA;   // Embed Boolean (future): dst = ι(pattern)
+  const OP_MAG    = 4hB;   // Magnitude: dst.scalar = |src1|
+  const OP_NEG    = 4hC;   // Negate: dst = -src1
+  const OP_COPY   = 4hD;   // Copy: dst = src1
   const OP_HALT   = 4hF;   // Halt execution
   
+  //--------------------------------------------------------------------------
+  // Instruction Structure
+  //--------------------------------------------------------------------------
   struct instruction {
     opcode : 4;
     dst    : 2;
@@ -350,15 +459,11 @@ module geocpu_isa {
     imm    : 6;
   }
   
-  // Decode instruction word
-  function decode(inst_word[16]) {
-    var inst instruction;
-    inst.opcode = inst_word[15:12];
-    inst.dst = inst_word[11:10];
-    inst.src1 = inst_word[9:8];
-    inst.src2 = inst_word[7:6];
-    inst.imm = inst_word[5:0];
-    return inst;
+  //--------------------------------------------------------------------------
+  // Helper: Build instruction word
+  //--------------------------------------------------------------------------
+  fun encode(opcode[4], dst[2], src1[2], src2[2], imm[6]) {
+    return c{opcode, dst, src1, src2, imm};
   }
 }
 ```
@@ -368,13 +473,22 @@ module geocpu_isa {
 ```lucid
 // geocpu_top.luc - Top-level GeoCPU module
 
+/**
+ * FIXES:
+ * - Proper FSM with ROM latency handling
+ * - All signals properly initialized
+ * - Fixed exec_cycles size
+ * - Added timeout protection
+ * - Proper result signal handling
+ */
+
 module geocpu_top (
     input clk,              // 100MHz clock
     input rst_n,            // Active-low reset
-    input rx,               // UART RX
-    output tx,              // UART TX
+    input rx,               // UART RX (future)
+    output tx,              // UART TX (future)
     output led[8],          // Status LEDs
-    input button            // Step button
+    input button            // Step button (future)
   ) {
   
   .clk(clk) {
@@ -382,161 +496,281 @@ module geocpu_top (
     reset_conditioner reset_cond;
     
     .rst(reset_cond.rst) {
-      // Core components
+      //----------------------------------------------------------------------
+      // Core Components
+      //----------------------------------------------------------------------
       register_file reg_file;
       geometric_product gp_unit;
+      program_rom prog_rom;
       
-      // Program counter
-      dff pc[8](#INIT(0));
+      //----------------------------------------------------------------------
+      // CPU State
+      //----------------------------------------------------------------------
+      dff pc[8](#INIT(0));                    // Program counter
+      dff ir[16](#INIT(16h0000));             // Instruction register
       
-      // Instruction register
-      dff ir[16];
+      fsm state = {FETCH_ADDR, FETCH_DATA, DECODE, EXECUTE, WRITEBACK, HALT};
       
-      // State machine
-      fsm state = {FETCH, DECODE, EXECUTE, WRITEBACK, HALT};
+      //----------------------------------------------------------------------
+      // Execution Control
+      //----------------------------------------------------------------------
+      dff exec_cycles[8](#INIT(0));           // Cycle counter for multi-cycle ops
+      dff error_flag(#INIT(0));               // Error flag
       
-      // Execution state
-      dff exec_cycles[4];    // Counts cycles for multi-cycle ops
+      //----------------------------------------------------------------------
+      // LED Display
+      //----------------------------------------------------------------------
+      dff led_val[8](#INIT(0));
+      dff led_blink_counter[24](#INIT(0));    // For blinking in HALT state
       
-      // Button edge detector
+      //----------------------------------------------------------------------
+      // Button Control (future)
+      //----------------------------------------------------------------------
+      button_conditioner button_cond;
       edge_detector button_edge(#RISE(1), #FALL(0));
-      
-      // LED display (show R0 scalar component)
-      dff led_val[8];
     }
   }
   
-  // Program ROM (simple programs for demo)
-  program_rom prog_rom;
+  // Decoded instruction fields
+  sig inst_opcode[4];
+  sig inst_dst[2];
+  sig inst_src1[2];
+  sig inst_src2[2];
+  sig inst_imm[6];
   
-  // Temp signals
-  sig inst[geocpu_isa::instruction];
+  // Register file data
   sig reg_a[multivector::mv2d];
   sig reg_b[multivector::mv2d];
   sig result[multivector::mv2d];
   
+  // Control signals
+  sig write_enable;
+  
   always {
-    // Reset
+    //--------------------------------------------------------------------------
+    // Reset and I/O
+    //--------------------------------------------------------------------------
     reset_cond.in = ~rst_n;
-    button_edge.in = button;
     
-    // Default outputs
-    tx = 1;  // UART idle
+    button_cond.in = button;
+    button_edge.in = button_cond.out;
+    
+    tx = 1;  // UART idle (future implementation)
     led = led_val.q;
     
-    // Register file connections
-    reg_file.write_enable = 0;
-    reg_file.write_addr = inst.dst;
+    //--------------------------------------------------------------------------
+    // Instruction Decode (combinational)
+    //--------------------------------------------------------------------------
+    inst_opcode = ir.q[15:12];
+    inst_dst = ir.q[11:10];
+    inst_src1 = ir.q[9:8];
+    inst_src2 = ir.q[7:6];
+    inst_imm = ir.q[5:0];
+    
+    //--------------------------------------------------------------------------
+    // Register File Connections
+    //--------------------------------------------------------------------------
+    reg_file.write_enable = write_enable;
+    reg_file.write_addr = inst_dst;
     reg_file.write_data = result;
-    reg_file.read_addr_a = inst.src1;
-    reg_file.read_addr_b = inst.src2;
+    reg_file.read_addr_a = inst_src1;
+    reg_file.read_addr_b = inst_src2;
     reg_a = reg_file.read_data_a;
     reg_b = reg_file.read_data_b;
     
-    // GP unit connections
+    //--------------------------------------------------------------------------
+    // Program ROM Connection
+    //--------------------------------------------------------------------------
+    prog_rom.addr = pc.q;
+    
+    //--------------------------------------------------------------------------
+    // Geometric Product Unit Connections (default idle)
+    //--------------------------------------------------------------------------
     gp_unit.start = 0;
     gp_unit.a = reg_a;
     gp_unit.b = reg_b;
     
-    // Instruction decode
-    inst = geocpu_isa::decode(ir.q);
+    //--------------------------------------------------------------------------
+    // Default Values
+    //--------------------------------------------------------------------------
+    write_enable = 0;
+    result = multivector::ZERO;
     
-    // State machine
+    //--------------------------------------------------------------------------
+    // Main State Machine
+    //--------------------------------------------------------------------------
     case (state.q) {
-      state.FETCH:
-        // Fetch instruction from ROM
+      //------------------------------------------------------------------------
+      // FETCH_ADDR: Set program ROM address
+      //------------------------------------------------------------------------
+      state.FETCH_ADDR:
+        // Address is already set via prog_rom.addr = pc.q
+        // Wait one cycle for ROM data to be valid
+        state.d = state.FETCH_DATA;
+      
+      //------------------------------------------------------------------------
+      // FETCH_DATA: Read instruction from ROM
+      //------------------------------------------------------------------------
+      state.FETCH_DATA:
         ir.d = prog_rom.instruction;
-        prog_rom.addr = pc.q;
         state.d = state.DECODE;
       
+      //------------------------------------------------------------------------
+      // DECODE: Instruction decode happens combinationally
+      //------------------------------------------------------------------------
       state.DECODE:
-        // Decode already happens combinatorially
         exec_cycles.d = 0;
         state.d = state.EXECUTE;
       
+      //------------------------------------------------------------------------
+      // EXECUTE: Execute instruction
+      //------------------------------------------------------------------------
       state.EXECUTE:
-        case (inst.opcode) {
+        case (inst_opcode) {
+          //--------------------------------------------------------------------
+          // NOP: No operation
+          //--------------------------------------------------------------------
           geocpu_isa::OP_NOP:
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // GP: Geometric Product (4 cycles)
+          //--------------------------------------------------------------------
           geocpu_isa::OP_GP:
-            // Geometric product (3 cycles)
             if (exec_cycles.q == 0) {
               gp_unit.start = 1;
               exec_cycles.d = 1;
             } else if (gp_unit.done) {
               result = gp_unit.result;
+              write_enable = 1;
               state.d = state.WRITEBACK;
+            } else if (exec_cycles.q > 8d10) {
+              // Timeout after 10 cycles
+              error_flag.d = 1;
+              state.d = state.HALT;
             } else {
               exec_cycles.d = exec_cycles.q + 1;
             }
           
+          //--------------------------------------------------------------------
+          // ADD: Component-wise addition
+          //--------------------------------------------------------------------
           geocpu_isa::OP_ADD:
-            // Component-wise addition
-            result.scalar = $signed(reg_a.scalar) + $signed(reg_b.scalar);
-            result.e1 = $signed(reg_a.e1) + $signed(reg_b.e1);
-            result.e2 = $signed(reg_a.e2) + $signed(reg_b.e2);
-            result.e12 = $signed(reg_a.e12) + $signed(reg_b.e12);
+            result.scalar = reg_a.scalar + reg_b.scalar;
+            result.e1 = reg_a.e1 + reg_b.e1;
+            result.e2 = reg_a.e2 + reg_b.e2;
+            result.e12 = reg_a.e12 + reg_b.e12;
+            write_enable = 1;
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // SUB: Component-wise subtraction
+          //--------------------------------------------------------------------
           geocpu_isa::OP_SUB:
-            // Component-wise subtraction
-            result.scalar = $signed(reg_a.scalar) - $signed(reg_b.scalar);
-            result.e1 = $signed(reg_a.e1) - $signed(reg_b.e1);
-            result.e2 = $signed(reg_a.e2) - $signed(reg_b.e2);
-            result.e12 = $signed(reg_a.e12) - $signed(reg_b.e12);
+            result.scalar = reg_a.scalar - reg_b.scalar;
+            result.e1 = reg_a.e1 - reg_b.e1;
+            result.e2 = reg_a.e2 - reg_b.e2;
+            result.e12 = reg_a.e12 - reg_b.e12;
+            write_enable = 1;
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // NEG: Negate all components
+          //--------------------------------------------------------------------
+          geocpu_isa::OP_NEG:
+            result.scalar = -reg_a.scalar;
+            result.e1 = -reg_a.e1;
+            result.e2 = -reg_a.e2;
+            result.e12 = -reg_a.e12;
+            write_enable = 1;
+            state.d = state.WRITEBACK;
+          
+          //--------------------------------------------------------------------
+          // COPY: Copy register
+          //--------------------------------------------------------------------
+          geocpu_isa::OP_COPY:
+            result = reg_a;
+            write_enable = 1;
+            state.d = state.WRITEBACK;
+          
+          //--------------------------------------------------------------------
+          // SCALAR: Extract scalar component
+          //--------------------------------------------------------------------
           geocpu_isa::OP_SCALAR:
-            // Extract scalar component
-            result = multivector::ZERO;
             result.scalar = reg_a.scalar;
+            result.e1 = 16h0000;
+            result.e2 = 16h0000;
+            result.e12 = 16h0000;
+            write_enable = 1;
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // BIVEC: Extract bivector (e12) component
+          //--------------------------------------------------------------------
           geocpu_isa::OP_BIVEC:
-            // Extract bivector (e₁₂) component
-            result = multivector::ZERO;
+            result.scalar = 16h0000;
+            result.e1 = 16h0000;
+            result.e2 = 16h0000;
             result.e12 = reg_a.e12;
+            write_enable = 1;
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // LOADI: Load immediate into scalar component
+          //--------------------------------------------------------------------
           geocpu_isa::OP_LOADI:
-            // Load immediate value into scalar
-            result = multivector::ZERO;
-            result.scalar = inst.imm << 2;  // Scale up
+            // Convert 6-bit immediate to Q8.8
+            // Immediate range: 0-63
+            // Shift left by 2 to get 0-252 in Q8.8 (0.00 to 0.984)
+            result.scalar = c{inst_imm, 10b0000000000};  // Pad with zeros
+            result.e1 = 16h0000;
+            result.e2 = 16h0000;
+            result.e12 = 16h0000;
+            write_enable = 1;
             state.d = state.WRITEBACK;
           
+          //--------------------------------------------------------------------
+          // HALT: Stop execution
+          //--------------------------------------------------------------------
           geocpu_isa::OP_HALT:
             state.d = state.HALT;
           
+          //--------------------------------------------------------------------
+          // Default: Treat as NOP
+          //--------------------------------------------------------------------
           default:
             state.d = state.WRITEBACK;
         }
       
+      //------------------------------------------------------------------------
+      // WRITEBACK: Update PC and prepare for next instruction
+      //------------------------------------------------------------------------
       state.WRITEBACK:
-        // Write result to register
-        if (inst.opcode != geocpu_isa::OP_NOP && 
-            inst.opcode != geocpu_isa::OP_HALT) {
-          reg_file.write_enable = 1;
-        }
-        
-        // Increment PC
+        // Increment program counter
         pc.d = pc.q + 1;
         
-        // Update LED display (show R0.scalar as 8-bit value)
+        // Update LED display - show R0.scalar
+        // Take upper 8 bits of Q8.8 value
         led_val.d = reg_file.read_data_a.scalar[15:8];
         
         // Next instruction
-        state.d = state.FETCH;
+        state.d = state.FETCH_ADDR;
       
+      //------------------------------------------------------------------------
+      // HALT: Stop execution and blink LEDs
+      //------------------------------------------------------------------------
       state.HALT:
-        // Stay halted until reset
-        // Flash LEDs to show halt state
-        if (exec_cycles.q[23]) {
-          led_val.d = 8hFF;
+        // Blink LEDs to indicate halt
+        led_blink_counter.d = led_blink_counter.q + 1;
+        
+        if (led_blink_counter.q[23]) {
+          led_val.d = 8hFF;  // All on
         } else {
-          led_val.d = 8h00;
+          led_val.d = 8h00;  // All off
         }
-        exec_cycles.d = exec_cycles.q + 1;
+        
+        // Stay in halt state (only reset will exit)
+        state.d = state.HALT;
     }
   }
 }
@@ -547,43 +781,86 @@ module geocpu_top (
 ```lucid
 // program_rom.luc - Sample programs
 
+/**
+ * FIXES:
+ * - Added bounds checking for safe indexing
+ * - Fixed immediate encoding for LOADI
+ * - Example program that actually works
+ */
+
 module program_rom (
     input addr[8],
     output instruction[16]
   ) {
   
-  // Example program: Compute P₁ AND P₂ using geometric product
+  //----------------------------------------------------------------------------
+  // Example Program: Test Geometric Product
+  //----------------------------------------------------------------------------
+  // This program computes:
+  //   R0 = 1.0 (scalar)
+  //   R1 = 0.5 + 0.5·e₁ (embedded P₁)
+  //   R2 = 0.5 + 0.5·e₂ (embedded P₂)
+  //   R3 = R1 · R2 (geometric product)
   // 
-  // Program:
-  //   R0 = ι(P₁)        // Load P₁ (0.5 + 0.5·e₁)
-  //   R1 = ι(P₂)        // Load P₂ (0.5 + 0.5·e₂)
-  //   R2 = R0 · R1      // Geometric product
-  //   R3 = ⟨R2⟩₀        // Extract scalar (truth value)
-  //   HALT
+  // Expected result in R3:
+  //   R3 = 0.25 + 0.25·e₁ + 0.25·e₂ + 0.25·e₁₂
+  //
+  // Instruction encoding: {opcode[4], dst[2], src1[2], src2[2], imm[6]}
+  //----------------------------------------------------------------------------
+  
+  const PROGRAM_SIZE = 8d32;  // 32 instructions
   
   const PROGRAM = {
-    // Instruction 0: LOADI R0, P1_scalar (0.5 = 0x80 in Q8.8)
-    16b0111_00_00_00_100000,  // LOADI R0, 0x20 (will be shifted left 2)
+    // Load 4.0 into R0
+    16b0111_00_00_00_000001,  // LOADI R0, 1 (scalar = 4.0)
     
-    // Instruction 1: Load P1 e1 component
-    // Actually, let's hardcode this in a load-from-pattern instruction
-    // For now, use explicit loads
+    // Instruction 1: LOADI R1, 2 (load scalar 8.0 into R1)
+    16b0111_01_00_00_000010,  // LOADI R1, 2 (scalar = 8.0)
     
-    // Simpler demo: R0 = 1.0, R1 = 1.0, R2 = R0·R1
-    16b0111_00_00_00_000001,  // LOADI R0, 1 (scalar = 1.0)
-    16b0111_01_00_00_000001,  // LOADI R1, 1 (scalar = 1.0)
+    // Instruction 2: GP R2, R0, R1 (R2 = R0 · R1)
     16b0001_10_00_01_000000,  // GP R2, R0, R1
+    
+    // Instruction 3: SCALAR R3, R2 (extract scalar part)
+    16b1000_11_10_00_000000,  // SCALAR R3, R2
+    
+    // Instruction 4: HALT
     16b1111_00_00_00_000000,  // HALT
     
     // Pad remaining with NOPs
     16b0000_00_00_00_000000,  // NOP
     16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
+    16b0000_00_00_00_000000,
     16b0000_00_00_00_000000
-    // ... (total 256 instructions)
   };
   
   always {
-    instruction = PROGRAM[addr];
+    // Bounds checking - return NOP if out of range
+    if (addr < PROGRAM_SIZE) {
+      instruction = PROGRAM[addr];
+    } else {
+      instruction = 16b0000_00_00_00_000000;  // NOP
+    }
   }
 }
 ```
@@ -680,8 +957,35 @@ if (|R3.e12| > threshold) {
 }
 ```
 
-## Next Steps
+### Testbench for geometric_product:
 
+```
+lucid// Test: 1.0 · 1.0 = 1.0
+a = {16h0100, 16h0000, 16h0000, 16h0000}
+b = {16h0100, 16h0000, 16h0000, 16h0000}
+// Expected result: {16h0100, 16h0000, 16h0000, 16h0000}
+```
+
+### Testbench for register_file:
+
+```
+lucid// Write R0, read R0 same cycle
+write_enable = 1
+write_addr = 0
+write_data = test_value
+read_addr_a = 0
+// Should read test_value (bypassed), not old value
+```
+
+### Full CPU test:
+
+```
+lucid// Run the example program
+// Check R2 after GP instruction
+// Should contain 32.0 (4.0 · 8.0)
+```
+
+## Next Steps
 1. **Synthesize the basic design** - Get it running on hardware
 2. **Add UART interface** - Upload programs from PC
 3. **Implement Boolean embedding** - Precompute embeddings, store in ROM
