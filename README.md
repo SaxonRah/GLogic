@@ -1,3 +1,11 @@
+# Boolean Embed: The paper's Theorem 2 has a mathematical error
+* Paper claims: E(α)² = 2ⁿ·E(α)
+* Reality: E(α)² = 2·E(α) (we proved this empirically)
+* The "effective commutativity" claimed in the proof doesn't hold. You don't need perfect idempotent projectors in Cl(n,0)!
+This is a good result as it hints at Boolean logic = A subspace of GLogic, not the full space, GLogic operations are more general than Boolean operations, Boolean operations emerge via restriction/projection.
+
+THIS IS A WIP 
+
 **GLogic: A Geometric Logic System for Higher-Order Reasoning**
 
 ## Abstract
