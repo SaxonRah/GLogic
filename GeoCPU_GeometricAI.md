@@ -975,8 +975,12 @@ This is **SIMD for semantic information** - parallel processing of meaning, not 
 
 - **Boolean computers compute with switches.**
 - **Geometric computers compute with dimmers.**
+- 
 - **Boolean logic snaps.**
 - **Geometric logic slides.**
+- 
+- **Boolean logic is a projection.**
+- **Geometric logic is the space being projected from.**
 
 ---
 
