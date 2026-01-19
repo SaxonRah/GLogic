@@ -1,0 +1,561 @@
+DIGEST 6c409d188574b2d9bdd97eb24cc90fa0
+FCln.Cln_Multivector
+R553:561 Cln.Cln_Basis <> <> lib
+R589:592 Coq.Lists.List <> <> lib
+R619:622 Coq.Bool.Bool <> <> lib
+R649:653 Coq.Arith.Arith <> <> lib
+R680:685 Coq.QArith.QArith <> <> lib
+R712:725 Coq.Vectors.Vector <> <> lib
+R752:757 Coq.Setoids.Setoid <> <> lib
+R784:792 Coq.Classes.Morphisms <> <> lib
+R819:822 Coq.setoid_ring.Ring <> <> lib
+R833:845 Coq.Lists.List ListNotations <> mod
+R873:884 Coq.QArith.Qring <> <> lib
+def 1149:1150 <> MV
+R1157:1159 Coq.Init.Datatypes <> nat ind
+binder 1153:1153 <> n:1
+R1178:1181 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1172:1175 Cln.Cln_Basis <> Mask def
+R1177:1177 Cln.Cln_Multivector <> n:1 var
+R1182:1182 Coq.QArith.QArith_base <> Q rec
+def 1197:1203 <> mv_zero
+binder 1206:1206 <> n:2
+R1211:1212 Cln.Cln_Multivector <> MV def
+R1214:1214 Cln.Cln_Multivector <> n:2 var
+def 1244:1249 <> mv_add
+binder 1253:1253 <> n:3
+R1263:1264 Cln.Cln_Multivector <> MV def
+R1266:1266 Cln.Cln_Multivector <> n:3 var
+binder 1257:1257 <> F:4
+binder 1259:1259 <> G:5
+R1271:1272 Cln.Cln_Multivector <> MV def
+R1274:1274 Cln.Cln_Multivector <> n:3 var
+binder 1283:1283 <> m:6
+R1292:1294 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R1289:1289 Cln.Cln_Multivector <> F:4 var
+R1291:1291 Cln.Cln_Multivector <> m:6 var
+R1295:1295 Cln.Cln_Multivector <> G:5 var
+R1297:1297 Cln.Cln_Multivector <> m:6 var
+def 1314:1321 <> mv_scale
+binder 1324:1324 <> n:7
+R1332:1332 Coq.QArith.QArith_base <> Q rec
+binder 1328:1328 <> k:8
+R1340:1341 Cln.Cln_Multivector <> MV def
+R1343:1343 Cln.Cln_Multivector <> n:7 var
+binder 1336:1336 <> F:9
+R1348:1349 Cln.Cln_Multivector <> MV def
+R1351:1351 Cln.Cln_Multivector <> n:7 var
+binder 1360:1360 <> m:10
+R1367:1369 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R1366:1366 Cln.Cln_Multivector <> k:8 var
+R1370:1370 Cln.Cln_Multivector <> F:9 var
+R1372:1372 Cln.Cln_Multivector <> m:10 var
+R1394:1399 Cln.Cln_Multivector <> mv_add def
+not 1385:1385 <> :::x_'⊕'_x
+def 1510:1514 <> basis
+binder 1517:1517 <> n:11
+R1525:1528 Cln.Cln_Basis <> Mask def
+R1530:1530 Cln.Cln_Multivector <> n:11 var
+binder 1521:1521 <> S:12
+R1535:1536 Cln.Cln_Multivector <> MV def
+R1538:1538 Cln.Cln_Multivector <> n:11 var
+binder 1549:1549 <> T:13
+R1557:1567 Cln.Cln_Basis <> mask_eq_dec def
+R1571:1571 Cln.Cln_Multivector <> S:12 var
+R1569:1569 Cln.Cln_Multivector <> T:13 var
+def 1806:1809 <> sumQ
+R1817:1820 Coq.Init.Datatypes <> list ind
+R1822:1822 Coq.QArith.QArith_base <> Q rec
+binder 1812:1813 <> xs:14
+R1827:1827 Coq.QArith.QArith_base <> Q rec
+R1840:1841 Cln.Cln_Multivector <> xs:14 var
+R1852:1859 Coq.Lists.List <> nil abbrev
+R1872:1880 Coq.Lists.List <> cons abbrev
+R1892:1894 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R1895:1898 Cln.Cln_Multivector <> sumQ:15 def
+prf 1920:1927 <> sumQ_app
+binder 1938:1939 <> xs:17
+binder 1941:1942 <> ys:18
+R1962:1965 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R1947:1950 Cln.Cln_Multivector <> sumQ def
+R1955:1958 Coq.Init.Datatypes <> ::list_scope:x_'++'_x not
+R1953:1954 Cln.Cln_Multivector <> xs:17 var
+R1959:1960 Cln.Cln_Multivector <> ys:18 var
+R1974:1976 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R1967:1970 Cln.Cln_Multivector <> sumQ def
+R1972:1973 Cln.Cln_Multivector <> xs:17 var
+R1977:1980 Cln.Cln_Multivector <> sumQ def
+R1982:1983 Cln.Cln_Multivector <> ys:18 var
+prf 2076:2087 <> sumQ_map_ext
+binder 2101:2101 <> A:19
+R2119:2122 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2118:2118 Cln.Cln_Multivector <> A:19 var
+R2123:2123 Coq.QArith.QArith_base <> Q rec
+binder 2112:2112 <> f:20
+binder 2114:2114 <> g:21
+R2131:2134 Coq.Init.Datatypes <> list ind
+R2136:2136 Cln.Cln_Multivector <> A:19 var
+binder 2127:2127 <> l:22
+R2144:2144 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2180:2188 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+binder 2152:2152 <> x:23
+R2166:2169 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2155:2161 Coq.Lists.List <> In def
+R2165:2165 Cln.Cln_Multivector <> l:22 var
+R2163:2163 Cln.Cln_Multivector <> x:23 var
+R2173:2176 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R2170:2170 Cln.Cln_Multivector <> f:20 var
+R2172:2172 Cln.Cln_Multivector <> x:23 var
+R2177:2177 Cln.Cln_Multivector <> g:21 var
+R2179:2179 Cln.Cln_Multivector <> x:23 var
+R2208:2211 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R2189:2192 Cln.Cln_Multivector <> sumQ def
+R2195:2202 Coq.Lists.List <> map def
+R2206:2206 Cln.Cln_Multivector <> l:22 var
+R2204:2204 Cln.Cln_Multivector <> f:20 var
+R2212:2215 Cln.Cln_Multivector <> sumQ def
+R2218:2225 Coq.Lists.List <> map def
+R2229:2229 Cln.Cln_Multivector <> l:22 var
+R2227:2227 Cln.Cln_Multivector <> g:21 var
+R2346:2355 Coq.QArith.QArith_base <> Qplus_comp inst
+R2346:2355 Coq.QArith.QArith_base <> Qplus_comp inst
+prf 2459:2470 <> sumQ_map_add
+binder 2484:2484 <> A:24
+R2502:2505 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2501:2501 Cln.Cln_Multivector <> A:24 var
+R2506:2506 Coq.QArith.QArith_base <> Q rec
+binder 2495:2495 <> f:25
+binder 2497:2497 <> g:26
+R2514:2517 Coq.Init.Datatypes <> list ind
+R2519:2519 Cln.Cln_Multivector <> A:24 var
+binder 2510:2510 <> l:27
+R2569:2576 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R2527:2530 Cln.Cln_Multivector <> sumQ def
+R2533:2540 Coq.Lists.List <> map def
+R2567:2567 Cln.Cln_Multivector <> l:27 var
+binder 2547:2547 <> x:28
+R2556:2558 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R2553:2553 Cln.Cln_Multivector <> f:25 var
+R2555:2555 Cln.Cln_Multivector <> x:28 var
+R2559:2559 Cln.Cln_Multivector <> g:26 var
+R2561:2561 Cln.Cln_Multivector <> x:28 var
+R2597:2599 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R2578:2581 Cln.Cln_Multivector <> sumQ def
+R2584:2591 Coq.Lists.List <> map def
+R2595:2595 Cln.Cln_Multivector <> l:27 var
+R2593:2593 Cln.Cln_Multivector <> f:25 var
+R2600:2603 Cln.Cln_Multivector <> sumQ def
+R2606:2613 Coq.Lists.List <> map def
+R2617:2617 Cln.Cln_Multivector <> l:27 var
+R2615:2615 Cln.Cln_Multivector <> g:26 var
+prf 2711:2726 <> sumQ_map_scale_l
+binder 2740:2740 <> A:29
+R2755:2755 Coq.QArith.QArith_base <> Q rec
+binder 2751:2751 <> k:30
+R2764:2767 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2763:2763 Cln.Cln_Multivector <> A:29 var
+R2768:2768 Coq.QArith.QArith_base <> Q rec
+binder 2759:2759 <> f:31
+R2776:2779 Coq.Init.Datatypes <> list ind
+R2781:2781 Cln.Cln_Multivector <> A:29 var
+binder 2772:2772 <> l:32
+R2829:2836 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R2789:2792 Cln.Cln_Multivector <> sumQ def
+R2795:2802 Coq.Lists.List <> map def
+R2827:2827 Cln.Cln_Multivector <> l:32 var
+binder 2809:2809 <> x:33
+R2816:2818 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R2815:2815 Cln.Cln_Multivector <> k:30 var
+R2819:2819 Cln.Cln_Multivector <> f:31 var
+R2821:2821 Cln.Cln_Multivector <> x:33 var
+R2839:2841 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R2838:2838 Cln.Cln_Multivector <> k:30 var
+R2842:2845 Cln.Cln_Multivector <> sumQ def
+R2848:2855 Coq.Lists.List <> map def
+R2859:2859 Cln.Cln_Multivector <> l:32 var
+R2857:2857 Cln.Cln_Multivector <> f:31 var
+def 3164:3165 <> sQ
+R3172:3175 Cln.Cln_Basis <> Sign ind
+binder 3168:3168 <> s:34
+R3180:3180 Coq.QArith.QArith_base <> Q rec
+R3193:3193 Cln.Cln_Multivector <> s:34 var
+R3204:3206 Cln.Cln_Basis <> Pos constr
+R3219:3221 Cln.Cln_Basis <> Neg constr
+prf 3247:3252 <> sQ_sq1
+binder 3263:3263 <> s:36
+R3281:3284 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R3271:3273 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R3267:3268 Cln.Cln_Multivector <> sQ def
+R3270:3270 Cln.Cln_Multivector <> s:36 var
+R3274:3275 Cln.Cln_Multivector <> sQ def
+R3277:3277 Cln.Cln_Multivector <> s:36 var
+prf 3334:3343 <> sQ_mul_eqb
+binder 3356:3356 <> a:37
+binder 3358:3358 <> b:38
+R3380:3384 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R3421:3421 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R3370:3372 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R3366:3367 Cln.Cln_Multivector <> sQ def
+R3369:3369 Cln.Cln_Multivector <> a:37 var
+R3373:3374 Cln.Cln_Multivector <> sQ def
+R3376:3376 Cln.Cln_Multivector <> b:38 var
+R3388:3395 Cln.Cln_Basis <> sign_eqb def
+R3399:3399 Cln.Cln_Multivector <> b:38 var
+R3397:3397 Cln.Cln_Multivector <> a:37 var
+def 3483:3485 <> chi
+R3492:3494 Coq.Init.Datatypes <> nat ind
+binder 3488:3488 <> n:39
+R3505:3508 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3499:3502 Cln.Cln_Basis <> Mask def
+R3504:3504 Cln.Cln_Multivector <> n:39 var
+R3517:3520 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3509:3514 Cln.Cln_Basis <> Corner def
+R3516:3516 Cln.Cln_Multivector <> n:39 var
+R3521:3521 Coq.QArith.QArith_base <> Q rec
+R3534:3534 Cln.Cln_Multivector <> n:39 var
+R3545:3545 Coq.Init.Datatypes <> O constr
+R3569:3569 Coq.Init.Datatypes <> S constr
+binder 3587:3587 <> m:42
+binder 3589:3589 <> s:43
+R3612:3620 Coq.Vectors.Vector <> hd def
+R3622:3622 Cln.Cln_Multivector <> m:42 var
+binder 3606:3607 <> mh:44
+R3645:3653 Coq.Vectors.Vector <> tl def
+R3655:3655 Cln.Cln_Multivector <> m:42 var
+binder 3639:3640 <> mt:45
+R3678:3686 Coq.Vectors.Vector <> hd def
+R3688:3688 Cln.Cln_Multivector <> s:43 var
+binder 3672:3673 <> sh:46
+R3711:3719 Coq.Vectors.Vector <> tl def
+R3721:3721 Cln.Cln_Multivector <> s:43 var
+binder 3705:3706 <> st:47
+R3735:3735 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R3761:3765 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R3779:3779 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R3739:3740 Cln.Cln_Multivector <> mh:44 var
+R3747:3748 Cln.Cln_Multivector <> sQ def
+R3750:3751 Cln.Cln_Multivector <> sh:46 var
+R3767:3769 Cln.Cln_Multivector <> chi:40 def
+R3774:3775 Cln.Cln_Multivector <> mt:45 var
+R3777:3778 Cln.Cln_Multivector <> st:47 var
+def 4006:4009 <> chi'
+R4016:4018 Coq.Init.Datatypes <> nat ind
+binder 4012:4012 <> n:48
+R4029:4032 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4023:4026 Cln.Cln_Basis <> Mask def
+R4028:4028 Cln.Cln_Multivector <> n:48 var
+R4041:4044 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4033:4038 Cln.Cln_Basis <> Corner def
+R4040:4040 Cln.Cln_Multivector <> n:48 var
+R4045:4045 Coq.QArith.QArith_base <> Q rec
+R4051:4053 Cln.Cln_Multivector <> chi def
+R4055:4055 Cln.Cln_Multivector <> n:48 var
+prf 4065:4078 <> chi_false_cons
+binder 4091:4091 <> n:49
+R4098:4101 Cln.Cln_Basis <> Mask def
+R4103:4103 Cln.Cln_Multivector <> n:49 var
+binder 4094:4094 <> m:50
+R4111:4116 Cln.Cln_Basis <> Corner def
+R4118:4118 Cln.Cln_Multivector <> n:49 var
+binder 4107:4107 <> s:51
+R4126:4129 Cln.Cln_Basis <> Sign ind
+binder 4122:4122 <> h:52
+R4225:4236 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4137:4140 Cln.Cln_Multivector <> chi' def
+R4202:4212 Coq.Vectors.Vector <> cons constr
+R4214:4217 Cln.Cln_Basis <> Sign ind
+R4219:4219 Cln.Cln_Multivector <> h:52 var
+R4221:4221 Cln.Cln_Multivector <> n:49 var
+R4223:4223 Cln.Cln_Multivector <> s:51 var
+R4154:4164 Coq.Vectors.Vector <> cons constr
+R4166:4169 Coq.Init.Datatypes <> bool ind
+R4171:4175 Coq.Init.Datatypes <> false constr
+R4177:4177 Cln.Cln_Multivector <> n:49 var
+R4179:4179 Cln.Cln_Multivector <> m:50 var
+R4148:4148 Coq.Init.Datatypes <> S constr
+R4150:4150 Cln.Cln_Multivector <> n:49 var
+R4237:4240 Cln.Cln_Multivector <> chi' def
+R4253:4253 Cln.Cln_Multivector <> s:51 var
+R4251:4251 Cln.Cln_Multivector <> m:50 var
+R4248:4248 Cln.Cln_Multivector <> n:49 var
+R4290:4293 Cln.Cln_Multivector <> chi' def
+R4296:4298 Cln.Cln_Multivector <> chi def
+prf 4328:4340 <> chi_true_cons
+binder 4353:4353 <> n:53
+R4360:4363 Cln.Cln_Basis <> Mask def
+R4365:4365 Cln.Cln_Multivector <> n:53 var
+binder 4356:4356 <> m:54
+R4373:4378 Cln.Cln_Basis <> Corner def
+R4380:4380 Cln.Cln_Multivector <> n:53 var
+binder 4369:4369 <> s:55
+R4388:4391 Cln.Cln_Basis <> Sign ind
+binder 4384:4384 <> h:56
+R4486:4497 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4399:4402 Cln.Cln_Multivector <> chi' def
+R4463:4473 Coq.Vectors.Vector <> cons constr
+R4475:4478 Cln.Cln_Basis <> Sign ind
+R4480:4480 Cln.Cln_Multivector <> h:56 var
+R4482:4482 Cln.Cln_Multivector <> n:53 var
+R4484:4484 Cln.Cln_Multivector <> s:55 var
+R4416:4426 Coq.Vectors.Vector <> cons constr
+R4428:4431 Coq.Init.Datatypes <> bool ind
+R4433:4436 Coq.Init.Datatypes <> true constr
+R4438:4438 Cln.Cln_Multivector <> n:53 var
+R4440:4440 Cln.Cln_Multivector <> m:54 var
+R4410:4410 Coq.Init.Datatypes <> S constr
+R4412:4412 Cln.Cln_Multivector <> n:53 var
+R4503:4505 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R4499:4500 Cln.Cln_Multivector <> sQ def
+R4502:4502 Cln.Cln_Multivector <> h:56 var
+R4506:4509 Cln.Cln_Multivector <> chi' def
+R4522:4522 Cln.Cln_Multivector <> s:55 var
+R4520:4520 Cln.Cln_Multivector <> m:54 var
+R4517:4517 Cln.Cln_Multivector <> n:53 var
+R4562:4565 Cln.Cln_Multivector <> chi' def
+R4568:4570 Cln.Cln_Multivector <> chi def
+def 4807:4810 <> pow2
+R4817:4819 Coq.Init.Datatypes <> nat ind
+binder 4813:4813 <> n:57
+R4824:4824 Coq.QArith.QArith_base <> Q rec
+R4837:4837 Cln.Cln_Multivector <> n:57 var
+R4848:4848 Coq.Init.Datatypes <> O constr
+R4861:4861 Coq.Init.Datatypes <> S constr
+R4872:4874 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R4875:4878 Cln.Cln_Multivector <> pow2:58 def
+prf 4899:4910 <> pow2_nonzero
+binder 4921:4921 <> n:60
+R4924:4925 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4939:4939 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4932:4935 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4926:4929 Cln.Cln_Multivector <> pow2 def
+R4931:4931 Cln.Cln_Multivector <> n:60 var
+R5042:5055 Coq.QArith.QArith_base <> Qmult_integral thm
+R5042:5055 Coq.QArith.QArith_base <> Qmult_integral thm
+def 5358:5361 <> eval
+binder 5364:5364 <> n:61
+R5372:5373 Cln.Cln_Multivector <> MV def
+R5375:5375 Cln.Cln_Multivector <> n:61 var
+binder 5368:5368 <> F:62
+R5383:5388 Cln.Cln_Basis <> Corner def
+R5390:5390 Cln.Cln_Multivector <> n:61 var
+binder 5379:5379 <> s:63
+R5395:5395 Coq.QArith.QArith_base <> Q rec
+R5402:5405 Cln.Cln_Multivector <> sumQ def
+R5408:5415 Coq.Lists.List <> map def
+R5448:5456 Cln.Cln_Basis <> all_masks def
+R5458:5458 Cln.Cln_Multivector <> n:61 var
+binder 5422:5422 <> m:64
+R5431:5433 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R5428:5428 Cln.Cln_Multivector <> F:62 var
+R5430:5430 Cln.Cln_Multivector <> m:64 var
+R5434:5437 Cln.Cln_Multivector <> chi' def
+R5441:5441 Cln.Cln_Multivector <> s:63 var
+R5439:5439 Cln.Cln_Multivector <> m:64 var
+prf 5470:5477 <> eval_add
+binder 5488:5488 <> n:65
+R5497:5498 Cln.Cln_Multivector <> MV def
+R5500:5500 Cln.Cln_Multivector <> n:65 var
+binder 5491:5491 <> F:66
+binder 5493:5493 <> G:67
+R5508:5513 Cln.Cln_Basis <> Corner def
+R5515:5515 Cln.Cln_Multivector <> n:65 var
+binder 5504:5504 <> s:68
+R5540:5543 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R5521:5524 Cln.Cln_Multivector <> eval def
+R5539:5539 Cln.Cln_Multivector <> s:68 var
+R5527:5532 Cln.Cln_Multivector <> mv_add def
+R5536:5536 Cln.Cln_Multivector <> G:67 var
+R5534:5534 Cln.Cln_Multivector <> F:66 var
+R5553:5555 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R5545:5548 Cln.Cln_Multivector <> eval def
+R5552:5552 Cln.Cln_Multivector <> s:68 var
+R5550:5550 Cln.Cln_Multivector <> F:66 var
+R5556:5559 Cln.Cln_Multivector <> eval def
+R5563:5563 Cln.Cln_Multivector <> s:68 var
+R5561:5561 Cln.Cln_Multivector <> G:67 var
+R5603:5606 Cln.Cln_Multivector <> eval def
+R5609:5614 Cln.Cln_Multivector <> mv_add def
+R5630:5641 Cln.Cln_Multivector <> sumQ_map_add thm
+R5630:5641 Cln.Cln_Multivector <> sumQ_map_add thm
+R5630:5641 Cln.Cln_Multivector <> sumQ_map_add thm
+R5652:5663 Cln.Cln_Multivector <> sumQ_map_ext thm
+R5652:5663 Cln.Cln_Multivector <> sumQ_map_ext thm
+prf 5704:5713 <> eval_scale
+binder 5724:5724 <> n:69
+R5731:5731 Coq.QArith.QArith_base <> Q rec
+binder 5727:5727 <> k:70
+R5739:5740 Cln.Cln_Multivector <> MV def
+R5742:5742 Cln.Cln_Multivector <> n:69 var
+binder 5735:5735 <> F:71
+R5750:5755 Cln.Cln_Basis <> Corner def
+R5757:5757 Cln.Cln_Multivector <> n:69 var
+binder 5746:5746 <> s:72
+R5784:5787 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R5763:5766 Cln.Cln_Multivector <> eval def
+R5783:5783 Cln.Cln_Multivector <> s:72 var
+R5769:5776 Cln.Cln_Multivector <> mv_scale def
+R5780:5780 Cln.Cln_Multivector <> F:71 var
+R5778:5778 Cln.Cln_Multivector <> k:70 var
+R5790:5792 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R5789:5789 Cln.Cln_Multivector <> k:70 var
+R5793:5796 Cln.Cln_Multivector <> eval def
+R5800:5800 Cln.Cln_Multivector <> s:72 var
+R5798:5798 Cln.Cln_Multivector <> F:71 var
+R5840:5843 Cln.Cln_Multivector <> eval def
+R5846:5853 Cln.Cln_Multivector <> mv_scale def
+R5869:5884 Cln.Cln_Multivector <> sumQ_map_scale_l thm
+R5869:5884 Cln.Cln_Multivector <> sumQ_map_scale_l thm
+R5869:5884 Cln.Cln_Multivector <> sumQ_map_scale_l thm
+R5895:5906 Cln.Cln_Multivector <> sumQ_map_ext thm
+R5895:5906 Cln.Cln_Multivector <> sumQ_map_ext thm
+prf 6196:6208 <> sumQ_map_zero
+binder 6222:6222 <> A:73
+R6237:6240 Coq.Init.Datatypes <> list ind
+R6242:6242 Cln.Cln_Multivector <> A:73 var
+binder 6233:6233 <> l:74
+R6282:6285 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R6250:6253 Cln.Cln_Multivector <> sumQ def
+R6256:6263 Coq.Lists.List <> map def
+R6280:6280 Cln.Cln_Multivector <> l:74 var
+prf 6413:6433 <> eval_sum_over_corners
+binder 6446:6446 <> n:75
+R6454:6457 Coq.Init.Datatypes <> list ind
+R6460:6465 Cln.Cln_Basis <> Corner def
+R6467:6467 Cln.Cln_Multivector <> n:75 var
+binder 6449:6450 <> cs:76
+R6484:6487 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6476:6481 Cln.Cln_Basis <> Corner def
+R6483:6483 Cln.Cln_Multivector <> n:75 var
+R6488:6489 Cln.Cln_Multivector <> MV def
+R6491:6491 Cln.Cln_Multivector <> n:75 var
+binder 6472:6472 <> H:77
+R6499:6504 Cln.Cln_Basis <> Corner def
+R6506:6506 Cln.Cln_Multivector <> n:75 var
+binder 6495:6495 <> s:78
+R6567:6574 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R6514:6517 Cln.Cln_Multivector <> eval def
+R6566:6566 Cln.Cln_Multivector <> s:78 var
+binder 6524:6524 <> m:79
+R6529:6532 Cln.Cln_Multivector <> sumQ def
+R6535:6542 Coq.Lists.List <> map def
+R6561:6562 Cln.Cln_Multivector <> cs:76 var
+binder 6549:6549 <> a:80
+R6554:6554 Cln.Cln_Multivector <> H:77 var
+R6558:6558 Cln.Cln_Multivector <> m:79 var
+R6556:6556 Cln.Cln_Multivector <> a:80 var
+R6575:6578 Cln.Cln_Multivector <> sumQ def
+R6581:6588 Coq.Lists.List <> map def
+R6614:6615 Cln.Cln_Multivector <> cs:76 var
+binder 6595:6595 <> a:81
+R6600:6603 Cln.Cln_Multivector <> eval def
+R6611:6611 Cln.Cln_Multivector <> s:78 var
+R6606:6606 Cln.Cln_Multivector <> H:77 var
+R6608:6608 Cln.Cln_Multivector <> a:81 var
+R6719:6722 Cln.Cln_Multivector <> eval def
+R6818:6821 Cln.Cln_Multivector <> sumQ def
+R6824:6831 Coq.Lists.List <> map def
+R6858:6866 Cln.Cln_Basis <> all_masks def
+R6842:6845 Cln.Cln_Basis <> Mask def
+R6802:6810 Coq.QArith.QArith_base <> Qeq_trans thm
+R6818:6821 Cln.Cln_Multivector <> sumQ def
+R6824:6831 Coq.Lists.List <> map def
+R6858:6866 Cln.Cln_Basis <> all_masks def
+R6842:6845 Cln.Cln_Basis <> Mask def
+R6802:6810 Coq.QArith.QArith_base <> Qeq_trans thm
+R6886:6897 Cln.Cln_Multivector <> sumQ_map_ext thm
+R6886:6897 Cln.Cln_Multivector <> sumQ_map_ext thm
+R6945:6957 Cln.Cln_Multivector <> sumQ_map_zero thm
+R6945:6957 Cln.Cln_Multivector <> sumQ_map_zero thm
+R6994:6997 Cln.Cln_Multivector <> eval def
+R7104:7107 Cln.Cln_Multivector <> sumQ def
+R7110:7117 Coq.Lists.List <> map def
+R7262:7270 Cln.Cln_Basis <> all_masks def
+R7143:7146 Cln.Cln_Basis <> Mask def
+binder 7139:7139 <> m:82
+R7172:7172 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7229:7232 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7178:7180 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R7177:7177 Cln.Cln_Multivector <> m:82 var
+R7181:7184 Cln.Cln_Multivector <> sumQ def
+R7187:7194 Coq.Lists.List <> map def
+R7206:7211 Cln.Cln_Basis <> Corner def
+binder 7201:7202 <> a0:83
+R7220:7221 Cln.Cln_Multivector <> a0:83 var
+R7223:7223 Cln.Cln_Multivector <> m:82 var
+R7233:7236 Cln.Cln_Multivector <> chi' def
+R7238:7238 Cln.Cln_Multivector <> m:82 var
+R7082:7090 Coq.QArith.QArith_base <> Qeq_trans thm
+R7104:7107 Cln.Cln_Multivector <> sumQ def
+R7110:7117 Coq.Lists.List <> map def
+R7262:7270 Cln.Cln_Basis <> all_masks def
+R7143:7146 Cln.Cln_Basis <> Mask def
+binder 7139:7139 <> m:84
+R7172:7172 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7229:7232 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7178:7180 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R7177:7177 Cln.Cln_Multivector <> m:84 var
+R7181:7184 Cln.Cln_Multivector <> sumQ def
+R7187:7194 Coq.Lists.List <> map def
+R7206:7211 Cln.Cln_Basis <> Corner def
+binder 7201:7202 <> a0:85
+R7220:7221 Cln.Cln_Multivector <> a0:85 var
+R7223:7223 Cln.Cln_Multivector <> m:84 var
+R7233:7236 Cln.Cln_Multivector <> chi' def
+R7238:7238 Cln.Cln_Multivector <> m:84 var
+R7082:7090 Coq.QArith.QArith_base <> Qeq_trans thm
+R7490:7501 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R7420:7423 Cln.Cln_Multivector <> sumQ def
+R7426:7433 Coq.Lists.List <> map def
+R7477:7485 Cln.Cln_Basis <> all_masks def
+R7444:7447 Cln.Cln_Basis <> Mask def
+binder 7440:7440 <> m:86
+R7460:7462 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7459:7459 Cln.Cln_Multivector <> m:86 var
+R7463:7466 Cln.Cln_Multivector <> chi' def
+R7468:7468 Cln.Cln_Multivector <> m:86 var
+R7502:7505 Cln.Cln_Multivector <> sumQ def
+R7508:7515 Coq.Lists.List <> map def
+R7653:7661 Cln.Cln_Basis <> all_masks def
+R7526:7529 Cln.Cln_Basis <> Mask def
+binder 7522:7522 <> m:87
+R7612:7614 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7564:7567 Cln.Cln_Multivector <> sumQ def
+R7570:7577 Coq.Lists.List <> map def
+R7589:7594 Cln.Cln_Basis <> Corner def
+binder 7584:7585 <> a0:88
+R7603:7604 Cln.Cln_Multivector <> a0:88 var
+R7606:7606 Cln.Cln_Multivector <> m:87 var
+R7615:7618 Cln.Cln_Multivector <> chi' def
+R7620:7620 Cln.Cln_Multivector <> m:87 var
+R7396:7404 Coq.QArith.QArith_base <> Qeq_trans thm
+R7490:7501 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R7420:7423 Cln.Cln_Multivector <> sumQ def
+R7426:7433 Coq.Lists.List <> map def
+R7477:7485 Cln.Cln_Basis <> all_masks def
+R7444:7447 Cln.Cln_Basis <> Mask def
+binder 7440:7440 <> m:89
+R7460:7462 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7459:7459 Cln.Cln_Multivector <> m:89 var
+R7463:7466 Cln.Cln_Multivector <> chi' def
+R7468:7468 Cln.Cln_Multivector <> m:89 var
+R7502:7505 Cln.Cln_Multivector <> sumQ def
+R7508:7515 Coq.Lists.List <> map def
+R7653:7661 Cln.Cln_Basis <> all_masks def
+R7526:7529 Cln.Cln_Basis <> Mask def
+binder 7522:7522 <> m:90
+R7612:7614 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7564:7567 Cln.Cln_Multivector <> sumQ def
+R7570:7577 Coq.Lists.List <> map def
+R7589:7594 Cln.Cln_Basis <> Corner def
+binder 7584:7585 <> a0:91
+R7603:7604 Cln.Cln_Multivector <> a0:91 var
+R7606:7606 Cln.Cln_Multivector <> m:90 var
+R7615:7618 Cln.Cln_Multivector <> chi' def
+R7620:7620 Cln.Cln_Multivector <> m:90 var
+R7396:7404 Coq.QArith.QArith_base <> Qeq_trans thm
+R7721:7732 Cln.Cln_Multivector <> sumQ_map_add thm
+R7721:7732 Cln.Cln_Multivector <> sumQ_map_add thm
+R7721:7732 Cln.Cln_Multivector <> sumQ_map_add thm
+R7749:7760 Cln.Cln_Multivector <> sumQ_map_ext thm
+R7749:7760 Cln.Cln_Multivector <> sumQ_map_ext thm
+R7954:7957 Cln.Cln_Multivector <> eval def

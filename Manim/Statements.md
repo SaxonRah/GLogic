@@ -1,0 +1,5 @@
+This work can be viewed as taking the multilinear structure behind Boolean Fourier analysis, restoring logical semantics from algebraic logic, and realizing the result as an explicit Clifford algebra. The result is an exact, executable embedding of Boolean logic into geometry.
+
+This work is not geometric logic in the categorical or topos-theoretic sense. It presents a constructive embedding of Boolean logic into geometric (Clifford) algebra, where Boolean formulas correspond to multivectors and evaluation recovers Boolean semantics exactly. The construction is exhaustively validated in Cl(2,0) and generalized algorithmically to Cl(n,0), exposing higher-order logical structure as graded geometric components. The goal is not to redefine logic syntactically, but to reveal and compute with the latent structure already present in Boolean truth tables.
+
+This work introduces a new class of logic-bearing geometric objects and a framework for studying Boolean structure inside geometric algebra. Whether it becomes a field depends on whether others find it useful and extend it.
