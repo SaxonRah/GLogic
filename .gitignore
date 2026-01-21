@@ -2,3 +2,5 @@
 __pycache__/
 .pytest_cache/
 /media
+GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model_or_fix.pt
+GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model.pt
