@@ -163,6 +163,9 @@ The **composition impossibility** (Phase 2) is probably the most important philo
 Require Import Cln_Basis.
 Require Import Cln_Multivector.
 
+From Coq Require Import FunctionalExtensionality.
+
+From Coq Require Import Lia.
 From Coq Require Import List Bool Arith QArith Vectors.Vector.
 From Coq Require Import Setoid Morphisms Ring.
 Import ListNotations.
@@ -273,179 +276,407 @@ Require Import QArith.
 Require Import Qcanon.
 
 Lemma Qmult_plus_distr_r_eq : forall x y z : Q,
-  (x + y) * z = x * z + y * z.
+  (x + y) * z == x * z + y * z.
 Proof.
-  intros x y z.
-  (* Convert to canonical form where Qeq becomes = *)
-  assert (H: (x + y) * z == x * z + y * z) by apply Qmult_plus_distr_r.
-  (* Now we need Qeq to = conversion *)
-  unfold Qeq in H.
-  simpl in H.
-  (* This is tricky - let's just compute both sides *)
-  destruct x as [xn xd], y as [yn yd], z as [zn zd].
-  unfold Qplus, Qmult in *.
-  simpl in *.
-  (* Now H tells us the numerators are equal when cross-multiplied *)
-  (* We need to show the fractions are equal *)
-  apply Qeq_eqR.
-  exact H.
+  intros. ring.
 Qed.
 
 Lemma Qmult_assoc_eq : forall x y z : Q,
-  (x * y) * z = x * (y * z).
+  (x * y) * z == x * (y * z).
 Proof.
-  intros.
-  setoid_replace ((x * y) * z) with (x * (y * z)).
-  - reflexivity.
-  - apply Qmult_assoc.
+  intros. ring.
 Qed.
 
 Lemma mv_gp_add_l :
-  forall n (sq : Vector.t Q n) (F1 F2 G : MV n),
-    @mv_gp n sq (mv_add F1 F2) G
-    =
-    mv_add (@mv_gp n sq F1 G) (@mv_gp n sq F2 G).
+  forall n (sq : Vector.t Q n) (F1 F2 G : MV n) (U : Mask n),
+    @mv_gp n sq (mv_add F1 F2) G U
+    ==
+    mv_add (@mv_gp n sq F1 G)
+           (@mv_gp n sq F2 G) U.
 Proof.
-  intros n sq F1 F2 G.
-  apply functional_extensionality; intro U.
+  intros n sq F1 F2 G U.
   unfold mv_gp, mv_add.
-  
-  assert (H1: forall l,
-    sumQ (List.map
-      (fun A => sumQ (List.map
-        (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                  then (F1 A + F2 A) * G B * basis_mul_coeff sq A B
-                  else 0) (all_masks n))) l) =
-    (sumQ (List.map
-      (fun A => sumQ (List.map
-        (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                  then F1 A * G B * basis_mul_coeff sq A B
-                  else 0) (all_masks n))) l) +
-     sumQ (List.map
-      (fun A => sumQ (List.map
-        (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                  then F2 A * G B * basis_mul_coeff sq A B
-                  else 0) (all_masks n))) l))).
-  {
-    intro l.
-    induction l as [|A tl IH]; simpl.
-    - reflexivity.
-    - rewrite IH. clear IH.
-      assert (H2: forall l2,
-        sumQ (List.map
-          (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                    then (F1 A + F2 A) * G B * basis_mul_coeff sq A B
-                    else 0) l2) =
-        (sumQ (List.map
-          (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                    then F1 A * G B * basis_mul_coeff sq A B
-                    else 0) l2) +
-         sumQ (List.map
-          (fun B => if mask_eq_dec (basis_mul_mask A B) U
-                    then F2 A * G B * basis_mul_coeff sq A B
-                    else 0) l2))).
-      {
-        intro l2.
-        induction l2 as [|B tl2 IH2]; simpl.
-        - reflexivity.
-        - rewrite IH2.
-          destruct (mask_eq_dec (basis_mul_mask A B) U).
-          + (* Case: masks equal, need to distribute and rearrange *)
-            (* Goal: (F1 A + F2 A) * G B * c + (s1 + s2) = F1 A * G B * c + s1 + (F2 A * G B * c + s2) *)
-            set (c := basis_mul_coeff sq A B).
-            set (s1 := sumQ (List.map _ tl2)).
-            set (s2 := sumQ (List.map _ tl2)).
-            (* Manually build the proof *)
-            assert (Hdist: (F1 A + F2 A) * G B * c = F1 A * G B * c + F2 A * G B * c).
-            { unfold c.
-              destruct (F1 A) as [n1 d1], (F2 A) as [n2 d2], (G B) as [ng dg], (basis_mul_coeff sq A B) as [nc dc].
-              unfold Qplus, Qmult. simpl.
-              f_equal.
-              - (* Numerator equality *)
-                rewrite !Pos2Z.inj_mul.
-                nia.
-              - (* Denominator equality *)
-                reflexivity.
-            }
-            rewrite Hdist.
-            (* Now: (x + y) + (s1 + s2) = x + s1 + (y + s2) *)
-            (* This is just associativity and commutativity *)
-            rewrite <- !Qplus_assoc.
-            f_equal.
-            rewrite !Qplus_assoc.
-            rewrite (Qplus_comm (F2 A * G B * c) s1).
-            rewrite <- !Qplus_assoc.
-            reflexivity.
-          + (* Case: masks not equal, both sides have 0 *)
-            reflexivity.
-      }
-      rewrite H2.
-      (* Outer rearrangement: s + (t1 + t2) = (s + t1) + t2 *)
-      rewrite !Qplus_assoc.
-      f_equal.
-      rewrite <- !Qplus_assoc.
-      f_equal.
-      apply Qplus_comm.
+
+  (* Define the two “inner sums” as functions of A *)
+  set (inner1 :=
+    fun A : Mask n =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F1 A * G B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  set (inner2 :=
+    fun A : Mask n =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F2 A * G B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  (* LHS == sumQ(map (fun A => inner1 A + inner2 A) all_masks) *)
+  eapply Qeq_trans.
+  2: {
+    (* now split the outer sum *)
+    exact (@sumQ_map_add (Mask n) inner1 inner2 (all_masks n)).
   }
-  apply (H1 (all_masks n)).
+
+  apply sumQ_map_ext.
+  intros A HA.
+  subst inner1 inner2.
+
+  (* Inside: split the B-sum *)
+  eapply Qeq_trans.
+  2: {
+    exact (@sumQ_map_add (Mask n)
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F1 A * G B * c)%Q else 0%Q)
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F2 A * G B * c)%Q else 0%Q)
+      (all_masks n)).
+  }
+
+  (* Pointwise: (F1+F2) term equals term1 + term2 *)
+  apply sumQ_map_ext.
+  intros B HB.
+  destruct (mask_eq_dec (basis_mul_mask A B) U); simpl; ring.
 Qed.
 
 Lemma mv_gp_add_r :
-  forall n sq (F G1 G2 : MV n),
-    mv_gp n sq F (mv_add G1 G2)
-    =
-    mv_add (mv_gp n sq F G1) (mv_gp n sq F G2).
+  forall n (sq : Vector.t Q n) (F G1 G2 : MV n) (U : Mask n),
+    @mv_gp n sq F (mv_add G1 G2) U
+    ==
+    mv_add (@mv_gp n sq F G1)
+           (@mv_gp n sq F G2) U.
 Proof.
-  intros n sq F G1 G2.
-  apply functional_extensionality; intro U.
+  intros n sq F G1 G2 U.
   unfold mv_gp, mv_add.
-  
-  apply sumQ_map_ext; intros A HA.
-  rewrite <- sumQ_map_add.
-  apply sumQ_map_ext; intros B HB.
-  
-  destruct (mask_eq_dec (basis_mul_mask A B) U).
-  - ring.
-  - ring.
+
+  (* Define the two A-indexed inner sums (with G1 and G2 separately) *)
+  set (inner1 :=
+    fun A : Mask n =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G1 B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  set (inner2 :=
+    fun A : Mask n =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G2 B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  (* Goal: outer sum with (G1+G2) == sumQ(map inner1) + sumQ(map inner2).
+     We’ll rewrite LHS into sumQ(map (fun A => inner1 A + inner2 A)),
+     then split with sumQ_map_add. *)
+  eapply Qeq_trans.
+  2: { exact (@sumQ_map_add (Mask n) inner1 inner2 (all_masks n)). }
+
+  (* Rewrite the outer map pointwise in A. *)
+  apply sumQ_map_ext.
+  intros A HA.
+  subst inner1 inner2.
+
+  (* Now show the B-sum distributes: *)
+  eapply Qeq_trans.
+  2: {
+    exact (@sumQ_map_add (Mask n)
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G1 B * c)%Q else 0%Q)
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G2 B * c)%Q else 0%Q)
+      (all_masks n)).
+  }
+
+  (* First rewrite the mapped term into (t1 + t2) pointwise, then ring. *)
+  apply sumQ_map_ext.
+  intros B HB.
+  destruct (mask_eq_dec (basis_mul_mask A B) U); simpl; ring.
 Qed.
 
 Lemma mv_gp_scale_l :
-  forall n sq (k : Q) (F G : MV n),
-    mv_gp n sq (mv_scale k F) G
-    =
-    mv_scale k (mv_gp n sq F G).
+  forall n (sq : Vector.t Q n) (k : Q) (F G : MV n) (U : Mask n),
+    @mv_gp n sq (mv_scale k F) G U
+    ==
+    mv_scale k (@mv_gp n sq F G) U.
 Proof.
-  intros n sq k F G.
-  apply functional_extensionality; intro U.
+  intros n sq k F G U.
   unfold mv_gp, mv_scale.
-  
-  rewrite <- sumQ_map_scale_l.
-  apply sumQ_map_ext; intros A HA.
-  rewrite <- sumQ_map_scale_l.
-  apply sumQ_map_ext; intros B HB.
-  
-  destruct (mask_eq_dec (basis_mul_mask A B) U).
-  - ring.
-  - ring.
+
+  (* Define the “base” inner sum without the k factor *)
+  set (inner_base :=
+    fun (A : Mask n) =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  (* Step 1: show the outer mapped function equals (fun A => k * inner_base A) *)
+  eapply Qeq_trans.
+  2: {
+    (* Step 2: pull k out of the outer sum *)
+    unfold mv_scale.
+    exact (@sumQ_map_scale_l (Mask n) k inner_base (all_masks n)).
+  }
+
+  (* Prove: sumQ(map outer_with_k) == sumQ(map (fun A => k * inner_base A)) *)
+  apply sumQ_map_ext.
+  intros A HA.
+  subst inner_base.
+
+  (* Now work on the inner B-sum for this A *)
+  eapply Qeq_trans.
+  2: {
+    (* Pull k out of the inner sum over B *)
+    exact (@sumQ_map_scale_l (Mask n) k
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G B * c)%Q else 0%Q)
+      (all_masks n)).
+  }
+
+  (* Pointwise: the term with (k * F A) matches k * (term without k) *)
+  apply sumQ_map_ext.
+  intros B HB.
+  destruct (mask_eq_dec (basis_mul_mask A B) U); simpl; ring.
 Qed.
 
 Lemma mv_gp_scale_r :
-  forall n sq (k : Q) (F G : MV n),
-    mv_gp n sq F (mv_scale k G)
-    =
-    mv_scale k (mv_gp n sq F G).
+  forall n (sq : Vector.t Q n) (k : Q) (F G : MV n) (U : Mask n),
+    @mv_gp n sq F (mv_scale k G) U
+    ==
+    mv_scale k (@mv_gp n sq F G) U.
 Proof.
-  intros n sq k F G.
-  apply functional_extensionality; intro U.
+  intros n sq k F G U.
   unfold mv_gp, mv_scale.
+
+  (* base inner sum (without the k factor) *)
+  set (inner_base :=
+    fun (A : Mask n) =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G B * c)%Q else 0%Q
+      ) (all_masks n))).
+
+  (* Rewrite outer sum into sumQ(map (fun A => k * inner_base A) ...),
+     then pull k out of the outer sum. *)
+  eapply Qeq_trans.
+  2: {
+    exact (@sumQ_map_scale_l (Mask n) k inner_base (all_masks n)).
+  }
+
+  (* Show the outer map matches k * inner_base pointwise *)
+  apply sumQ_map_ext.
+  intros A HA.
+  subst inner_base.
+
+  (* Now, for each A, rewrite the inner B-sum into k * (base inner sum),
+     then pull k out via sumQ_map_scale_l. *)
+  eapply Qeq_trans.
+  2: {
+    exact (@sumQ_map_scale_l (Mask n) k
+      (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * G B * c)%Q
+        else 0%Q)
+      (all_masks n)).
+  }
+
+  (* Pointwise ring normalization under the if *)
+  apply sumQ_map_ext.
+  intros B HB.
+  destruct (mask_eq_dec (basis_mul_mask A B) U); simpl; ring.
+Qed.
+
+Require Import Coq.Program.Equality.
+
+(* --- XOR with empty mask --- *)
+Lemma mask_xor_empty_l :
+  forall n (B : Mask n),
+    mask_xor (mask_empty (n:=n)) B = B.
+Proof.
+  induction n; intro B.
+  - dependent destruction B. reflexivity.
+  - dependent destruction B.
+    simpl [mask_xor mask_empty].
+    (* mask_empty = false :: ... ; xorb false h = h *)
+    simpl. f_equal. apply IHn.
+Qed.
+
+Lemma swaps_parity_empty_l_aux :
+  forall n (B : Mask n),
+    List.fold_right
+      (fun ab st =>
+         let '(ai, bi) := ab in
+         let '(s, p) := st in
+         (xorb s (andb bi p), xorb ai p))
+      (false, false)
+      (List.combine (Vector.to_list (Vector.const false n)) (Vector.to_list B))
+    =
+    (false, false).
+Proof.
+  induction n as [|n IH]; intro B.
+  - dependent destruction B. simpl. reflexivity.
+  - dependent destruction B. simpl.
+    (* Now B is (Vector.cons _ h _ B0) for some h,B0, and simpl exposes it. *)
+    (* fold back the unfolded Vector.to_list terms so IH matches *)
+    fold (Vector.to_list (Vector.const false n)).
+    fold (Vector.to_list B).
+    rewrite IH.
+    simpl. rewrite Bool.andb_false_r. reflexivity.
+Qed.
+
+Lemma swaps_parity_empty_l :
+  forall n (B : Mask n),
+    swaps_parity (Vector.const false n) B = false.
+Proof.
+  intros n B.
+  unfold swaps_parity.
+  (* swaps_parity is fst of that fold *)
+  rewrite swaps_parity_empty_l_aux.
+  reflexivity.
+Qed.
+
+
+
+Lemma metric_factor_empty_l :
+  forall n (sq : Vector.t Q n) (B : Mask n),
+    metric_factor sq (mask_empty (n:=n)) B == 1%Q.
+Proof.
+  induction n as [|n IH]; intros sq B.
+  - dependent destruction sq.
+    dependent destruction B.
+    simpl. reflexivity.
+  - dependent destruction sq.
+    dependent destruction B.
+    (* Now expand metric_factor just one step, but control simplification. *)
+    unfold metric_factor.
+    unfold mask_empty.
+    (* mask_empty = const false (S n) = cons false (const false n) *)
+    simpl.
+    (* After simpl, the list being folded starts with factor = 1, since ai=false *)
+    (* fold_right Qmult 1 (1 :: rest) == 1 * fold_right ... rest *)
+    simpl.
+
+    (* The remaining fold_right/map/combine is exactly the n-case: *)
+    (* We want to rewrite it to metric_factor sqt (const false n) bt *)
+    (* Instead of folding to_list, just re-expand metric_factor on the tail: *)
+    change (List.fold_right Qmult 1%Q
+      (List.map
+        (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+        (List.combine (to_list sq)
+          (List.combine (to_list (Vector.const false n)) (to_list B)))))
+    with (metric_factor sqt (Vector.const false n) bt).
+
+    (* Now use IH *)
+    rewrite (IH sq B).
+    ring.
+Qed.
+
+Lemma basis_mul_coeff_empty_l :
+  forall n (sq : Vector.t Q n) (B : Mask n),
+    basis_mul_coeff sq (mask_empty (n:=n)) B == 1%Q.
+Proof.
+  intros n sq B.
+  unfold basis_mul_coeff.
+  rewrite swaps_parity_empty_l.
+  unfold sgnQ. simpl.
+  rewrite metric_factor_empty_l.
+  ring.
+Qed.
+
+(* --- “Kronecker delta sum” over all_masks ---
+   sum_{m in all_masks n} (if m=U then f m else 0) == f U
+*)
+Lemma sumQ_all_masks_pick :
+  forall n (f : Mask n -> Q) (U : Mask n),
+    sumQ (List.map (fun m => if mask_eq_dec m U then f m else 0%Q) (all_masks n))
+    == f U.
+Proof.
+  induction n; intros f U.
+  - dependent destruction U. simpl.
+  destruct (mask_eq_dec ([] : Mask 0) ([] : Mask 0)) as [Heq|Hneq].
+  + destruct (mask_eq_dec ([] : Mask 0) ([] : Mask 0)) as [_|Hneq'].
+    * ring.
+    * exfalso; apply Hneq'; reflexivity.
+  + exfalso; apply Hneq; reflexivity.
   
-  apply sumQ_map_ext; intros A HA.
-  rewrite <- sumQ_map_scale_l.
-  apply sumQ_map_ext; intros B HB.
-  
-  destruct (mask_eq_dec (basis_mul_mask A B) U).
-  - ring.
-  - ring.
+  - dependent destruction U as [Uh Ut].
+    simpl [all_masks].
+    (* all_masks (S n) = map (false::) ms ++ map (true::) ms *)
+    rewrite sumQ_app.
+    (* split by whether U head is false or true *)
+    destruct Uh.
+    + (* Uh = true => left half contributes 0, right half picks Ut *)
+      (* left half: all are false::m, never equal to true::Ut *)
+      have Hleft :
+        sumQ
+          (List.map
+             (fun m =>
+              if mask_eq_dec m (true :: Ut) then f m else 0%Q)
+             (List.map (fun m => false :: m) (all_masks n)))
+        == 0%Q.
+      {
+        apply sumQ_map_ext; intros m Hm.
+        apply (proj1 (in_map_iff' (fun t => false :: t) m (all_masks n))) in Hm.
+        destruct Hm as [t [Ht_in Ht_eq]]. subst m.
+        destruct (mask_eq_dec (false :: t) (true :: Ut)) as [Heq|Hneq].
+        - inversion Heq.
+        - ring.
+      }
+      rewrite Hleft. ring_simplify.
+
+      (* right half: reduce equality (true::t = true::Ut) to (t=Ut) *)
+      rewrite <- (IHn (fun t => f (true :: t)) Ut).
+      apply sumQ_map_ext; intros t Ht.
+      destruct (mask_eq_dec (true :: t) (true :: Ut)) as [Heq|Hneq].
+      * (* then t=Ut *)
+        inversion Heq; subst. ring.
+      * (* not equal *)
+        (* show t <> Ut, so delta is 0 *)
+        destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
+        -- subst. exfalso. apply Hneq. reflexivity.
+        -- ring.
+    + (* Uh = false: symmetric *)
+      have Hright :
+        sumQ
+          (List.map
+             (fun m =>
+              if mask_eq_dec m (false :: Ut) then f m else 0%Q)
+             (List.map (fun m => true :: m) (all_masks n)))
+        == 0%Q.
+      {
+        apply sumQ_map_ext; intros m Hm.
+        apply (proj1 (in_map_iff' (fun t => true :: t) m (all_masks n))) in Hm.
+        destruct Hm as [t [Ht_in Ht_eq]]. subst m.
+        destruct (mask_eq_dec (true :: t) (false :: Ut)) as [Heq|Hneq].
+        - inversion Heq.
+        - ring.
+      }
+      rewrite Hright. ring_simplify.
+
+      rewrite <- (IHn (fun t => f (false :: t)) Ut).
+      apply sumQ_map_ext; intros t Ht.
+      destruct (mask_eq_dec (false :: t) (false :: Ut)) as [Heq|Hneq].
+      * inversion Heq; subst. ring.
+      * destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
+        -- subst. exfalso. apply Hneq. reflexivity.
+        -- ring.
 Qed.
 
 Lemma mv_gp_one_l :
