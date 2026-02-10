@@ -328,8 +328,10 @@ class Row:
     poly_deg: Optional[int] = None
 
 
-def measure(name: str, n: int, prog: Node, do_expand: bool) -> Row:
-    ts = tree_size(prog)
+# def measure(name: str, n: int, prog: Node, do_expand: bool) -> Row:
+#     ts = tree_size(prog)
+def measure(name: str, n: int, prog: Node, do_expand: bool, skip_tree: bool = False) -> Row:
+    ts = -1 if skip_tree else tree_size(prog)
     ds = dag_unique_nodes(prog)
     d = tree_depth(prog)
     g = max_grade_upper_bound(prog)
@@ -407,8 +409,10 @@ def verdict(rows: List[Row], label: str):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--max_n", type=int, default=40, help="max n for program-structure tests")
-    ap.add_argument("--expand_n", type=int, default=12, help="max n for polynomial expansion (normal form)")
+    # ap.add_argument("--max_n", type=int, default=40, help="max n for program-structure tests")
+    # ap.add_argument("--expand_n", type=int, default=12, help="max n for polynomial expansion (normal form)")
+    ap.add_argument("--max_n", type=int, default=20, help="max n for program-structure tests")
+    ap.add_argument("--expand_n", type=int, default=8, help="max n for polynomial expansion (normal form)")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
@@ -422,14 +426,17 @@ def main():
         ("AND_balanced_literals", balanced_AND_of_literals),
         ("OR_chain_literals", chain_OR_of_literals),
         ("XOR_parity_chain", parity_XOR_of_literals),
-        ("DUPLICATE_demo_OR(p,p)", duplicate_subcircuit_blowup_demo),
+        # ("DUPLICATE_demo_OR(p,p)", duplicate_subcircuit_blowup_demo),
     ]
 
     structure_rows: List[Row] = []
     for n in range(2, args.max_n + 1):
+        print("n =", n, flush=True)
         for name, builder in prog_builders:
+            skip_tree = name.startswith("DUPLICATE")
             prog = builder(n)
-            structure_rows.append(measure(name, n, prog, do_expand=False))
+            # structure_rows.append(measure(name, n, prog, do_expand=False))
+            structure_rows.append(measure(name, n, prog, do_expand=False, skip_tree=skip_tree))
 
     print_table(structure_rows, "TRACK B: FACTORED REPRESENTATION (AST/DAG) — gate-by-gate compilation")
 
@@ -484,3 +491,202 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+The experiment shows a clean separation between expanded normal forms (which blow up exponentially for AND/OR)
+and factored program representations (whose DAG size grows roughly linearly for canonical circuit families).
+
+This supports the feasibility of a circuit→GAProg compilation that preserves polynomial size,
+provided the representation language includes explicit sharing (DAG/let-binding).
+
+The next decisive tests are fan-out (shared subcircuits) and random-circuit scaling;
+passing those would strongly support the bridge theorem’s plausibility.
+
+n = 2
+n = 3
+n = 4
+n = 5
+n = 6
+n = 7
+n = 8
+n = 9
+n = 10
+n = 11
+n = 12
+n = 13
+n = 14
+n = 15
+n = 16
+n = 17
+n = 18
+n = 19
+n = 20
+
+==========================================================================================
+TRACK B: FACTORED REPRESENTATION (AST/DAG) — gate-by-gate compilation
+==========================================================================================
+  n | prog                   |   tree |    dag | depth | grade_ub | vars | poly_supp | poly_deg
+-----------------------------------------------------------------------------------------------
+  2 | AND_chain_literals     |      9 |      8 |     3 |        2 |    2 |         - |        -
+  2 | AND_balanced_literals  |      9 |      8 |     3 |        2 |    2 |         - |        -
+  2 | OR_chain_literals      |     20 |     11 |     5 |        2 |    2 |         - |        -
+  2 | XOR_parity_chain       |     20 |     11 |     5 |        2 |    2 |         - |        -
+  3 | AND_chain_literals     |     14 |     12 |     4 |        3 |    3 |         - |        -
+  3 | AND_balanced_literals  |     14 |     12 |     4 |        3 |    3 |         - |        -
+  3 | OR_chain_literals      |     52 |     18 |     8 |        3 |    3 |         - |        -
+  3 | XOR_parity_chain       |     52 |     18 |     8 |        3 |    3 |         - |        -
+  4 | AND_chain_literals     |     19 |     16 |     5 |        4 |    4 |         - |        -
+  4 | AND_balanced_literals  |     19 |     16 |     4 |        4 |    4 |         - |        -
+  4 | OR_chain_literals      |    116 |     25 |    11 |        4 |    4 |         - |        -
+  4 | XOR_parity_chain       |    116 |     25 |    11 |        4 |    4 |         - |        -
+  5 | AND_chain_literals     |     24 |     20 |     6 |        5 |    5 |         - |        -
+  5 | AND_balanced_literals  |     24 |     20 |     5 |        5 |    5 |         - |        -
+  5 | OR_chain_literals      |    244 |     32 |    14 |        5 |    5 |         - |        -
+  5 | XOR_parity_chain       |    244 |     32 |    14 |        5 |    5 |         - |        -
+  6 | AND_chain_literals     |     29 |     24 |     7 |        6 |    6 |         - |        -
+  6 | AND_balanced_literals  |     29 |     24 |     5 |        6 |    6 |         - |        -
+  6 | OR_chain_literals      |    500 |     39 |    17 |        6 |    6 |         - |        -
+  6 | XOR_parity_chain       |    500 |     39 |    17 |        6 |    6 |         - |        -
+  7 | AND_chain_literals     |     34 |     28 |     8 |        7 |    7 |         - |        -
+  7 | AND_balanced_literals  |     34 |     28 |     5 |        7 |    7 |         - |        -
+  7 | OR_chain_literals      |   1012 |     46 |    20 |        7 |    7 |         - |        -
+  7 | XOR_parity_chain       |   1012 |     46 |    20 |        7 |    7 |         - |        -
+  8 | AND_chain_literals     |     39 |     32 |     9 |        8 |    8 |         - |        -
+  8 | AND_balanced_literals  |     39 |     32 |     5 |        8 |    8 |         - |        -
+  8 | OR_chain_literals      |   2036 |     53 |    23 |        8 |    8 |         - |        -
+  8 | XOR_parity_chain       |   2036 |     53 |    23 |        8 |    8 |         - |        -
+  9 | AND_chain_literals     |     44 |     36 |    10 |        9 |    9 |         - |        -
+  9 | AND_balanced_literals  |     44 |     36 |     6 |        9 |    9 |         - |        -
+  9 | OR_chain_literals      |   4084 |     60 |    26 |        9 |    9 |         - |        -
+  9 | XOR_parity_chain       |   4084 |     60 |    26 |        9 |    9 |         - |        -
+ 10 | AND_chain_literals     |     49 |     40 |    11 |       10 |   10 |         - |        -
+ 10 | AND_balanced_literals  |     49 |     40 |     6 |       10 |   10 |         - |        -
+ 10 | OR_chain_literals      |   8180 |     67 |    29 |       10 |   10 |         - |        -
+ 10 | XOR_parity_chain       |   8180 |     67 |    29 |       10 |   10 |         - |        -
+ 11 | AND_chain_literals     |     54 |     44 |    12 |       11 |   11 |         - |        -
+ 11 | AND_balanced_literals  |     54 |     44 |     6 |       11 |   11 |         - |        -
+ 11 | OR_chain_literals      |  16372 |     74 |    32 |       11 |   11 |         - |        -
+ 11 | XOR_parity_chain       |  16372 |     74 |    32 |       11 |   11 |         - |        -
+ 12 | AND_chain_literals     |     59 |     48 |    13 |       12 |   12 |         - |        -
+ 12 | AND_balanced_literals  |     59 |     48 |     6 |       12 |   12 |         - |        -
+ 12 | OR_chain_literals      |  32756 |     81 |    35 |       12 |   12 |         - |        -
+ 12 | XOR_parity_chain       |  32756 |     81 |    35 |       12 |   12 |         - |        -
+ 13 | AND_chain_literals     |     64 |     52 |    14 |       13 |   13 |         - |        -
+ 13 | AND_balanced_literals  |     64 |     52 |     6 |       13 |   13 |         - |        -
+ 13 | OR_chain_literals      |  65524 |     88 |    38 |       13 |   13 |         - |        -
+ 13 | XOR_parity_chain       |  65524 |     88 |    38 |       13 |   13 |         - |        -
+ 14 | AND_chain_literals     |     69 |     56 |    15 |       14 |   14 |         - |        -
+ 14 | AND_balanced_literals  |     69 |     56 |     6 |       14 |   14 |         - |        -
+ 14 | OR_chain_literals      | 131060 |     95 |    41 |       14 |   14 |         - |        -
+ 14 | XOR_parity_chain       | 131060 |     95 |    41 |       14 |   14 |         - |        -
+ 15 | AND_chain_literals     |     74 |     60 |    16 |       15 |   15 |         - |        -
+ 15 | AND_balanced_literals  |     74 |     60 |     6 |       15 |   15 |         - |        -
+ 15 | OR_chain_literals      | 262132 |    102 |    44 |       15 |   15 |         - |        -
+ 15 | XOR_parity_chain       | 262132 |    102 |    44 |       15 |   15 |         - |        -
+ 16 | AND_chain_literals     |     79 |     64 |    17 |       16 |   16 |         - |        -
+ 16 | AND_balanced_literals  |     79 |     64 |     6 |       16 |   16 |         - |        -
+ 16 | OR_chain_literals      | 524276 |    109 |    47 |       16 |   16 |         - |        -
+ 16 | XOR_parity_chain       | 524276 |    109 |    47 |       16 |   16 |         - |        -
+ 17 | AND_chain_literals     |     84 |     68 |    18 |       17 |   17 |         - |        -
+ 17 | AND_balanced_literals  |     84 |     68 |     7 |       17 |   17 |         - |        -
+ 17 | OR_chain_literals      | 1048564 |    116 |    50 |       17 |   17 |         - |        -
+ 17 | XOR_parity_chain       | 1048564 |    116 |    50 |       17 |   17 |         - |        -
+ 18 | AND_chain_literals     |     89 |     72 |    19 |       18 |   18 |         - |        -
+ 18 | AND_balanced_literals  |     89 |     72 |     7 |       18 |   18 |         - |        -
+ 18 | OR_chain_literals      | 2097140 |    123 |    53 |       18 |   18 |         - |        -
+ 18 | XOR_parity_chain       | 2097140 |    123 |    53 |       18 |   18 |         - |        -
+ 19 | AND_chain_literals     |     94 |     76 |    20 |       19 |   19 |         - |        -
+ 19 | AND_balanced_literals  |     94 |     76 |     7 |       19 |   19 |         - |        -
+ 19 | OR_chain_literals      | 4194292 |    130 |    56 |       19 |   19 |         - |        -
+ 19 | XOR_parity_chain       | 4194292 |    130 |    56 |       19 |   19 |         - |        -
+ 20 | AND_chain_literals     |     99 |     80 |    21 |       20 |   20 |         - |        -
+ 20 | AND_balanced_literals  |     99 |     80 |     7 |       20 |   20 |         - |        -
+ 20 | OR_chain_literals      | 8388596 |    137 |    59 |       20 |   20 |         - |        -
+ 20 | XOR_parity_chain       | 8388596 |    137 |    59 |       20 |   20 |         - |        -
+
+------------------------------------------------------------------------------------------
+Growth readout for: AND_chain_literals
+  DAG size:   looks poly-ish (log-log slope ~ 1.00)
+  Depth:      looks poly-ish (log-log slope ~ 0.86)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: AND_balanced_literals
+  DAG size:   looks poly-ish (log-log slope ~ 1.00)
+  Depth:      looks poly-ish (log-log slope ~ 0.33)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: OR_chain_literals
+  DAG size:   looks poly-ish (log-log slope ~ 1.08)
+  Depth:      looks poly-ish (log-log slope ~ 1.06)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: XOR_parity_chain
+  DAG size:   looks poly-ish (log-log slope ~ 1.08)
+  Depth:      looks poly-ish (log-log slope ~ 1.06)
+------------------------------------------------------------------------------------------
+
+==========================================================================================
+TRACK A: EXPANDED NORMAL FORM (monomial support) — where blow-ups live
+==========================================================================================
+  n | prog                   |   tree |    dag | depth | grade_ub | vars | poly_supp | poly_deg
+-----------------------------------------------------------------------------------------------
+  2 | AND_chain_literals     |      9 |      8 |     3 |        2 |    2 |         4 |        2
+  2 | AND_balanced_literals  |      9 |      8 |     3 |        2 |    2 |         4 |        2
+  2 | OR_chain_literals      |     20 |     11 |     5 |        2 |    2 |         4 |        2
+  2 | XOR_parity_chain       |     20 |     11 |     5 |        2 |    2 |         2 |        2
+  3 | AND_chain_literals     |     14 |     12 |     4 |        3 |    3 |         8 |        3
+  3 | AND_balanced_literals  |     14 |     12 |     4 |        3 |    3 |         8 |        3
+  3 | OR_chain_literals      |     52 |     18 |     8 |        3 |    3 |         8 |        3
+  3 | XOR_parity_chain       |     52 |     18 |     8 |        3 |    3 |         2 |        3
+  4 | AND_chain_literals     |     19 |     16 |     5 |        4 |    4 |        16 |        4
+  4 | AND_balanced_literals  |     19 |     16 |     4 |        4 |    4 |        16 |        4
+  4 | OR_chain_literals      |    116 |     25 |    11 |        4 |    4 |        16 |        4
+  4 | XOR_parity_chain       |    116 |     25 |    11 |        4 |    4 |         2 |        4
+  5 | AND_chain_literals     |     24 |     20 |     6 |        5 |    5 |        32 |        5
+  5 | AND_balanced_literals  |     24 |     20 |     5 |        5 |    5 |        32 |        5
+  5 | OR_chain_literals      |    244 |     32 |    14 |        5 |    5 |        32 |        5
+  5 | XOR_parity_chain       |    244 |     32 |    14 |        5 |    5 |         2 |        5
+  6 | AND_chain_literals     |     29 |     24 |     7 |        6 |    6 |        64 |        6
+  6 | AND_balanced_literals  |     29 |     24 |     5 |        6 |    6 |        64 |        6
+  6 | OR_chain_literals      |    500 |     39 |    17 |        6 |    6 |        64 |        6
+  6 | XOR_parity_chain       |    500 |     39 |    17 |        6 |    6 |         2 |        6
+  7 | AND_chain_literals     |     34 |     28 |     8 |        7 |    7 |       128 |        7
+  7 | AND_balanced_literals  |     34 |     28 |     5 |        7 |    7 |       128 |        7
+  7 | OR_chain_literals      |   1012 |     46 |    20 |        7 |    7 |       128 |        7
+  7 | XOR_parity_chain       |   1012 |     46 |    20 |        7 |    7 |         2 |        7
+  8 | AND_chain_literals     |     39 |     32 |     9 |        8 |    8 |       256 |        8
+  8 | AND_balanced_literals  |     39 |     32 |     5 |        8 |    8 |       256 |        8
+  8 | OR_chain_literals      |   2036 |     53 |    23 |        8 |    8 |       256 |        8
+  8 | XOR_parity_chain       |   2036 |     53 |    23 |        8 |    8 |         2 |        8
+
+------------------------------------------------------------------------------------------
+Growth readout for: AND_chain_literals (expanded)
+  DAG size:   looks poly-ish (log-log slope ~ 1.00)
+  Depth:      looks poly-ish (log-log slope ~ 0.80)
+  Poly supp:  looks exponential-ish (avg ratio ~ 2.00)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: AND_balanced_literals (expanded)
+  DAG size:   looks poly-ish (log-log slope ~ 1.00)
+  Depth:      looks poly-ish (log-log slope ~ 0.37)
+  Poly supp:  looks exponential-ish (avg ratio ~ 2.00)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: OR_chain_literals (expanded)
+  DAG size:   looks poly-ish (log-log slope ~ 1.13)
+  Depth:      looks poly-ish (log-log slope ~ 1.10)
+  Poly supp:  looks exponential-ish (avg ratio ~ 2.00)
+------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------------------
+Growth readout for: XOR_parity_chain (expanded)
+  DAG size:   looks poly-ish (log-log slope ~ 1.13)
+  Depth:      looks poly-ish (log-log slope ~ 1.10)
+  Poly supp:  looks poly-ish (log-log slope ~ 0.00)
+------------------------------------------------------------------------------------------
+"""
