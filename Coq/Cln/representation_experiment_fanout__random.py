@@ -124,7 +124,7 @@ def dag_unique_nodes_structural(n: Node) -> int:
     rec(n)
     return len(seen)
 
-def dag_size_shared(prog: SharedProg) -> int:
+def dag_size_shared_old(prog: SharedProg) -> int:
     """
     True shared-DAG size: #defs + unique nodes reachable from root after accounting for refs.
     Here we count each def once, and count structural uniques inside defs/root excluding refs.
@@ -151,6 +151,31 @@ def dag_size_shared(prog: SharedProg) -> int:
     rec(prog.root)
     # Add defs themselves (each stored once)
     return len(seen) + len(prog.defs)
+
+def dag_size_shared(prog: SharedProg) -> int:
+    seen_nodes: Set[Node] = set()
+    seen_defs: Set[int] = set()
+
+    def rec(x: Node):
+        if x in seen_nodes:
+            return
+        seen_nodes.add(x)
+
+        if x.op == "ref":
+            idx = x.args[0]
+            if idx in seen_defs:
+                return
+            seen_defs.add(idx)
+            rec(prog.defs[idx])
+            return
+
+        for a in x.args:
+            if isinstance(a, Node):
+                rec(a)
+
+    rec(prog.root)
+    return len(seen_nodes) + len(seen_defs)
+
 
 def max_grade_upper_bound(n: Node) -> int:
     if n.op == "const": return 0
@@ -546,14 +571,21 @@ def verdict_family(rows: List[Row], label: str):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--max_n", type=int, default=30, help="max n for canonical families")
-    ap.add_argument("--expand_n", type=int, default=10, help="max n to attempt Track A expansion")
+    # ap.add_argument("--max_n", type=int, default=30, help="max n for canonical families")
+    # ap.add_argument("--expand_n", type=int, default=10, help="max n to attempt Track A expansion")
+    ap.add_argument("--max_n", type=int, default=20, help="max n for canonical families")
+    ap.add_argument("--expand_n", type=int, default=8, help="max n to attempt Track A expansion")
     ap.add_argument("--fanout_n", type=int, default=20, help="n vars inside the reused subcircuit p")
     ap.add_argument("--fanout_k", type=int, default=200, help="max fanout leaves (reuse count)")
     ap.add_argument("--fanout_steps", type=int, default=8, help="number of k points (log-spaced)")
-    ap.add_argument("--rand_vars", type=int, default=50, help="random circuit variable count")
-    ap.add_argument("--rand_size", type=int, default=500, help="random circuit gate count")
-    ap.add_argument("--rand_trials", type=int, default=20, help="random circuit trials")
+    ap.add_argument("--rand_vars", type=int, default=30, help="random circuit variable count")
+    ap.add_argument("--rand_size", type=int, default=200, help="random circuit gate count")
+    ap.add_argument("--rand_trials", type=int, default=5, help="random circuit trials")
+    # ap.add_argument("--fanout_k", type=int, default=200, help="max fanout leaves (reuse count)")
+    # ap.add_argument("--fanout_steps", type=int, default=8, help="number of k points (log-spaced)")
+    # ap.add_argument("--rand_vars", type=int, default=50, help="random circuit variable count")
+    # ap.add_argument("--rand_size", type=int, default=500, help="random circuit gate count")
+    # ap.add_argument("--rand_trials", type=int, default=20, help="random circuit trials")
     ap.add_argument("--rand_share", type=float, default=0.3, help="sharing probability for shared random circuits")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
