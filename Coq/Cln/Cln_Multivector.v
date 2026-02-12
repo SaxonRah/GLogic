@@ -69,6 +69,20 @@ Proof.
   - rewrite IHxs. ring.
 Qed.
 
+Lemma sumQ_map_const0 :
+  forall (A : Type) (l : list A),
+    sumQ (List.map (fun _ : A => 0%Q) l) == 0%Q.
+Proof.
+  intros A l.
+  induction l as [|a tl IH]; simpl.
+  - apply Qeq_refl.
+  - (* 0 + sumQ(...) == 0 *)
+    rewrite IH.
+    (* 0 + 0 == 0 *)
+    rewrite Qplus_0_l.
+    apply Qeq_refl.
+Qed.
+
 Lemma sumQ_map_ext :
   forall (A : Type) (f g : A -> Q) (l : list A),
     (forall x, List.In x l -> f x == g x) ->

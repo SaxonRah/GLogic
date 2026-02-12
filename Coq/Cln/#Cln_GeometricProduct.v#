@@ -789,7 +789,8 @@ Proof.
   2: {
     (* after picking A=empty we’ll show it equals F U *)
     (* so we keep going below *)
-    eapply (@sumQ_all_masks_pick n outer (mask_empty (n:=n))).
+    exact (@sumQ_all_masks_pick n outer mask_empty).
+
 
 
     exact (@sumQ_all_masks_pick n outer (mask_empty (n:=n))).
