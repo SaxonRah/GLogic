@@ -263,6 +263,19 @@ Definition mv_gp (n : nat) (sq : Vector.t Q n) (F G : MV n) : MV n :=
 
 
 Infix "⋆" := (mv_gp _ ) (at level 40). (* usage: (mv_gp n sq F G) *)
+(*This won't work as expected*)
+Notation "F ⋆[ n , sq ] G" := (mv_gp n sq F G) (at level 40).
+(*
+OR
+
+Section GP.
+  Context {n : nat} (sq : Vector.t Q n).
+  Infix "⋆" := (mv_gp n sq) (at level 40).
+End GP.
+
+That avoids the “partial application to _” trap.
+*)
+
 
 (* Scalar 1 (the empty blade) *)
 Definition mv_one {n} : MV n := basis (mask_empty (n:=n)).
@@ -704,6 +717,15 @@ Lemma mv_gp_basis :
              (basis (basis_mul_mask A B)).
 Proof.
   (* Unfold mv_gp and basis; only one (A,B) term survives by eq_dec. *)
+Admitted.
+
+Lemma mv_gp_basis :
+  forall n sq (A B : Mask n),
+    mv_gp n sq (basis A) (basis B)
+    =
+    mv_scale (basis_mul_coeff sq A B)
+             (basis (basis_mul_mask A B)).
+Proof.
 Admitted.
 
 (* ============================================================ *)
