@@ -2005,14 +2005,410 @@ Proof.
     ring.
 Qed.
 
+(*A. Sign side: swaps_parity cocycle*)
+
+Lemma sgnQ_xorb :
+  forall b1 b2,
+    (sgnQ b1 * sgnQ b2)%Q == sgnQ (xorb b1 b2).
+Proof.
+  intros b1 b2. destruct b1, b2; unfold sgnQ; cbn; ring.
+Qed.
+
+Lemma sgnQ_negb :
+  forall b, sgnQ (negb b) == (-1)%Q * sgnQ b.
+Proof.
+  intros b. destruct b; unfold sgnQ; cbn; ring.
+Qed.
+
+
+Lemma sumQ_fubini :
+  forall (A B : Type) (la : list A) (lb : list B) (h : A -> B -> Q),
+    sumQ (List.map (fun a => sumQ (List.map (fun b => h a b) lb)) la)
+    ==
+    sumQ (List.map (fun b => sumQ (List.map (fun a => h a b) la)) lb).
+Proof.
+  intros A B la.
+  induction la as [|a tl IH]; intros lb h; simpl.
+  - rewrite sumQ_map_const0. reflexivity.
+  - eapply Qeq_trans.
+    2: {
+      apply (sumQ_map_ext (A:=B)
+        (fun b => sumQ (List.map (fun a0 => h a0 b) (a :: tl)))
+        (fun b => (h a b + sumQ (List.map (fun a0 => h a0 b) tl))%Q)
+        lb).
+      intros b Hb. simpl. reflexivity.
+    }
+    rewrite (sumQ_map_add (A:=B)
+      (fun b => h a b)
+      (fun b => sumQ (List.map (fun a0 => h a0 b) tl))
+      lb).
+    rewrite <- IH.
+    ring.
+Qed.
+
+Definition parity_mask {n} (A : Mask n) : bool :=
+  List.fold_right xorb false (Vector.to_list A).
+  
+Lemma parity_mask_cons :
+  forall n (h:bool) (A:Mask n),
+    parity_mask (h :: A) = xorb h (parity_mask A).
+Proof.
+  intros n h A.
+  unfold parity_mask.
+  cbn [Vector.to_list]. simpl.
+  reflexivity.
+Qed.
+
+Lemma map2_cons :
+  forall (A B C : Type) (g : A -> B -> C) n
+         (a : A) (b : B) (va : Vector.t A n) (vb : Vector.t B n),
+    Vector.map2 g (a :: va) (b :: vb) = (g a b) :: Vector.map2 g va vb.
+Proof.
+  intros A B C g n a b va vb.
+  (* map2 is defined via rect2, so one cbn step solves it *)
+  cbn [Vector.map2 Vector.rect2].
+  reflexivity.
+Qed.
+
+Lemma mask_xor_cons :
+  forall n (a b : bool) (A B : Mask n),
+    mask_xor (a :: A) (b :: B) = (xorb a b) :: mask_xor A B.
+Proof.
+  intros n a b A B.
+  unfold mask_xor.
+  rewrite map2_cons.
+  reflexivity.
+Qed.
+
+Lemma xorb_assoc : forall a b c, xorb a (xorb b c) = xorb (xorb a b) c.
+Proof. intros a b c; destruct a, b, c; reflexivity. Qed.
+
+Lemma xorb_comm : forall a b, xorb a b = xorb b a.
+Proof. intros a b; destruct a, b; reflexivity. Qed.
+
+
+Lemma parity_mask_xor :
+  forall n (A B : Mask n),
+    parity_mask (mask_xor A B) = xorb (parity_mask A) (parity_mask B).
+Proof.
+  induction n as [|n IH]; intros A B.
+  - dependent destruction A; dependent destruction B.
+    cbn [parity_mask mask_xor]. reflexivity.
+  - dependent destruction A; dependent destruction B.
+    (* rewrite RHS parities first *)
+    rewrite parity_mask_cons.
+    rewrite parity_mask_cons.
+    (* rewrite LHS mask_xor into a cons, then parity_mask_cons applies *)
+    rewrite mask_xor_cons.
+    rewrite parity_mask_cons.
+    (* tail *)
+    rewrite IH.
+    destruct h, h0; cbn;
+    destruct (parity_mask A), (parity_mask B); cbn; reflexivity.
+Qed.
+
+
+Lemma swaps_state_snd :
+  forall n (A B : Mask n),
+    snd
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+         (false, false)
+         (List.combine (Vector.to_list A) (Vector.to_list B)))
+    = parity_mask A.
+Proof.
+  induction n as [|n IH]; intros A B.
+  - dependent destruction A. dependent destruction B. cbn. reflexivity.
+  - dependent destruction A. dependent destruction B. cbn.
+    (* after cbn, the fold_right over combine becomes head :: tail *)
+    simpl.
+    (* unpack tail state *)
+    remember
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+         (false, false)
+         (combine (to_list A) (to_list B)))
+      as tail eqn:Htail.
+    destruct tail as [s p]. cbn.
+    (* use IH on tails *)
+    specialize (IH A B).
+    rewrite <- Htail in IH. cbn in IH.
+    unfold parity_mask in *. cbn in *.
+    (* fold back the unfolded Vector.to_list A *)
+    change
+      ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+          match v with
+          | [] => b
+          | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+          end) n A []%list)
+    with (Vector.to_list A).
+
+    (* fold back the unfolded Vector.to_list B *)
+    change
+      ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+          match v with
+          | [] => b
+          | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+          end) n B []%list)
+    with (Vector.to_list B).
+
+    rewrite <- Htail.
+    cbn.
+    now rewrite IH.
+Qed.
+
+Lemma swaps_parity_cons :
+  forall n (a b : bool) (A B : Mask n),
+    swaps_parity (Vector.cons _ a _ A) (Vector.cons _ b _ B)
+    =
+    xorb (swaps_parity A B) (b && parity_mask A).
+Proof.
+  intros n a b A B.
+  unfold swaps_parity.
+  cbn.
+  (* unfold one step of fold_right on combine *)
+  simpl.
+  (* tail state *)
+  remember
+    (List.fold_right
+       (fun ab st : bool * bool =>
+          let '(ai, bi) := ab in
+          let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+       (false, false)
+       (combine (to_list A) (to_list B)))
+    as tail eqn:Htail.
+  destruct tail as [s p]. cbn.
+
+  (* identify s = swaps_parity A B and p = parity_mask A *)
+  assert (s = swaps_parity A B).
+  { unfold swaps_parity. rewrite <- Htail. reflexivity. }
+  assert (p = parity_mask A).
+  { pose proof (@swaps_state_snd n A B) as Hp.
+    rewrite <- Htail in Hp. exact Hp. }
+
+    subst s p.
+
+    (* fold the unfolded to_list fixpoints back so Htail matches *)
+    change
+      ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b0 : list bool) {struct v} : list bool :=
+          match v with
+          | [] => b0
+          | Vector.cons _ a0 n1 w => (a0 :: fold_right_fix n1 w b0)%list
+          end) n A []%list)
+    with (Vector.to_list A).
+
+    change
+      ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b0 : list bool) {struct v} : list bool :=
+          match v with
+          | [] => b0
+          | Vector.cons _ a0 n1 w => (a0 :: fold_right_fix n1 w b0)%list
+          end) n B []%list)
+    with (Vector.to_list B).
+
+    (* now the fold_right subterm matches Htail *)
+    rewrite <- Htail.
+    cbn.
+    reflexivity.
+Qed.
+
+Lemma swaps_parity_cocycle :
+  forall n (A B C : Mask n),
+    xorb (swaps_parity A B) (swaps_parity (mask_xor A B) C)
+    =
+    xorb (swaps_parity B C) (swaps_parity A (mask_xor B C)).
+Proof.
+  induction n as [|n IH]; intros A B C.
+  - dependent destruction A. dependent destruction B. dependent destruction C.
+    cbn. reflexivity.
+  - dependent destruction A. dependent destruction B. dependent destruction C.
+
+    (* Expand the outer cons/cons swaps_parity *)
+    repeat rewrite swaps_parity_cons.
+
+    (* Put mask_xor into cons form so swaps_parity_cons applies again *)
+    repeat rewrite mask_xor_cons.
+
+    (* Expand the remaining swaps_parity *)
+    repeat rewrite swaps_parity_cons.
+
+    (* Push parity through xor *)
+    repeat rewrite parity_mask_xor.
+
+    (* At this point your goal is essentially the one you pasted:
+       S ⊕ (X ⊕ (T ⊕ Y)) = U ⊕ (X' ⊕ (V ⊕ Y'))
+       where S,T,U,V are tail swaps_parity terms. *)
+
+    (* Name the relevant pieces to make rewriting predictable *)
+    set (S := swaps_parity A B).
+    set (T := swaps_parity (mask_xor A B) C).
+    set (U := swaps_parity B C).
+    set (V := swaps_parity A (mask_xor B C)).
+
+    set (X  := h0 && parity_mask A).
+    set (Y  := h1 && xorb (parity_mask A) (parity_mask B)).
+    set (X' := h1 && parity_mask B).
+    set (Y' := xorb h0 h1 && parity_mask A).
+    
+    (* normalize both sides to right-associated form so later regrouping is predictable *)
+    rewrite <- xorb_assoc.  (* (S ⊕ X) ⊕ (T ⊕ Y)  ->  S ⊕ (X ⊕ (T ⊕ Y)) *)
+    rewrite <- xorb_assoc.  (* (U ⊕ X') ⊕ (V ⊕ Y') -> U ⊕ (X' ⊕ (V ⊕ Y')) *)
+
+
+    (* Regroup LHS into (S⊕T) ⊕ (X⊕Y) *)
+    rewrite (xorb_assoc X T Y).          (* X ⊕ (T ⊕ Y) -> (X ⊕ T) ⊕ Y *)
+    rewrite (xorb_comm X T).             (* (X ⊕ T) -> (T ⊕ X) *)
+    rewrite <- (xorb_assoc T X Y).       (* (T ⊕ X) ⊕ Y -> T ⊕ (X ⊕ Y) *)
+    rewrite (xorb_assoc S T (xorb X Y)). (* S ⊕ (T ⊕ ...) -> (S ⊕ T) ⊕ ... *)
+
+    (* Regroup RHS into (U⊕V) ⊕ (X'⊕Y') *)
+    rewrite (xorb_assoc X' V Y').
+    rewrite (xorb_comm X' V).
+    rewrite <- (xorb_assoc V X' Y').
+    rewrite (xorb_assoc U V (xorb X' Y')).
+    
+    subst S T U V.
+
+    (* Now we can use IH to turn the left (swaps_parity A B ⊕ swaps_parity (A⊕B) C)
+       into (swaps_parity B C ⊕ swaps_parity A (B⊕C)) so both sides share the same left-xor. *)
+    rewrite (IH A B C).
+
+    (* cancel common left-xor without needing negb_inj *)
+    assert (xorb_cancel_l_bool : forall a b c : bool, xorb a b = xorb a c -> b = c).
+    { intros a b c; destruct a; cbn; intro H.
+      - (* a = true : goal is negb b = negb c, just case-split b,c *)
+        destruct b, c; cbn in H; try discriminate; reflexivity.
+      - (* a = false *)
+        exact H.
+    }
+
+    apply (xorb_cancel_l_bool (xorb (swaps_parity B C) (swaps_parity A (mask_xor B C)))).
+
+    (* Now only the head/parity identity remains *)
+    subst X Y X' Y'.
+    destruct h, h0, h1; cbn;
+    destruct (parity_mask A), (parity_mask B); cbn; reflexivity.
+Qed.
+
+(*B. Metric side: metric_factor cocycle*)
+
+Lemma metric_factor_cons :
+  forall n (h : Q) (sq : Vector.t Q n) (a b : bool) (A B : Mask n),
+    metric_factor (Vector.cons Q h n sq)
+                  (Vector.cons bool a n A)
+                  (Vector.cons bool b n B)
+    ==
+    (if andb a b then h else 1%Q) * metric_factor sq A B.
+Proof.
+  intros n h sq a b A B.
+  unfold metric_factor.
+  repeat rewrite to_list_cons.
+  cbn.
+  reflexivity.
+Qed.
+
+Lemma metric_factor_cocycle :
+  forall n (sq : Vector.t Q n) (A B C : Mask n),
+    (metric_factor sq A B * metric_factor sq (mask_xor A B) C)%Q
+    ==
+    (metric_factor sq B C * metric_factor sq A (mask_xor B C))%Q.
+Proof.
+  induction n as [|n IH]; intros sq A B C.
+  - dependent destruction sq.
+    dependent destruction A; dependent destruction B; dependent destruction C.
+    cbn [metric_factor mask_xor]. cbn. reflexivity.
+  - dependent destruction sq.
+    dependent destruction A; dependent destruction B; dependent destruction C.
+
+    (* expose the xor heads so metric_factor_cons applies cleanly *)
+    rewrite mask_xor_cons.
+    rewrite mask_xor_cons.
+
+    (* peel metric_factor one step on each occurrence *)
+    rewrite (@metric_factor_cons n h sq h0 h1 A B).
+    rewrite (@metric_factor_cons n h sq (xorb h0 h1) h2 (mask_xor A B) C).
+    rewrite (@metric_factor_cons n h sq h1 h2 B C).
+    rewrite (@metric_factor_cons n h sq h0 (xorb h1 h2) A (mask_xor B C)).
+
+    (* Now everything is “head scalars” times tail metric_factors.
+       Factor to isolate the IH subterm. *)
+    set (H1 := if h0 && h1 then h else 1%Q).
+    set (H2 := if xorb h0 h1 && h2 then h else 1%Q).
+    set (H3 := if h1 && h2 then h else 1%Q).
+    set (H4 := if h0 && xorb h1 h2 then h else 1%Q).
+
+    set (mAB := metric_factor sq A B).
+    set (mX  := metric_factor sq (mask_xor A B) C).
+    set (mBC := metric_factor sq B C).
+    set (mA  := metric_factor sq A (mask_xor B C)).
+
+    (* turn (H1*mAB)*(H2*mX) into (H1*H2)*(mAB*mX), and similarly on RHS *)
+    setoid_replace ((H1 * mAB) * (H2 * mX))%Q with ((H1 * H2) * (mAB * mX))%Q by ring.
+    setoid_replace ((H3 * mBC) * (H4 * mA))%Q with ((H3 * H4) * (mBC * mA))%Q by ring.
+
+    (* now IH matches exactly on (mAB*mX) *)
+    subst mAB mX mBC mA.
+    rewrite (IH sq A B C).
+
+    (* remaining goal is purely about the head booleans *)
+    subst H1 H2 H3 H4.
+    destruct h0, h1, h2; cbn; ring.
+Qed.
+
 Lemma basis_mul_assoc_coeff :
   forall n sq (A B C : Mask n),
-    (basis_mul_coeff n sq A B * basis_mul_coeff n sq (basis_mul_mask A B) C)%Q
+    (basis_mul_coeff sq A B * basis_mul_coeff sq (basis_mul_mask A B) C)%Q
     ==
-    (basis_mul_coeff n sq B C * basis_mul_coeff n sq A (basis_mul_mask B C))%Q.
+    (basis_mul_coeff sq B C * basis_mul_coeff sq A (basis_mul_mask B C))%Q.
 Proof.
-Admitted.
+  intros n sq A B C.
+  unfold basis_mul_coeff, basis_mul_mask.
+  cbn.
 
+  (* Expand basis_mul_mask = mask_xor if that's your definition *)
+  (* If basis_mul_mask is already mask_xor, this does nothing; otherwise keep it. *)
+
+  (* Reassociate/commute so the sgnQ factors are adjacent on each side *)
+  (* LHS: s1 * m1 * (s2 * m2)  ==>  (s1*s2) * (m1*m2) *)
+  set (s1 := sgnQ (swaps_parity A B)).
+  set (s2 := sgnQ (swaps_parity (mask_xor A B) C)).
+  set (m1 := metric_factor sq A B).
+  set (m2 := metric_factor sq (mask_xor A B) C).
+
+  set (t1 := sgnQ (swaps_parity B C)).
+  set (t2 := sgnQ (swaps_parity A (mask_xor B C))).
+  set (n1 := metric_factor sq B C).
+  set (n2 := metric_factor sq A (mask_xor B C)).
+
+  (* Now rewrite the whole goal in these names so "ring" can rearrange cleanly under == *)
+  change ((s1 * m1 * (s2 * m2))%Q == (t1 * n1 * (t2 * n2))%Q).
+
+  (* Turn each side into (s1*s2)*(m1*m2) form *)
+  setoid_replace (s1 * m1 * (s2 * m2))%Q with ((s1 * s2) * (m1 * m2))%Q by ring.
+  setoid_replace (t1 * n1 * (t2 * n2))%Q with ((t1 * t2) * (n1 * n2))%Q by ring.
+
+  (* Now apply the two cocycles *)
+  (* 1) sign cocycle: (sgnQ p)*(sgnQ q) = sgnQ (xorb p q) and then swaps_parity_cocycle *)
+  (* Use sgnQ_xorb only once per side after we have adjacency. *)
+  subst s1 s2 t1 t2 m1 m2 n1 n2.
+
+  (* Rewrite each adjacent sign product into sgnQ(xorb ...) *)
+  repeat rewrite sgnQ_xorb.
+
+  (* Reduce to showing the xorb arguments match and the metric products match *)
+  (* We'll use swaps_parity_cocycle and metric_factor_cocycle. *)
+  (* The signs are now: sgnQ (xorb (swaps_parity A B) (swaps_parity (mask_xor A B) C)) etc. *)
+  (* So we rewrite inside with swaps_parity_cocycle *)
+  rewrite swaps_parity_cocycle.
+
+  (* Metric part is exactly metric_factor_cocycle *)
+  rewrite metric_factor_cocycle.
+
+  ring.
+Qed.
 
 Lemma mv_gp_assoc :
   forall n sq (F G H : MV n) (U : Mask n),
