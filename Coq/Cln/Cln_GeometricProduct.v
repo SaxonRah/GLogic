@@ -1429,7 +1429,12 @@ Proof.
 
     (* goal is currently the head-step applied to the unfolded tail;
        fold it back to combine tl tl *)
-    change ((let '(s0, p0) := List.fold_right (fun ab st : bool * bool => let '(ai, bi) := ab in let '(s0, p0) := st in (xorb s0 (bi && p0), xorb ai p0)) (false, false) (List.combine tl tl) in (xorb s0 false, p0)) = (false, false)).
+    change ((let '(s0, p0) := 
+      List.fold_right (fun ab st : bool * bool =>
+                       let '(ai, bi) := ab in
+                       let '(s0, p0) := st in
+                       (xorb s0 (bi && p0), xorb ai p0)) (false, false)
+                       (List.combine tl tl) in (xorb s0 false, p0)) = (false, false)).
 
 
     (* rewrite tail fold into (s,p), then compute *)
@@ -1553,18 +1558,117 @@ Proof.
     ring.
 Qed.
 
+Lemma metric_factor_single_disjoint :
+  forall n (sq : Vector.t Q n) (i j : Fin.t n),
+    i <> j ->
+    metric_factor sq (mask_single i) (mask_single j) == 1%Q.
+Proof.
+  intros n sq i j Hij.
+  revert sq j Hij.
+  induction i as [|n i IH]; intros sq j Hij.
+  - (* i = F1 *)
+  dependent destruction sq. (* sq = h :: sqt, n is tail length *)
+  dependent destruction j.
+
+  + (* j = F1 *)
+    exfalso. apply Hij. reflexivity.
+  + (* j = FS j, with j : Fin.t n *)
+    cbn [mask_single].
+    unfold metric_factor.
+    simpl. simpl.
+    change (List.fold_right Qmult 1%Q
+      (List.map (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+        (List.combine (Vector.to_list sq)
+          (List.combine (Vector.to_list (Vector.const false n))
+                        (Vector.to_list (mask_single j))))))
+    with (metric_factor sqt (Vector.const false n) (mask_single j)).
+    rewrite (@metric_factor_empty_l n sq (mask_single j)).
+    ring.
+
+
+  - (* i = FS i *)
+    dependent destruction sq.
+    dependent destruction j.
+    + (* j = F1 *)
+      cbn [mask_single].
+      unfold metric_factor.
+      simpl. simpl.
+      (* head overlap is false && true = false, so head factor is 1 *)
+      change (List.fold_right Qmult 1%Q
+        (List.map (fun '(sq_i,(ai,bi)) => if ai && bi then sq_i else 1%Q)
+          (List.combine (Vector.to_list sq)
+            (List.combine (Vector.to_list (mask_single i)) (Vector.to_list (Vector.const false n))))))
+      with (metric_factor sqt (mask_single i) (Vector.const false n)).
+      rewrite (@metric_factor_empty_r n sq (mask_single i)).
+      ring.
+
+    + (* j = FS j *)
+      cbn [mask_single].
+      unfold metric_factor.
+      simpl. simpl.
+      replace (List.fold_right Qmult 1%Q
+          (List.map (fun '(sq_i,(ai,bi)) => if ai && bi then sq_i else 1%Q)
+             (List.combine (Vector.to_list sq)
+                (List.combine (Vector.to_list (mask_single i))
+                              (Vector.to_list (mask_single j))))))
+      with (metric_factor sq (mask_single i) (mask_single j)) by reflexivity.
+
+      (* head contributes 1, so reduce to IH on tails *)
+      eapply Qeq_trans with
+        (y := List.fold_right Qmult 1%Q
+                (List.map (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+                  (List.combine (Vector.to_list sq)
+                    (List.combine (Vector.to_list (mask_single i))
+                                  (Vector.to_list (mask_single j)))))).
+      * cbn [Vector.to_list]. rewrite Qmult_1_l. reflexivity.
+      * change (List.fold_right Qmult 1%Q
+                  (List.map (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+                    (List.combine (Vector.to_list sq)
+                      (List.combine (Vector.to_list (mask_single i))
+                                    (Vector.to_list (mask_single j))))))
+          with (metric_factor sq (mask_single i) (mask_single j)).
+        (* Hij : FS i <> FS j  ->  i <> j *)
+        apply (IH sq j).
+        intro Heq. apply Hij. now f_equal.
+Qed.
+
+
 Lemma e_anticomm :
   forall n (sq : Vector.t Q n) (i j : Fin.t n) (U : Mask n),
     i <> j ->
-    mv_gp n sq (e n i) (e n j) U
+    (@mv_gp n sq (e i) (e j)) U
     ==
-    mv_scale (-1)%Q (mv_gp n sq (e n j) (e n i)) U.
+    mv_scale (-1)%Q (@mv_gp n sq (e j) (e i)) U.
 Proof.
-  (* Reduce both sides with mv_gp_basis; show:
-       basis_mul_mask (single i) (single j) = basis_mul_mask (single j) (single i)
-     metric_factor symmetric here (no overlap),
-     swaps_parity differs by 1 when i≠j, giving the -1. *)
-Admitted.
+  intros n sq i j U Hij.
+  unfold mv_scale.
+
+  (* reduce both sides to basis coefficients *)
+  rewrite (@mv_gp_basis n sq (mask_single i) (mask_single j) U).
+  rewrite (@mv_gp_basis n sq (mask_single j) (mask_single i) U).
+  unfold basis_mul_mask, basis_mul_coeff.
+
+  (* xor is commutative *)
+  rewrite (mask_xor_comm (mask_single i) (mask_single j)).
+
+  destruct (mask_eq_dec U (mask_xor (mask_single j) (mask_single i))) as [HU|HUne].
+  - subst U.
+    (* now compare coefficients *)
+
+    (* metric factors are 1 in both orders *)
+    rewrite (metric_factor_single_disjoint n sq i j Hij).
+    rewrite (metric_factor_single_disjoint n sq j i (fun H => Hij (eq_sym H))).
+
+    (* now only the sgnQ terms differ *)
+    rewrite (sgnQ_swaps_parity_flip n i j Hij).
+
+    ring.
+
+  - (* outside the xor blade, both are zero *)
+    cbn.
+    ring.
+Qed.
+
 
 
 Lemma basis_mul_assoc_coeff :
