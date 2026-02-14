@@ -1085,92 +1085,487 @@ Proof.
     exact (@sumQ_all_masks_pick n F U).
 Qed.
 
-Search Qeq.
-
 (* ============================================================ *)
-(* Closed form on basis blades                                    *)
+(* Closed form on basis blades                                  *)
 (* ============================================================ *)
 
 Lemma mv_gp_basis :
-  forall n sq (A B : Mask n),
-    mv_gp n sq (basis A) (basis B)
-    =
-    mv_scale (basis_mul_coeff n sq A B)
-             (basis (basis_mul_mask A B)).
+  forall n (sq : Vector.t Q n) (A B : Mask n) (U : Mask n),
+    @mv_gp n sq (basis A) (basis B) U
+    ==
+    (if mask_eq_dec U (basis_mul_mask A B)
+     then basis_mul_coeff sq A B
+     else 0%Q).
 Proof.
-  (* Unfold mv_gp and basis; only one (A,B) term survives by eq_dec. *)
-Admitted.
+  intros n sq A B U.
+  unfold mv_gp, basis.
 
-Lemma mv_gp_basis :
-  forall n sq (A B : Mask n),
-    mv_gp n sq (basis A) (basis B)
-    =
-    mv_scale (basis_mul_coeff sq A B)
-             (basis (basis_mul_mask A B)).
-Proof.
-Admitted.
+  (* Step 1: rewrite the outer map so it is exactly in pick-shape over A' *)
+  eapply Qeq_trans.
+  - apply (@sumQ_map_ext (Mask n)
+      (fun A' : Mask n =>
+         sumQ
+           (List.map
+              (fun B' : Mask n =>
+                 let c := basis_mul_coeff sq A' B' in
+                 if mask_eq_dec (basis_mul_mask A' B') U
+                 then ((if mask_eq_dec A' A then 1%Q else 0%Q)
+                       * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+                 else 0%Q)
+              (all_masks n)))
+      (fun A' : Mask n =>
+         if mask_eq_dec A' A then
+           sumQ
+             (List.map
+                (fun B' : Mask n =>
+                   let c := basis_mul_coeff sq A B' in
+                   if mask_eq_dec (basis_mul_mask A B') U
+                   then ((1%Q)
+                         * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+                   else 0%Q)
+                (all_masks n))
+         else 0%Q)
+      (all_masks n)).
+    intros A' HA'.
+    destruct (mask_eq_dec A' A) as [HeqA'|HneqA'].
+    + subst A'. cbn. ring.
+    + (* if A'<>A then (if A'=A then 1 else 0)=0, so entire inner sum is 0 *)
+      cbn.
+      (* show the inner sum is sum of zeros *)
+      eapply Qeq_trans.
+      * apply (@sumQ_map_ext (Mask n)
+          (fun B' : Mask n =>
+             let c := basis_mul_coeff sq A' B' in
+             if mask_eq_dec (basis_mul_mask A' B') U
+             then (0%Q * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+             else 0%Q)
+          (fun _ : Mask n => 0%Q)
+          (all_masks n)).
+        intros B' HB'.
+        destruct (mask_eq_dec (basis_mul_mask A' B') U); cbn; ring.
+      * exact (sumQ_map_const0 (A:=Mask n) (all_masks n)).
+  - (* Step 2: pick A'=A in the outer sum *)
+    eapply Qeq_trans.
+    +
+      set (innerA :=
+        fun A' : Mask n =>
+          sumQ
+            (List.map
+               (fun B' : Mask n =>
+                  let c := basis_mul_coeff sq A' B' in
+                  if mask_eq_dec (basis_mul_mask A' B') U
+                  then ((if mask_eq_dec A' A then 1%Q else 0%Q)
+                        * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+                  else 0%Q)
+               (all_masks n))).
+
+      (* rewrite the current outer sum into the exact pick shape for innerA *)
+      eapply Qeq_trans.
+      * apply (@sumQ_map_ext (Mask n)
+          (fun A' : Mask n =>
+             if mask_eq_dec A' A
+             then
+               sumQ
+                 (List.map
+                    (fun B' : Mask n =>
+                       let c := basis_mul_coeff sq A B' in
+                       if mask_eq_dec (basis_mul_mask A B') U
+                       then (1%Q * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+                       else 0%Q)
+                    (all_masks n))
+             else 0%Q)
+          (fun A' : Mask n =>
+             if mask_eq_dec A' A then innerA A' else 0%Q)
+          (all_masks n)).
+        intros A' HA'.
+        destruct (mask_eq_dec A' A) as [Heq|Hneq].
+        ++ subst A'. unfold innerA.
+         destruct (mask_eq_dec A A) as [_|Hbad].
+         -- cbn. apply Qeq_refl.
+         -- exfalso; apply Hbad; reflexivity.
+        ++ cbn. apply Qeq_refl.
+      * (* now apply pick *)
+        exact (@sumQ_all_masks_pick n innerA A).
+    + (* after pick, simplify innerA A *)
+      cbn.
+      destruct (mask_eq_dec A A) as [_|Hbad]; [|exfalso; apply Hbad; reflexivity].
+      cbn.
+
+  (* Step 3: rewrite inner B' sum into pick-shape over B' *)
+  eapply Qeq_trans.
+  * apply (@sumQ_map_ext (Mask n)
+      (fun B' : Mask n =>
+         let c := basis_mul_coeff sq A B' in
+         if mask_eq_dec (basis_mul_mask A B') U
+         then (1%Q * (if mask_eq_dec B' B then 1%Q else 0%Q) * c)%Q
+         else 0%Q)
+      (fun B' : Mask n =>
+         if mask_eq_dec B' B then
+           let c := basis_mul_coeff sq A B in
+           if mask_eq_dec (basis_mul_mask A B) U
+           then (1%Q * 1%Q * c)%Q
+           else 0%Q
+         else 0%Q)
+      (all_masks n)).
+    intros B' HB'.
+    destruct (mask_eq_dec B' B) as [HeqB'|HneqB'].
+    -- subst B'. cbn. ring.
+    -- destruct (mask_eq_dec (basis_mul_mask A B') U); cbn; ring.
+    * (* Step 4: pick B'=B *)
+    set (innerB :=
+      fun _ : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (1%Q * 1%Q * c)%Q
+        else 0%Q).
+
+    (* rewrite into exact pick-shape that sumQ_all_masks_pick expects *)
+    eapply Qeq_trans.
+    -- apply (@sumQ_map_ext (Mask n)
+         (fun B' : Mask n =>
+            if mask_eq_dec B' B
+            then let c := basis_mul_coeff sq A B in
+                 if mask_eq_dec (basis_mul_mask A B) U
+                 then (1%Q * 1%Q * c)%Q
+                 else 0%Q
+            else 0%Q)
+         (fun B' : Mask n =>
+            if mask_eq_dec B' B then innerB B' else 0%Q)
+         (all_masks n)).
+       intros B' HB'.
+       destruct (mask_eq_dec B' B) as [->|Hneq]; cbn; apply Qeq_refl.
+    
+    -- eapply Qeq_trans.
+        exact (@sumQ_all_masks_pick n innerB B).
+        (* now prove innerB B == (if ... then coeff else 0) *)
+        unfold innerB.
+        (* simplify 1*1*c = c and reconcile the two eq_dec orientations *)
+        destruct (mask_eq_dec (basis_mul_mask A B) U) as [HABU|HABU]; cbn.
+        (* basis_mul_mask A B = U *)
+        destruct (mask_eq_dec U (basis_mul_mask A B)) as [HU|HNU].
+        ring.  (* (1*1*c)=c and RHS is coeff *)
+        exfalso; apply HNU; symmetry; exact HABU.
+        (* basis_mul_mask A B <> U *)
+        destruct (mask_eq_dec U (basis_mul_mask A B)) as [HU|HNU].
+        exfalso; apply HABU; symmetry; exact HU.
+        ring.  (* both sides 0 *)
+Qed.
+
+
 
 (* ============================================================ *)
 (* Singleton masks = generators e_i                               *)
 (* ============================================================ *)
 
-Fixpoint mask_single (n : nat) : Fin.t n -> Mask n :=
-  match n with
-  | 0 => fun i => match i with end
-  | S k =>
-      fun i =>
-        match i with
-        | Fin.F1 =>
-            true :: Vector.const false k
-        | Fin.FS j =>
-            false :: mask_single k j
-        end
+Fixpoint mask_single {n : nat} (i : Fin.t n) : Mask n :=
+  match i with
+  | Fin.F1 =>
+      true :: Vector.const false _
+  | Fin.FS j =>
+      false :: mask_single j
   end.
-
-Definition e (n : nat) (i : Fin.t n) : MV n := basis (mask_single n i).
+Definition e (n : nat) (i : Fin.t n) : MV n := basis (mask_single i).
 
 (* ============================================================ *)
 (* Clifford relations on generators                               *)
 (* ============================================================ *)
 
-Lemma e_square :
-  forall n (sq : Vector.t Q n) (i : Fin.t n),
-    mv_gp n sq (e n i) (e n i)
-    =
-    mv_scale (Vector.nth sq i) mv_one.
+Lemma mask_xor_self :
+  forall n (A : Mask n),
+    mask_xor A A = mask_empty (n:=n).
 Proof.
-  (* Use mv_gp_basis with A=B=single i.
-     - xor = empty
-     - swaps_parity(single,single)=0
-     - metric_factor contributes sq_i once (since overlap at i) *)
-Admitted.
+  induction n; intro A.
+  - dependent destruction A. reflexivity.
+  - dependent destruction A. cbn [mask_xor mask_empty].
+    simpl. f_equal.
+    + destruct h; reflexivity.
+    + apply IHn.
+Qed.
+
+Lemma mask_xor_comm :
+  forall n (A B : Mask n),
+    mask_xor A B = mask_xor B A.
+Proof.
+  induction n; intros A B.
+  - dependent destruction A; dependent destruction B; reflexivity.
+  - dependent destruction A; dependent destruction B.
+    cbn [mask_xor]. simpl. f_equal.
+    + destruct h, h0; reflexivity.
+    + apply IHn.
+Qed.
+
+Lemma metric_factor_single_square :
+  forall n (sq : Vector.t Q n) (i : Fin.t n),
+    metric_factor sq (mask_single i) (mask_single i) == Vector.nth sq i.
+Proof.
+  intros n sq i.
+  induction i as [|n i IH].
+    dependent destruction sq.
+    cbn [mask_single].
+    unfold metric_factor.
+    simpl. simpl.
+
+    change (List.fold_right Qmult 1%Q
+      (List.map
+        (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+        (List.combine (Vector.to_list sq)
+          (List.combine (Vector.to_list (Vector.const false n))
+                        (Vector.to_list (Vector.const false n))))))
+    with (metric_factor sqt (Vector.const false n) (Vector.const false n)).
+
+    rewrite (@metric_factor_empty_l n sq (Vector.const false n)).
+    cbn [Vector.nth].
+    ring.
+    
+  - dependent destruction sq.
+
+    cbn [mask_single].
+    unfold metric_factor.
+    simpl. simpl.
+
+    change
+      (List.fold_right Qmult 1%Q
+         (List.map
+            (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+            (List.combine (Vector.to_list sq)
+               (List.combine (Vector.to_list (mask_single i))
+                             (Vector.to_list (mask_single i))))))
+    with (metric_factor sqt (mask_single i) (mask_single i)).
+
+    eapply Qeq_trans with
+      (y := List.fold_right Qmult 1%Q
+              (List.map (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+                 (List.combine (Vector.to_list sq)
+                    (List.combine (Vector.to_list (mask_single i))
+                                  (Vector.to_list (mask_single i)))))).
+    *  cbn [Vector.to_list].
+       rewrite Qmult_1_l.
+       reflexivity.
+    *
+      change (List.fold_right Qmult 1%Q
+                (List.map (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+                   (List.combine (Vector.to_list sq)
+                      (List.combine (Vector.to_list (mask_single i))
+                                    (Vector.to_list (mask_single i))))))
+        with (metric_factor sq (mask_single i) (mask_single i)).
+      exact (IH sq).
+Qed.
+
+Lemma swaps_parity_const_false :
+  forall n,
+    swaps_parity (Vector.const false n) (Vector.const false n) = false.
+Proof.
+  intro n.
+  unfold swaps_parity.
+  induction n as [|n IH].
+  - cbn. reflexivity.
+  - cbn [Vector.to_list Vector.const].
+    simpl.
+
+    (* name the tail list in the same shape IH uses *)
+    set (tl := Vector.to_list (Vector.const false n)).
+
+    (* force the goal to talk about tl, not the unfolded fixpoint *)
+    change
+      (fst
+         (let '(s0, p0) :=
+            List.fold_right
+              (fun ab st : bool * bool =>
+                 let '(ai, bi) := ab in
+                 let '(s0, p0) := st in (xorb s0 (bi && p0), xorb ai p0))
+              (false, false)
+              (List.combine tl tl)
+          in (xorb s0 false, p0)) = false).
+
+    (* now remember a small term *)
+    remember
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s0, p0) := st in (xorb s0 (bi && p0), xorb ai p0))
+         (false, false)
+         (List.combine tl tl))
+      as tail eqn:Htail.
+
+    destruct tail as [s p]. cbn.
+
+    (* goal becomes xorb s false = false *)
+    rewrite xorb_false_r.  (* goal: s = false *)
+
+    (* rewrite IH to the same statement using tl/tail *)
+    unfold tl in Htail.
+    rewrite <- Htail in IH.
+    cbn in IH.
+
+    exact IH.
+Qed.
+
+Lemma swaps_state_const_false :
+  forall n,
+    List.fold_right
+      (fun ab st : bool * bool =>
+         let '(ai, bi) := ab in
+         let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+      (false, false)
+      (List.combine (Vector.to_list (Vector.const false n))
+                    (Vector.to_list (Vector.const false n)))
+    = (false, false).
+Proof.
+  induction n as [|n IH].
+  - cbn. reflexivity.
+  - cbn [Vector.to_list Vector.const].
+    simpl.
+
+    set (tl := Vector.to_list (Vector.const false n)).
+
+    remember
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+         (false, false)
+         (List.combine tl tl))
+      as tail eqn:Htail.
+
+    (* goal is currently the head-step applied to the unfolded tail;
+       fold it back to combine tl tl *)
+    change ((let '(s0, p0) := List.fold_right (fun ab st : bool * bool => let '(ai, bi) := ab in let '(s0, p0) := st in (xorb s0 (bi && p0), xorb ai p0)) (false, false) (List.combine tl tl) in (xorb s0 false, p0)) = (false, false)).
+
+
+    (* rewrite tail fold into (s,p), then compute *)
+    rewrite <- Htail.
+    destruct tail as [s p]. cbn.
+    rewrite xorb_false_r.
+    
+    (* reduce IH to the same tail statement *)
+    unfold tl in Htail.
+    rewrite <- Htail in IH.
+    exact IH.
+Qed.
+
+Lemma swaps_parity_single_self :
+  forall n (i : Fin.t n),
+    swaps_parity (mask_single i) (mask_single i) = false.
+Proof.
+  intros n i.
+  induction i as [|n i IH].
+  - (* i = F1 *)
+    cbn [mask_single].            (* swaps_parity (true::const false _) (true::const false _) *)
+    unfold swaps_parity.
+    cbn [Vector.to_list].         (* to_list (true::v) *)
+    cbn [Vector.to_list Vector.const].
+    simpl.                        (* fold_right over (true,true)::tail *)
+    
+    (* fold the unfolded fixpoint back into Vector.to_list (Vector.const false n) *)
+    set (tl := Vector.to_list (Vector.const false n)).
+    
+    change
+      (fst
+         (let '(s, p) :=
+            List.fold_right
+              (fun ab st : bool * bool =>
+                 let '(ai, bi) := ab in
+                 let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+              (false, false)
+              (List.combine tl tl)
+          in (xorb s p, if p then false else true)) = false).
+          
+    unfold tl.
+
+    (* now it matches the lemma *)
+    rewrite swaps_state_const_false.
+
+    cbn.                          (* compute head step at (true,true) with tail=(false,false) *)
+    reflexivity.
+
+    - (* i = FS i *)
+    cbn [mask_single].
+    unfold swaps_parity.
+    cbn [Vector.to_list]. 
+    cbn [Vector.to_list Vector.const].
+    simpl.
+
+    (* Turn the tail fold into swaps_parity (mask_single i) (mask_single i) *)
+    change
+      (fst
+         (let '(s, p) :=
+            List.fold_right
+              (fun ab st : bool * bool =>
+                 let '(ai, bi) := ab in
+                 let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+              (false, false)
+              (List.combine (Vector.to_list (mask_single i))
+                            (Vector.to_list (mask_single i)))
+          in (xorb s false, p)) = false).
+
+    (* Now simplify the let/fst: xorb s false = s *)
+    remember
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+         (false, false)
+         (List.combine (Vector.to_list (mask_single i))
+                       (Vector.to_list (mask_single i))))
+      as tail eqn:Htail.
+    destruct tail as [s p]. cbn.
+    rewrite xorb_false_r.
+
+    (* Goal is now fst (s,p) = false; rewrite back to swaps_parity and use IH *)
+    cbn.
+    (* Use IH: swaps_parity (mask_single i) (mask_single i) = false *)
+    unfold swaps_parity in IH.
+    (* rewrite IH's fold into our s *)
+    rewrite <- Htail in IH.
+    cbn in IH.
+    exact IH.
+Qed.
+
+
+Lemma e_square :
+  forall n (sq : Vector.t Q n) (i : Fin.t n) (U : Mask n),
+    (@mv_gp n sq (e i) (e i)) U
+    ==
+    (mv_scale (Vector.nth sq i) mv_one) U.
+Proof.
+  intros n sq i U.
+  unfold mv_one.  (* don't unfold e; it's fine *)
+
+  rewrite (@mv_gp_basis n sq (mask_single i) (mask_single i) U).
+  unfold basis_mul_mask, basis_mul_coeff.
+  rewrite (mask_xor_self (mask_single i)).
+
+  destruct (mask_eq_dec U (mask_empty (n:=n))) as [HU|HUne].
+  - subst U.
+    rewrite swaps_parity_single_self.
+    cbn [sgnQ].
+    rewrite (@metric_factor_single_square n sq i).
+    cbn.
+    unfold basis; cbn.
+    
+    unfold mv_scale.
+    cbn.  (* turns (fun T => if mask_eq_dec T mask_empty then 1 else 0) mask_empty into an if *)
+    destruct (mask_eq_dec mask_empty mask_empty) as [_|H]; [|contradiction].
+    cbn.
+    ring.
+  - unfold mv_scale, basis; cbn.
+    destruct (mask_eq_dec U (mask_empty (n:=n))); [contradiction|].
+    ring.
+Qed.
 
 Lemma e_anticomm :
-  forall n (sq : Vector.t Q n) (i j : Fin.t n),
+  forall n (sq : Vector.t Q n) (i j : Fin.t n) (U : Mask n),
     i <> j ->
-    mv_gp n sq (e n i) (e n j)
-    =
-    mv_scale (-1)%Q (mv_gp n sq (e n j) (e n i)).
+    mv_gp n sq (e n i) (e n j) U
+    ==
+    mv_scale (-1)%Q (mv_gp n sq (e n j) (e n i)) U.
 Proof.
-  (* Reduce with mv_gp_basis; show:
-       xor(single i, single j) = xor(single j, single i)
-     and metric_factor symmetric (no overlap),
-     but swaps_parity flips by 1 when i≠j. *)
+  (* Reduce both sides with mv_gp_basis; show:
+       basis_mul_mask (single i) (single j) = basis_mul_mask (single j) (single i)
+     metric_factor symmetric here (no overlap),
+     swaps_parity differs by 1 when i≠j, giving the -1. *)
 Admitted.
 
-(* ============================================================ *)
-(* Associativity                                                  *)
-(* ============================================================ *)
-
-(*
-  The heart is associativity on basis blades:
-     (e_A e_B) e_C = e_A (e_B e_C)
-
-  which amounts to the 2-cocycle identity for:
-     cocycle(A,B) := basis_mul_coeff n sq A B
-
-  Once you have basis associativity, lift to MV by bilinearity.
-*)
 
 Lemma basis_mul_assoc_coeff :
   forall n sq (A B C : Mask n),
@@ -1178,16 +1573,15 @@ Lemma basis_mul_assoc_coeff :
     ==
     (basis_mul_coeff n sq B C * basis_mul_coeff n sq A (basis_mul_mask B C))%Q.
 Proof.
-  (* Prove by induction on n using the recurrences for swaps_parity and metric_factor.
-     This is the “cocycle law”. *)
 Admitted.
 
+
 Lemma mv_gp_assoc :
-  forall n sq (F G H : MV n),
-    mv_gp n sq (mv_gp n sq F G) H
-    =
-    mv_gp n sq F (mv_gp n sq G H).
+  forall n sq (F G H : MV n) (U : Mask n),
+    mv_gp n sq (mv_gp n sq F G) H U
+    ==
+    mv_gp n sq F (mv_gp n sq G H) U.
 Proof.
   (* Expand coefficients; use basis_mul_assoc_coeff inside the triple sums;
-     ext U; rearrange finite sums (all_masks complete/nodup already in your basis file). *)
+     ext is already “baked in” since we're proving pointwise at U. *)
 Admitted.
