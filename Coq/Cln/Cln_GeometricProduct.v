@@ -565,8 +565,6 @@ Proof.
   reflexivity.
 Qed.
 
-
-
 Lemma metric_factor_empty_l :
   forall n (sq : Vector.t Q n) (B : Mask n),
     metric_factor sq (mask_empty (n:=n)) B == 1%Q.
@@ -757,7 +755,7 @@ Proof.
   intros n sq F U.
   unfold mv_gp, mv_one, basis.
 
-  (* Let the “outer” summand be a function of A *)
+  (* outer(A) = Σ_B [A xor B = U] * (delta_{A=empty}) * F(B) * coeff(A,B) *)
   set (outer :=
     fun A : Mask n =>
       sumQ (List.map (fun B : Mask n =>
@@ -767,7 +765,7 @@ Proof.
         else 0%Q
       ) (all_masks n))).
 
-  (* Rewrite the whole thing into Σ_A outer(A) *)
+  (* Rewrite whole thing into Σ_A outer(A) *)
   change
     (sumQ
       (List.map
@@ -781,44 +779,313 @@ Proof.
                 else 0%Q)
               (all_masks n)))
         (all_masks n)) == F U).
-  (* This is definitionally outer *)
   fold outer.
 
-  (* Now use your “Kronecker pick” lemma on A, picking A = empty *)
-  eapply Qeq_trans.
-  2: {
-    (* after picking A=empty we’ll show it equals F U *)
-    (* so we keep going below *)
-    exact (@sumQ_all_masks_pick n outer mask_empty).
+  (* 1) For A ≠ empty, outer A = 0 *)
+  assert (Houter0 : forall A : Mask n, A <> mask_empty -> outer A == 0%Q).
+  {
+    intros A Hne.
+    unfold outer.
+
+    eapply Qeq_trans.
+    - (* force g := 0 to avoid ?g *)
+      apply (@sumQ_map_ext (Mask n)
+        (fun B : Mask n =>
+           let c := basis_mul_coeff sq A B in
+           if mask_eq_dec (basis_mul_mask A B) U
+           then ((if mask_eq_dec A mask_empty then 1 else 0) * F B * c)%Q
+           else 0%Q)
+        (fun _ : Mask n => 0%Q)
+        (all_masks n)).
 
 
-
-    exact (@sumQ_all_masks_pick n outer (mask_empty (n:=n))).
+      intros B HB.
+      destruct (mask_eq_dec (basis_mul_mask A B) U) as [HAB|HAB]; simpl.
+      + destruct (mask_eq_dec A mask_empty) as [Heq|Hneq].
+        * exfalso; exact (Hne Heq).
+        * (* 0 * F B * c == 0 *)
+          ring.
+      + (* 0 == 0 *)
+        apply Qeq_refl.
+    - (* sumQ (map (fun _ => 0) ...) == 0 *)
+      exact (sumQ_map_const0 (A:=Mask n) (all_masks n)).
   }
 
-  (* We still owe: outer(empty) == F U *)
-  unfold outer.
-  (* Simplify mv_one at A=empty and basis_mul_coeff/mask at empty *)
-  (* First, kill the (if A=empty then 1 else 0) by evaluating at empty *)
-  destruct (mask_eq_dec (mask_empty (n:=n)) (mask_empty (n:=n))) as [_|Hbad].
-  2:{ exfalso; apply Hbad; reflexivity. }
-  cbn.
+  (* 2) Replace Σ_A outer(A) by the guarded sum that sumQ_all_masks_pick expects *)
+  set (E := mask_empty (n:=n)).
+  set (guarded :=
+    fun A : Mask n =>
+    
+      if mask_eq_dec A E then outer A else 0%Q).
+    (*if mask_eq_dec A (mask_empty (n:=n)) then outer A else 0%Q).*)
+  
+  eapply Qeq_trans.
+    - (* pointwise: outer A == guarded A *)
+      apply (@sumQ_map_ext (Mask n) outer guarded (all_masks n)).
+      intros A HA.
+      unfold guarded.
+      destruct (mask_eq_dec A E) as [Heq|HneqE].
+      + (* A = E *)
+        subst A. apply Qeq_refl.
+      + (* A <> E : guarded A = 0 *)
+        exact (Houter0 A HneqE).
+    - (* now apply the pick lemma on A, picking empty *)
+      eapply Qeq_trans.
+      + (* guarded has the pick shape *)
+        (* guarded A = if A=E then outer A else 0 *)
+        (* so this is exactly sumQ_all_masks_pick with U:=E *)
+        exact (@sumQ_all_masks_pick n outer E).
+      + (* outer(E) == F U *)
+        subst E.
+        unfold outer.
 
-  (* Rewrite basis_mul_mask empty B = B *)
-  apply sumQ_map_ext; intros B HB.
-  rewrite (mask_xor_empty_l (n:=n) B).  (* basis_mul_mask is mask_xor *)
-  rewrite (basis_mul_coeff_empty_l (n:=n) sq B).
-  (* Now each term is: if B=U then F B else 0 *)
-  destruct (mask_eq_dec B U) as [Heq|Hneq].
-  - subst. ring.  (* 1*F U*1 = F U *)
-  - ring.
+        (* simplify the delta (if empty=empty then 1 else 0) *)
+        destruct (mask_eq_dec mask_empty mask_empty) as [_|Hbad].
+        2:{ exfalso; apply Hbad; reflexivity. }
+        cbn.
+
+        (* rewrite the term to (if B=U then F B else 0) *)
+        eapply Qeq_trans with
+          (y := sumQ (List.map (fun B : Mask n =>
+                   if mask_eq_dec B U then F B else 0%Q) (all_masks n))).
+        * (* goal 1: rewrite the sum to the (if B=U then F B else 0) form *)
+          apply (@sumQ_map_ext (Mask n)
+                   (fun B : Mask n =>
+                      if mask_eq_dec (basis_mul_mask mask_empty B) U
+                      then (1%Q * F B * basis_mul_coeff sq mask_empty B)%Q
+                      else 0%Q)
+                   (fun B : Mask n =>
+                      if mask_eq_dec B U then F B else 0%Q)
+                   (all_masks n)).
+          
+          intros B HB.
+          unfold basis_mul_mask.
+          rewrite (mask_xor_empty_l (n:=n) B).
+
+          destruct (mask_eq_dec B U) as [Heq|Hneq]; simpl.
+          { (* B = U *)
+            (* Goal: 1 * F B * basis_mul_coeff sq mask_empty B == F B *)
+
+            (* Step 1: replace the rightmost factor using basis_mul_coeff_empty_l *)
+            eapply Qeq_trans with (y := (1%Q * F B * 1%Q)%Q).
+            { (* show: 1 * F B * coeff == 1 * F B * 1 *)
+              (* use compatibility on the RIGHT factor of the outer multiplication *)
+              apply Qmult_comp.
+              - apply Qeq_refl.   (* left factor: 1 * F B *)
+              - exact (basis_mul_coeff_empty_l (n:=n) sq B).
+            }
+            { (* Step 2: 1*F B*1 == F B *)
+              ring.
+            }
+          }
+          { (* B <> U *)
+            apply Qeq_refl.
+          }
+          (*sumQ (List.map (fun B : Mask n => if mask_eq_dec B U then F B else 0) (all_masks n)) == F U*)
+          * exact (@sumQ_all_masks_pick n F U).
 Qed.
 
 
+Lemma mask_xor_empty_r :
+  forall n (A : Mask n),
+    mask_xor A (mask_empty (n:=n)) = A.
+Proof.
+  induction n as [|n IH]; intro A.
+  - dependent destruction A. reflexivity.
+  - dependent destruction A.
+    simpl [mask_xor mask_empty]. simpl.
+    f_equal.
+    + (* head bit *)
+      destruct h; reflexivity.   (* xorb true false = true, xorb false false = false *)
+    + (* tail *)
+      apply IH.
+Qed.
+
+Lemma swaps_parity_empty_r_aux_fst :
+  forall n (A : Mask n),
+    fst
+      (List.fold_right
+         (fun ab st =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in
+            (xorb s (andb bi p), xorb ai p))
+         (false, false)
+         (List.combine (Vector.to_list A)
+                       (Vector.to_list (Vector.const false n))))
+    = false.
+Proof.
+  induction n as [|n IH]; intro A.
+  - dependent destruction A. simpl. reflexivity.
+  - dependent destruction A. simpl.
+    fold (Vector.to_list A).
+    fold (Vector.to_list (Vector.const false n)).
+    (* at this point bi = false has already reduced (bi && p) to false *)
+    simpl.                    (* fst of the let/pair *)
+    destruct (List.fold_right
+      (fun ab st : bool * bool =>
+         let '(ai, bi) := ab in
+         let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+      (false, false)
+      (combine (to_list A) (to_list (const false n))))
+      as [s p] eqn:Hs.
+    cbn.                       (* fst (xorb s false, ...) -> xorb s false *)
+    rewrite Bool.xorb_false_r.
+    (* goal becomes: s = false *)
+    (* and IH, rewritten using Hs, gives exactly that *)
+    specialize (IH A).
+    rewrite Hs in IH.
+    exact IH.
+Qed.
+
+Lemma swaps_parity_empty_r :
+  forall n (A : Mask n),
+    swaps_parity A (Vector.const false n) = false.
+Proof.
+  intros n A.
+  unfold swaps_parity.
+  apply swaps_parity_empty_r_aux_fst.
+Qed.
+
+Lemma metric_factor_empty_r :
+  forall n (sq : Vector.t Q n) (A : Mask n),
+    metric_factor sq A (mask_empty (n:=n)) == 1%Q.
+Proof.
+  induction n as [|n IH]; intros sq A.
+  - dependent destruction sq.
+    dependent destruction A.
+    simpl. reflexivity.
+  - dependent destruction sq.
+    dependent destruction A.
+    unfold metric_factor.
+    unfold mask_empty.
+    simpl.
+    simpl.
+    change (List.fold_right Qmult 1%Q
+      (List.map
+        (fun '(sq_i, (ai, bi)) => if ai && bi then sq_i else 1%Q)
+        (List.combine (to_list sq)
+          (List.combine (to_list A) (to_list (Vector.const false n))))))
+    with (metric_factor sqt A (Vector.const false n)).
+    rewrite (IH sq A).
+    rewrite Bool.andb_false_r.
+    simpl.
+    ring.
+Qed.
+
+Lemma basis_mul_coeff_empty_r :
+  forall n (sq : Vector.t Q n) (A : Mask n),
+    basis_mul_coeff sq A (mask_empty (n:=n)) == 1%Q.
+Proof.
+  intros n sq A.
+  unfold basis_mul_coeff.
+  rewrite swaps_parity_empty_r.
+  unfold sgnQ. simpl.
+  rewrite metric_factor_empty_r.
+  ring.
+Qed.
+
 Lemma mv_gp_one_r :
-  forall n sq (F : MV n),
-    mv_gp n sq F mv_one = F.
-Proof. Admitted.
+  forall n (sq : Vector.t Q n) (F : MV n) (U : Mask n),
+    @mv_gp n sq F (@mv_one n) U == F U.
+Proof.
+  intros n sq F U.
+  unfold mv_gp, mv_one, basis.
+
+  (* inner(A) = Σ_B [A xor B = U] * F(A) * (delta_{B=empty}) * coeff(A,B) *)
+  set (inner :=
+    fun A : Mask n =>
+      sumQ (List.map (fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * (if mask_eq_dec B (mask_empty (n:=n)) then 1%Q else 0%Q) * c)%Q
+        else 0%Q
+      ) (all_masks n))).
+
+  (* Rewrite whole thing into Σ_A inner(A) *)
+  change
+    (sumQ
+      (List.map
+        (fun A : Mask n =>
+          sumQ
+            (List.map
+              (fun B : Mask n =>
+                let c := basis_mul_coeff sq A B in
+                if mask_eq_dec (basis_mul_mask A B) U
+                then (F A * (if mask_eq_dec B (mask_empty (n:=n)) then 1%Q else 0%Q) * c)%Q
+                else 0%Q)
+              (all_masks n)))
+        (all_masks n)) == F U).
+  fold inner.
+
+  (* 1) For B ≠ empty, the B-term is 0 (so inner A is a B-pick) *)
+  (* We'll do exactly the same “guarded” trick, but now in the INNER sum. *)
+  eapply Qeq_trans.
+  - (* rewrite each A-summand inner(A) into (if A=U then F A else 0) *)
+    apply (@sumQ_map_ext (Mask n)
+      inner
+      (fun A : Mask n => if mask_eq_dec A U then F A else 0%Q)
+      (all_masks n)).
+    intros A HA.
+    unfold inner.
+
+    (* gB(B) is the mapped term in the inner sum for this fixed A *)
+    set (gB :=
+      fun B : Mask n =>
+        let c := basis_mul_coeff sq A B in
+        if mask_eq_dec (basis_mul_mask A B) U
+        then (F A * (if mask_eq_dec B (mask_empty (n:=n)) then 1%Q else 0%Q) * c)%Q
+        else 0%Q).
+
+    (* show gB B = 0 when B ≠ empty *)
+    assert (HgB0 : forall B : Mask n, B <> mask_empty -> gB B == 0%Q).
+    {
+      intros B Hne.
+      unfold gB.
+      destruct (mask_eq_dec (basis_mul_mask A B) U); simpl; [| apply Qeq_refl].
+      destruct (mask_eq_dec B (mask_empty (n:=n))) as [Heq|Hneq].
+      - exfalso; exact (Hne Heq).
+      - ring.
+    }
+
+    (* guard the inner sum so sumQ_all_masks_pick applies *)
+    set (E := mask_empty (n:=n)).
+    set (guardB := fun B : Mask n => if mask_eq_dec B E then gB B else 0%Q).
+
+    eapply Qeq_trans.
+    + (* pointwise: gB B == guardB B *)
+      apply (@sumQ_map_ext (Mask n) gB guardB (all_masks n)).
+      intros B HB.
+      unfold guardB.
+      destruct (mask_eq_dec B E) as [Heq|Hneq].
+      * subst B; apply Qeq_refl.
+      * exact (HgB0 B Hneq).
+    + (* pick B=E *)
+      eapply Qeq_trans.
+      * exact (@sumQ_all_masks_pick n gB E).
+      * (* compute gB(empty) and show it equals if A=U then F A else 0 *)
+        subst E.
+        unfold gB.
+        destruct (mask_eq_dec (mask_empty (n:=n)) (mask_empty (n:=n))) as [_|Hbad].
+        2:{ exfalso; apply Hbad; reflexivity. }
+        cbn.
+
+        unfold basis_mul_mask.
+        rewrite (mask_xor_empty_r (n:=n) A).
+        destruct (mask_eq_dec A U) as [HeqAU|HneqAU]; simpl.
+        -- (* A = U: reduce coeff(A,empty)=1 *)
+           eapply Qeq_trans with (y := (F A * 1%Q * 1%Q)%Q).
+           { apply Qmult_comp.
+             - apply Qeq_refl.
+             - exact (basis_mul_coeff_empty_r (n:=n) sq A).
+           }
+           ring.
+        -- (* A ≠ U: both sides 0 *)
+           ring.
+  - (* outer pick over A *)
+    exact (@sumQ_all_masks_pick n F U).
+Qed.
+
+Search Qeq.
 
 (* ============================================================ *)
 (* Closed form on basis blades                                    *)
