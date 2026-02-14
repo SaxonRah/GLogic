@@ -1632,6 +1632,342 @@ Proof.
         intro Heq. apply Hij. now f_equal.
 Qed.
 
+Lemma swaps_parity_empty_r_aux_snd :
+  forall n (A : Mask n),
+    snd
+      (List.fold_right
+         (fun ab st =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in
+            (xorb s (andb bi p), xorb ai p))
+         (false, false)
+         (List.combine (Vector.to_list A)
+                       (Vector.to_list (Vector.const false n))))
+    = List.fold_right xorb false (Vector.to_list A).
+Proof.
+  induction n as [|n IH]; intro A.
+  - dependent destruction A. simpl. reflexivity.
+  - dependent destruction A. simpl.
+    fold (Vector.to_list A).
+    fold (Vector.to_list (Vector.const false n)).
+    simpl.
+    remember
+      (List.fold_right
+         (fun ab st : bool * bool =>
+            let '(ai, bi) := ab in
+            let '(s, p) := st in (xorb s (bi && p), xorb ai p))
+         (false, false)
+         (combine (to_list A) (to_list (const false n))))
+      as tail eqn:Htail.
+    destruct tail as [s p]. simpl.
+    specialize (IH A).
+    rewrite <- Htail in IH. simpl in IH.
+    rewrite IH. reflexivity.
+Qed.
+
+Lemma parity_const_false :
+  forall n,
+    List.fold_right xorb false (Vector.to_list (Vector.const false n)) = false.
+Proof.
+  induction n as [|n IH].
+  - simpl. reflexivity.
+  - simpl.
+    cbn [Vector.to_list].  (* this causes the tail to become a fixpoint *)
+
+    (* >>> ADD THIS <<< fold the fixpoint tail back into Vector.to_list *)
+    change
+      ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+          match v with
+          | [] => b
+          | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+          end) n (Vector.const false n) []%list)
+    with (Vector.to_list (Vector.const false n)).
+
+    simpl.
+    rewrite IH.
+    simpl.
+    reflexivity.
+Qed.
+
+Lemma to_list_cons :
+  forall (A : Type) n (a : A) (v : Vector.t A n),
+    Vector.to_list (Vector.cons A a n v) = (a :: Vector.to_list v)%list.
+Proof.
+  intros A n a v.
+  reflexivity.
+Qed.
+
+Lemma mask_single_FS :
+  forall n (j : Fin.t n),
+    mask_single (Fin.FS j) = Vector.cons bool false n (mask_single j).
+Proof.
+  intros. reflexivity.
+Qed.
+
+Lemma parity_mask_single_true :
+  forall n (j : Fin.t n),
+    List.fold_right xorb false (Vector.to_list (mask_single j)) = true.
+Proof.
+  induction n as [|n IH]; intros j.
+  - inversion j.
+  - dependent destruction j.
+    + cbn [mask_single]. simpl.
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (Vector.const false n) []%list)
+      with (Vector.to_list (Vector.const false n)).
+      rewrite parity_const_false.
+      simpl. reflexivity.
+    + (* j = FS j *)
+      (* either just: cbn [mask_single]. rewrite to_list_cons. ... *)
+      rewrite mask_single_FS.      (* include only if needed *)
+      rewrite to_list_cons.
+      simpl.
+      apply IH.
+Qed.
+
+Lemma fst_let_pair :
+  forall (t : bool * bool),
+    fst (let '(s,p) := t in (xorb s false, p)) = fst t.
+Proof.
+  intros [s p]. simpl. now rewrite Bool.xorb_false_r.
+Qed.
+
+
+Lemma swaps_parity_single_swap_negb :
+  forall n (i j : Fin.t n),
+    i <> j ->
+    swaps_parity (mask_single i) (mask_single j)
+    =
+    negb (swaps_parity (mask_single j) (mask_single i)).
+Proof.
+  intros n i j Hij.
+  revert j Hij.
+  induction i as [|n i IH]; intros j Hij.
+  - (* i = F1 *)
+    dependent destruction j.
+    + exfalso. apply Hij. reflexivity.
+    + (* j = FS j *)
+      cbn [mask_single].
+      unfold swaps_parity.
+      cbn.
+
+      (* tails *)
+      remember
+        (List.fold_right
+           (fun ab st : bool * bool =>
+              let '(ai, bi) := ab in
+              let '(s, p) := st in (xorb s (andb bi p), xorb ai p))
+           (false, false)
+           (List.combine (Vector.to_list (Vector.const false n))
+                         (Vector.to_list (mask_single j))))
+        as tailL eqn:HtailL.
+      remember
+        (List.fold_right
+           (fun ab st : bool * bool =>
+              let '(ai, bi) := ab in
+              let '(s, p) := st in (xorb s (andb bi p), xorb ai p))
+           (false, false)
+           (List.combine (Vector.to_list (mask_single j))
+                         (Vector.to_list (Vector.const false n))))
+        as tailR eqn:HtailR.
+
+      destruct tailL as [sL pL]; destruct tailR as [sR pR]; cbn.
+
+      (* fst tails are false *)
+      assert (sL = false) as HsL.
+      { pose proof (@swaps_parity_empty_l_aux n (mask_single j)) as Haux.
+        rewrite <- HtailL in Haux.
+        inversion Haux; reflexivity. }
+
+      assert (sR = false) as HsR.
+      { pose proof (@swaps_parity_empty_r_aux_fst n (mask_single j)) as Hr.
+        rewrite <- HtailR in Hr.
+        exact Hr. }
+
+      subst sL sR.
+
+      (* rewrite tails back into the goal; may need your fold-back 'change' tricks
+         if to_list got unfolded by cbn somewhere *)
+      (* fold back the first to_list (const false n) *)
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (Vector.const false n) []%list)
+      with (Vector.to_list (Vector.const false n)).
+
+      (* fold back the second to_list (mask_single j) *)
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (mask_single j) []%list)
+      with (Vector.to_list (mask_single j)).
+
+      rewrite <- HtailL.
+      rewrite <- HtailR.
+      cbn.
+
+      (* From empty-left aux we can also get pL=false *)
+      assert (pL = false) as HpL.
+      { pose proof (@swaps_parity_empty_l_aux n (mask_single j)) as Haux.
+        rewrite <- HtailL in Haux.
+        inversion Haux; reflexivity. }
+      subst pL.
+      cbn.
+
+      (* Now the remaining goal will be false = negb pR (like you saw before).
+         Prove pR=true using the snd lemma + parity_mask_single_true. *)
+      assert (pR = true) as HpR.
+      { pose proof (@swaps_parity_empty_r_aux_snd n (mask_single j)) as Hsnd.
+        (* Hsnd : snd (fold_right ... (combine (to_list (mask_single j)) (to_list (const false n))))
+                 = fold_right xorb false (to_list (mask_single j)) *)
+        rewrite <- HtailR in Hsnd.
+        simpl in Hsnd.  (* snd (false,pR) = pR *)
+        rewrite parity_mask_single_true in Hsnd.
+        exact Hsnd. }
+
+      rewrite HpR. cbn. reflexivity.
+
+  - (* i = FS i *)
+    dependent destruction j.
+    + (* j = F1 *)
+      (* This is the same statement as the previous case, with roles swapped.
+         You can either redo the symmetric calculation, or just use the result
+         from the previous case by appealing to the first branch IH on i=F1. *)
+
+      (* easiest: reuse the already-proved base case by symmetry:
+         show swaps_parity (mask_single (FS i)) (mask_single F1) = negb (...) *)
+      cbn [mask_single].
+      unfold swaps_parity.
+      cbn.
+
+      (* tails: now left tail is (mask_single i, const false), right tail is (const false, mask_single i) *)
+      remember
+        (List.fold_right
+           (fun ab st : bool * bool =>
+              let '(ai, bi) := ab in
+              let '(s, p) := st in (xorb s (andb bi p), xorb ai p))
+           (false, false)
+           (List.combine (Vector.to_list (mask_single i))
+                         (Vector.to_list (Vector.const false n))))
+        as tailL eqn:HtailL.
+      remember
+        (List.fold_right
+           (fun ab st : bool * bool =>
+              let '(ai, bi) := ab in
+              let '(s, p) := st in (xorb s (andb bi p), xorb ai p))
+           (false, false)
+           (List.combine (Vector.to_list (Vector.const false n))
+                         (Vector.to_list (mask_single i))))
+        as tailR eqn:HtailR.
+
+      destruct tailL as [sL pL]; destruct tailR as [sR pR]; cbn.
+
+      assert (sL = false) as HsL.
+      { pose proof (@swaps_parity_empty_r_aux_fst n (mask_single i)) as Hr.
+        rewrite <- HtailL in Hr. exact Hr. }
+      assert (sR = false) as HsR.
+      { pose proof (@swaps_parity_empty_l_aux n (mask_single i)) as Haux.
+        rewrite <- HtailR in Haux.
+        inversion Haux; reflexivity. }
+
+      subst sL sR.
+      (* fold back to_list (mask_single i) *)
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (mask_single i) []%list)
+      with (Vector.to_list (mask_single i)).
+
+      (* fold back to_list (const false n) *)
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (Vector.const false n) []%list)
+      with (Vector.to_list (Vector.const false n)).
+
+      rewrite <- HtailL.
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (Vector.const false n) []%list)
+      with (Vector.to_list (Vector.const false n)).
+
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (mask_single i) []%list)
+      with (Vector.to_list (mask_single i)).
+      rewrite <- HtailR.
+      cbn.
+
+      (* Here you’ll get the “false = negb pL” shape; pL is parity of mask_single i, hence true. *)
+      assert (pL = true) as HpL.
+      { pose proof (@swaps_parity_empty_r_aux_snd n (mask_single i)) as Hsnd.
+        rewrite <- HtailL in Hsnd.
+        simpl in Hsnd.
+        rewrite parity_mask_single_true in Hsnd.
+        exact Hsnd. }
+      rewrite HpL. cbn. reflexivity.
+
+    + (* j = FS j *)
+      (* reduce to tails; this should collapse directly to IH *)
+      cbn [mask_single].
+      unfold swaps_parity.
+      cbn.
+
+      (* fold the unfolded to_list fixpoints back so we can fold swaps_parity itself *)
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (mask_single i) []%list)
+      with (Vector.to_list (mask_single i)).
+
+      change
+        ((fix fold_right_fix (n0 : nat) (v : Vector.t bool n0) (b : list bool) {struct v} : list bool :=
+            match v with
+            | [] => b
+            | Vector.cons _ a n1 w => (a :: fold_right_fix n1 w b)%list
+            end) n (mask_single j) []%list)
+      with (Vector.to_list (mask_single j)).
+
+      rewrite fst_let_pair.
+      rewrite fst_let_pair.
+      change (swaps_parity (n:=n) (mask_single i) (mask_single j) =
+              negb (swaps_parity (n:=n) (mask_single j) (mask_single i))).
+      apply IH; intro Heq; apply Hij; now f_equal.
+Qed.
+
+Lemma sgnQ_swaps_parity_flip :
+  forall n (i j : Fin.t n),
+    i <> j ->
+    sgnQ (swaps_parity (mask_single i) (mask_single j))
+    ==
+    (-1)%Q * sgnQ (swaps_parity (mask_single j) (mask_single i)).
+Proof.
+  intros n i j Hij.
+  rewrite (@swaps_parity_single_swap_negb n i j Hij).
+  unfold sgnQ.
+  destruct (swaps_parity (mask_single j) (mask_single i)); cbn; ring.
+Qed.
+
 
 Lemma e_anticomm :
   forall n (sq : Vector.t Q n) (i j : Fin.t n) (U : Mask n),
@@ -1660,7 +1996,7 @@ Proof.
     rewrite (@metric_factor_single_disjoint n sq j i (fun H => Hij (eq_sym H))).
 
     (* now only the sgnQ terms differ *)
-    rewrite (sgnQ_swaps_parity_flip n i j Hij).
+    rewrite (@sgnQ_swaps_parity_flip n i j Hij).
 
     ring.
 
@@ -1668,8 +2004,6 @@ Proof.
     cbn.
     ring.
 Qed.
-
-
 
 Lemma basis_mul_assoc_coeff :
   forall n sq (A B C : Mask n),
