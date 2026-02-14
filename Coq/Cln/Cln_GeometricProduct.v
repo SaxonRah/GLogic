@@ -1656,8 +1656,8 @@ Proof.
     (* now compare coefficients *)
 
     (* metric factors are 1 in both orders *)
-    rewrite (metric_factor_single_disjoint n sq i j Hij).
-    rewrite (metric_factor_single_disjoint n sq j i (fun H => Hij (eq_sym H))).
+    rewrite (@metric_factor_single_disjoint n sq i j Hij).
+    rewrite (@metric_factor_single_disjoint n sq j i (fun H => Hij (eq_sym H))).
 
     (* now only the sgnQ terms differ *)
     rewrite (sgnQ_swaps_parity_flip n i j Hij).
