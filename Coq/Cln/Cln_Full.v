@@ -3752,7 +3752,6 @@ Proof.
           reflexivity.
 Qed.
 
-
 Lemma mv_gp_assoc_LHS_triple :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
     mv_gp sq (mv_gp sq F G) H U
@@ -3768,6 +3767,20 @@ Lemma mv_gp_assoc_LHS_triple :
 Proof.
 Admitted.
 
+Lemma mv_gp_assoc_RHS_triple :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
+    mv_gp sq F (mv_gp sq G H) U
+    ==
+    sumQ (List.map (fun A =>
+    sumQ (List.map (fun B =>
+    sumQ (List.map (fun C =>
+      if mask_eq_dec (mask_xor A (mask_xor B C)) U
+      then (F A * G B * H C
+            * basis_mul_coeff sq B C
+            * basis_mul_coeff sq A (mask_xor B C))%Q
+      else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
+Proof.
+Admitted.
 
 Lemma mv_gp_assoc :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
@@ -3779,15 +3792,20 @@ Proof.
   eapply Qeq_trans.
   - apply mv_gp_assoc_LHS_triple.
   - eapply Qeq_trans.
-    + (* rewrite RHS into triple form *)
-      (* symmetry because RHS_triple states RHS == tripleRHS *)
-      symmetry. apply mv_gp_assoc_RHS_triple.
-    + (* kernel equality on the triple sums *)
-      apply (sumQ_map_ext (A:=Mask n)); intros A HA.
-      apply (sumQ_map_ext (A:=Mask n)); intros B HB.
-      apply (sumQ_map_ext (A:=Mask n)); intros C HC.
-      rewrite mask_xor_assoc.
-      ring_simplify.
-      rewrite (basis_mul_assoc_coeff (n:=n) (sq:=sq) (A:=A) (B:=B) (C:=C)).
-      ring.
+    2: { symmetry. apply mv_gp_assoc_RHS_triple. }
+    apply (sumQ_map_ext (A:=Mask n)); intros A HA.
+    apply (sumQ_map_ext (A:=Mask n)); intros B HB.
+    apply (sumQ_map_ext (A:=Mask n)); intros C HC.
+    rewrite mask_xor_assoc.
+    destruct (mask_eq_dec (mask_xor A (mask_xor B C)) U); [|reflexivity].
+    (* Now both sides are products differing only in the coeff pair *)
+    assert (Hc : (basis_mul_coeff sq A B * basis_mul_coeff sq (mask_xor A B) C)%Q
+                 == (basis_mul_coeff sq B C * basis_mul_coeff sq A (mask_xor B C))%Q).
+    { pose proof (basis_mul_assoc_coeff sq A B C) as H0.
+      unfold basis_mul_mask in H0. exact H0. }
+    apply Qeq_trans with (y := (F A * G B * H C * (basis_mul_coeff sq A B * basis_mul_coeff sq (mask_xor A B) C))%Q).
+    { ring. }
+    apply Qeq_trans with (y := (F A * G B * H C * (basis_mul_coeff sq B C * basis_mul_coeff sq A (mask_xor B C)))%Q).
+    { apply Qmult_comp. reflexivity. exact Hc. }
+    ring.
 Qed.
