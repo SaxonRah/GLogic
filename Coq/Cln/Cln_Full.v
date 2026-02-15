@@ -3610,33 +3610,25 @@ Proof.
   intros n sq F G H U.
   unfold mv_gp.
 
-  (* rename outer indices by extensionality: A->X, B->C *)
   eapply Qeq_trans.
   - apply (sumQ_map_ext (A:=Mask n)); intros X HX.
     apply (sumQ_map_ext (A:=Mask n)); intros C HC.
     apply Qeq_refl.
-  - (* work pointwise in X,C *)
+  -
     apply (sumQ_map_ext (A:=Mask n)); intros X HX.
     apply (sumQ_map_ext (A:=Mask n)); intros C HC.
 
-    (* expose the outer filter on X,C and normalize basis_mul_mask *)
     cbn [basis_mul_mask].
 
     destruct (mask_eq_dec (mask_xor X C) U) as [Hhit|Hmiss].
-    + (* hit: U = X⊕C *)
+    +
       subst U.
-
-      (* kill the trivial if that remained from the original definition form *)
       change (basis_mul_mask X C) with (mask_xor X C).
       destruct (mask_eq_dec (mask_xor X C) (mask_xor X C)) as [_|Hbad]; [|contradiction].
       cbn.
-
-      (* normalize inner filter basis_mul_mask A B -> mask_xor A B *)
       cbn [basis_mul_mask].
-
       set (k := (H C * basis_mul_coeff sq X C)%Q).
 
-      (* rewrite sumAB * H C * coeffXC into sumAB * k *)
       setoid_replace
         ((sumQ
             (List.map
@@ -3661,7 +3653,6 @@ Proof.
                      (all_masks n))) (all_masks n)) * k)%Q)
       by (unfold k; ring).
 
-      (* push k into outer A-sum *)
       rewrite <- (@sumQ_map_scale_r (Mask n) k
         (fun A : Mask n =>
            sumQ (List.map (fun B : Mask n =>
@@ -3670,7 +3661,6 @@ Proof.
              else 0%Q) (all_masks n)))
         (all_masks n)).
 
-      (* push k into each inner B-sum *)
       apply (sumQ_map_ext (A:=Mask n)); intros A HA.
       rewrite <- (@sumQ_map_scale_r (Mask n) k
         (fun B : Mask n =>
@@ -3679,45 +3669,25 @@ Proof.
            else 0%Q)
         (all_masks n)).
 
-      (* now prove pointwise equality with K_LHS *)
       apply (sumQ_map_ext (A:=Mask n)); intros B HB.
       unfold K_LHS.
 
-      (* outer test in K_LHS is reflexive after subst U *)
       destruct (mask_eq_dec (mask_xor X C) (mask_xor X C)) as [_|Hbad2]; [|contradiction].
       cbn.
 
       destruct (mask_eq_dec (mask_xor A B) X) as [Hab|Hab].
-      * (* inner hit: both sides are the same product *)
-        unfold k.
-        ring.
-      * (* inner miss: both sides are 0 *)
-        ring.
+      * unfold k; ring.
+      * ring.
 
-    + (* miss: outer filter false *)
-      (* LHS: the outer indicator is false *)
-      (* miss branch: mask_xor X C <> U *)
+    +
       destruct (mask_eq_dec (mask_xor X C) U) as [Heq|Hne]; [contradiction|].
       destruct (mask_eq_dec (basis_mul_mask X C) U) as [Heq|Hneq].
 
-      * (* then-branch: derive contradiction from Hne *)
-        exfalso.
-        apply Hne.  (* your hypothesis: mask_xor X C <> U *)
-        (* convert Heq : basis_mul_mask X C = U into mask_xor X C = U *)
-        cbn [basis_mul_mask] in Heq.
-        exact Heq.
-      * (* else-branch: LHS reduces to 0 *)
-        cbn.
-
-        unfold K_LHS.
-
-        (* show the outer if is false using Hmiss *)
-        destruct (mask_eq_dec (mask_xor X C) U) as [Heq|Hneq'].
+      * exfalso; apply Hne; cbn [basis_mul_mask] in Heq; exact Heq.
+      * cbn. unfold K_LHS. destruct (mask_eq_dec (mask_xor X C) U) as [Heq|Hneq'].
         -- exfalso. exact (Hmiss Heq).
         
-        --
-          (* remaining goal: 0 == (double sum of zeros) *)
-          assert (sumQ_zeros :
+        -- assert (sumQ_zeros :
                     forall (l : list (Mask n)),
                       sumQ (List.map (fun _ : Mask n => 0%Q) l) == 0%Q).
           { intro l; induction l as [|x tl IH]; cbn.
@@ -3725,31 +3695,149 @@ Proof.
             - rewrite IH; ring.
           }
 
-          set (As := all_masks n).
+        set (As := all_masks n).
+        pose proof (sumQ_zeros As) as Hin.
 
-          (* inner constant: sumQ (map (fun _ => 0) As) == 0 *)
-          pose proof (sumQ_zeros As) as Hin.
+        eapply Qeq_trans.
+        2: {
+          apply Qeq_sym.
+          eapply Qeq_trans with
+            (y := sumQ (List.map (fun _ : Mask n => 0%Q) As)).
 
-          (* Replace the outer sum of constants by a sum of zeros, using sumQ_map_ext *)
-          eapply Qeq_trans.
-          2: {
-            (* now goal will be: 0 == sumQ (map (fun _ => 0) As) *)
-            apply Qeq_sym.
-            (* goal is: 0 == sumQ (map (fun _ => inner) As) *)
-            (* now: sumQ (map (fun _ => inner) As) == 0 *)
+          - apply (sumQ_map_ext (A := Mask n)); intros _ _. exact Hin.
+          - exact (sumQ_zeros As).
+        }
+        reflexivity.
+Qed.
 
-            (* Pick the intermediate explicitly, so no ?y evar appears. *)
-            eapply Qeq_trans with
-              (y := sumQ (List.map (fun _ : Mask n => 0%Q) As)).
+Lemma if_mask_eq_dec_flip :
+  forall n (X Y : Mask n) (t e : Q),
+    (if mask_eq_dec X Y then t else e)
+    ==
+    (if mask_eq_dec Y X then t else e).
+Proof.
+  intros n X Y t e.
+  destruct (mask_eq_dec X Y) as [Hxy|Hxy];
+  destruct (mask_eq_dec Y X) as [Hyx|Hyx].
+  - (* X=Y, Y=X *) reflexivity.
+  - (* X=Y, Y<>X *) exfalso; apply Hyx; symmetry; exact Hxy.
+  - (* X<>Y, Y=X *) exfalso; apply Hxy; symmetry; exact Hyx.
+  - (* X<>Y, Y<>X *) reflexivity.
+Qed.
 
-            - (* outer constant-sum == sum of zeros *)
-              apply (sumQ_map_ext (A := Mask n)); intros _ _.
-              exact Hin.
+Lemma sumQ_fubini_masks
+  (n : nat) (h : Mask n -> Mask n -> Q) :
+  sumQ (List.map (fun x => sumQ (List.map (h x) (all_masks n))) (all_masks n))
+  ==
+  sumQ (List.map (fun y => sumQ (List.map (fun x => h x y) (all_masks n))) (all_masks n)).
+Proof.
+  apply (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n) h).
+Qed.
 
-            - (* sum of zeros == 0 *)
-              exact (sumQ_zeros As).
-          }
-          reflexivity.
+Lemma sumQ_fubini_masks_in
+  (n : nat) (L : list (Mask n)) (h : Mask n -> Mask n -> Mask n -> Q) :
+  sumQ (List.map (fun x =>
+    sumQ (List.map (fun a =>
+      sumQ (List.map (fun b => h x a b) (all_masks n)))
+    (all_masks n))) L)
+  ==
+  sumQ (List.map (fun x =>
+    sumQ (List.map (fun b =>
+      sumQ (List.map (fun a => h x a b) (all_masks n)))
+    (all_masks n))) L).
+Proof.
+  apply (sumQ_map_ext (A:=Mask n)); intro x; intro Hx.
+  (* inside fixed x: swap a and b *)
+  exact (@sumQ_fubini_masks n (fun a b => h x a b)).
+Qed.
+
+Lemma mv_gp_assoc_LHS_triple :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
+    mv_gp sq (mv_gp sq F G) H U
+    ==
+    sumQ (List.map (fun A =>
+    sumQ (List.map (fun B =>
+    sumQ (List.map (fun C =>
+      if mask_eq_dec (mask_xor (mask_xor A B) C) U
+      then (F A * G B * H C
+            * basis_mul_coeff sq A B
+            * basis_mul_coeff sq (mask_xor A B) C)%Q
+      else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
+Proof.
+  intros n sq F G H U.
+
+  eapply Qeq_trans.
+  - apply mv_gp_assoc_LHS_quad_kernel.
+  -
+    rewrite (@sumQ_fubini_masks n
+      (fun X C =>
+         sumQ (List.map (fun A =>
+           sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))
+         (all_masks n)))).
+
+    apply (sumQ_map_ext (A:=Mask n)); intros C HC.
+    rewrite (@sumQ_fubini_masks n
+      (fun X A =>
+         sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))).
+
+    apply (sumQ_map_ext (A:=Mask n)); intros A HA.
+    rewrite (@sumQ_fubini_masks n
+      (fun X B => K_LHS sq F G H U X C A B)).
+
+    apply (sumQ_map_ext (A:=Mask n)); intros B HB.
+
+    unfold K_LHS.
+
+    rename C into C0.
+    rename A into A0.
+    rename B into B0.
+    
+    eapply Qeq_trans.
+    2: {
+      apply (@sumQ_all_masks_pick_eq_xor n
+        (fun X =>
+           if mask_eq_dec (mask_xor X B0) U
+           then (F C0 * G A0 * H B0
+                 * basis_mul_coeff sq C0 A0
+                 * basis_mul_coeff sq X B0)%Q
+           else 0%Q)
+        C0 A0).
+    }
+
+    apply (sumQ_map_ext (A:=Mask n)); intros X HX.
+
+    destruct (mask_eq_dec (mask_xor X C0) U) as [HXC|HXC]; cbn.
+    
+    
+    +
+      rewrite (@if_mask_eq_dec_flip n (mask_xor A0 B0) X
+        ((F A0 * G B0 * H C0
+          * basis_mul_coeff sq A0 B0
+          * basis_mul_coeff sq X C0)%Q)
+        0%Q).
+      reflexivity. 
+    +
+      reflexivity.
+ 
+    rewrite (sumQ_fubini_masks n
+      (fun C0 A0 =>
+         sumQ (List.map (fun B0 =>
+           if mask_eq_dec (mask_xor (mask_xor A0 B0) C0) U
+           then (F A0 * G B0 * H C0
+                 * basis_mul_coeff sq A0 B0
+                 * basis_mul_coeff sq (mask_xor A0 B0) C0)%Q
+           else 0%Q) (all_masks n)))).
+
+    apply (sumQ_map_ext (A:=Mask n)); intros A0 HA0.
+    rewrite (sumQ_fubini_masks n
+      (fun B0 C0 =>
+         if mask_eq_dec (mask_xor (mask_xor A0 B0) C0) U
+         then (F A0 * G B0 * H C0
+               * basis_mul_coeff sq A0 B0
+               * basis_mul_coeff sq (mask_xor A0 B0) C0)%Q
+         else 0%Q)).
+
+    reflexivity.
 Qed.
 
 Lemma mv_gp_assoc_LHS_triple :
@@ -3798,7 +3886,6 @@ Proof.
     apply (sumQ_map_ext (A:=Mask n)); intros C HC.
     rewrite mask_xor_assoc.
     destruct (mask_eq_dec (mask_xor A (mask_xor B C)) U); [|reflexivity].
-    (* Now both sides are products differing only in the coeff pair *)
     assert (Hc : (basis_mul_coeff sq A B * basis_mul_coeff sq (mask_xor A B) C)%Q
                  == (basis_mul_coeff sq B C * basis_mul_coeff sq A (mask_xor B C))%Q).
     { pose proof (basis_mul_assoc_coeff sq A B C) as H0.
