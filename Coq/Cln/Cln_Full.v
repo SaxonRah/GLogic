@@ -3751,93 +3751,336 @@ Proof.
   exact (@sumQ_fubini_masks n (fun a b => h x a b)).
 Qed.
 
-Lemma mv_gp_assoc_LHS_triple :
+(* Helper: collapse the X-sum for fixed C, A, B *)
+Lemma K_LHS_X_collapse :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U C A B : Mask n),
+    sumQ (List.map (fun X => K_LHS sq F G H U X C A B) (all_masks n))
+    ==
+    if mask_eq_dec (mask_xor (mask_xor A B) C) U
+    then (F A * G B * H C
+          * basis_mul_coeff sq A B
+          * basis_mul_coeff sq (mask_xor A B) C)%Q
+    else 0%Q.
+Proof.
+  intros n sq F G H U C A B.
+  set (val := if mask_eq_dec (mask_xor (mask_xor A B) C) U
+              then (F A * G B * H C
+                    * basis_mul_coeff sq A B
+                    * basis_mul_coeff sq (mask_xor A B) C)%Q
+              else 0%Q).
+  (* Rewrite each K_LHS term into pick-shape: if X=A⊕B then val else 0 *)
+  eapply Qeq_trans.
+  { apply (@sumQ_map_ext (Mask n)
+      (fun X => K_LHS sq F G H U X C A B)
+      (fun X => if mask_eq_dec X (mask_xor A B) then val else 0%Q)
+      (all_masks n)).
+    intros X _.
+    unfold K_LHS.
+    destruct (mask_eq_dec X (mask_xor A B)) as [HXeq|HXneq].
+    - (* X = A⊕B: inner condition A⊕B=X is trivially true *)
+      subst X.
+      unfold val.
+      destruct (mask_eq_dec (mask_xor (mask_xor A B) C) U) as [HU|HnU].
+      + destruct (mask_eq_dec (mask_xor A B) (mask_xor A B)) as [_|Hbad];
+          [apply Qeq_refl | exfalso; apply Hbad; reflexivity].
+      + destruct (mask_eq_dec (mask_xor (mask_xor A B) C) U) as [Hbad|_];
+          [contradiction|].
+        destruct (mask_eq_dec (mask_xor A B) (mask_xor A B)) as [_|Hbad];
+          [apply Qeq_refl | exfalso; apply Hbad; reflexivity].
+    - (* X ≠ A⊕B: inner condition fails → 0 *)
+      destruct (mask_eq_dec (mask_xor X C) U) as [_|_].
+      + destruct (mask_eq_dec (mask_xor A B) X) as [Heq|_].
+        * exfalso; apply HXneq; symmetry; exact Heq.
+        * apply Qeq_refl.
+      + apply Qeq_refl.
+  }
+  (* Now: ∑_X (if X = A⊕B then val else 0) == val *)
+  eapply Qeq_trans.
+  { apply (@sumQ_all_masks_pick n (fun _ => val) (mask_xor A B)). }
+  unfold val. apply Qeq_refl.
+Qed.
+
+Definition K_RHS {n} (sq : Vector.t Q n) (F G H : MV n) (U : Mask n)
+  (A Y B C : Mask n) : Q :=
+  if mask_eq_dec (mask_xor A Y) U then
+    if mask_eq_dec (mask_xor B C) Y then
+      (F A * G B * H C
+       * basis_mul_coeff sq B C
+       * basis_mul_coeff sq A Y)%Q
+    else 0%Q
+  else 0%Q.
+
+Lemma mv_gp_assoc_RHS_quad_kernel :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
-    mv_gp sq (mv_gp sq F G) H U
+    mv_gp sq F (mv_gp sq G H) U
+    ==
+    sumQ (List.map (fun A : Mask n =>
+      sumQ (List.map (fun Y : Mask n =>
+        sumQ (List.map (fun B : Mask n =>
+          sumQ (List.map (fun C : Mask n =>
+            K_RHS sq F G H U A Y B C) (all_masks n)))
+        (all_masks n)))
+      (all_masks n)))
+    (all_masks n)).
+Proof.
+Admitted.
+(*
+  intros n sq F G H U.
+  unfold mv_gp.
+  apply (sumQ_map_ext (A:=Mask n)); intros A _.
+  apply (sumQ_map_ext (A:=Mask n)); intros Y _.
+  cbn [basis_mul_mask].
+  destruct (mask_eq_dec (mask_xor A Y) U) as [Hhit|Hmiss].
+  - subst U.
+    destruct (mask_eq_dec (mask_xor A Y) (mask_xor A Y)) as [_|Hbad];
+      [|exfalso; apply Hbad; reflexivity].
+    cbn. cbn [basis_mul_mask].
+    set (k := (F A * basis_mul_coeff sq A Y)%Q).
+    rewrite <- (@sumQ_map_scale_r (Mask n) k
+      (fun B =>
+         sumQ (List.map (fun C =>
+           if mask_eq_dec (mask_xor B C) Y
+           then (G B * H C * basis_mul_coeff sq B C)%Q
+           else 0%Q) (all_masks n)))
+      (all_masks n)).
+    apply (sumQ_map_ext (A:=Mask n)); intros B _.
+    rewrite <- (@sumQ_map_scale_r (Mask n) k
+      (fun C =>
+         if mask_eq_dec (mask_xor B C) Y
+         then (G B * H C * basis_mul_coeff sq B C)%Q
+         else 0%Q)
+      (all_masks n)).
+    apply (sumQ_map_ext (A:=Mask n)); intros C _.
+    unfold K_RHS.
+    destruct (mask_eq_dec (mask_xor A Y) (mask_xor A Y)) as [_|Hbad];
+      [|exfalso; apply Hbad; reflexivity]. cbn.
+    destruct (mask_eq_dec (mask_xor B C) Y); unfold k; ring.
+  - eapply Qeq_trans.
+    2: {
+      apply Qeq_sym.
+      eapply Qeq_trans.
+      { apply (@sumQ_map_ext (Mask n)
+          (fun B => sumQ (List.map (fun C => K_RHS sq F G H U A Y B C) (all_masks n)))
+          (fun _ => 0%Q)
+          (all_masks n)).
+        intros B _.
+        eapply Qeq_trans.
+        { apply (@sumQ_map_ext (Mask n)
+            (fun C => K_RHS sq F G H U A Y B C)
+            (fun _ => 0%Q)
+            (all_masks n)).
+          intros C _.
+          unfold K_RHS.
+          destruct (mask_eq_dec (mask_xor A Y) U) as [Heq|_];
+            [contradiction | apply Qeq_refl]. }
+        apply sumQ_map_const0. }
+      apply sumQ_map_const0. }
+    destruct (mask_eq_dec (basis_mul_mask A Y) U) as [Heq|_].
+    + exfalso; apply Hmiss; cbn [basis_mul_mask] in Heq; exact Heq.
+    + ring.
+Qed.
+*)
+
+Lemma K_RHS_Y_collapse :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U A B C : Mask n),
+    sumQ (List.map (fun Y => K_RHS sq F G H U A Y B C) (all_masks n))
+    ==
+    if mask_eq_dec (mask_xor A (mask_xor B C)) U
+    then (F A * G B * H C
+          * basis_mul_coeff sq B C
+          * basis_mul_coeff sq A (mask_xor B C))%Q
+    else 0%Q.
+Proof.
+  intros n sq F G H U A B C.
+  set (val := if mask_eq_dec (mask_xor A (mask_xor B C)) U
+              then (F A * G B * H C
+                    * basis_mul_coeff sq B C
+                    * basis_mul_coeff sq A (mask_xor B C))%Q
+              else 0%Q).
+  eapply Qeq_trans.
+  { apply (@sumQ_map_ext (Mask n)
+      (fun Y => K_RHS sq F G H U A Y B C)
+      (fun Y => if mask_eq_dec Y (mask_xor B C) then val else 0%Q)
+      (all_masks n)).
+    intros Y _.
+    unfold K_RHS.
+    destruct (mask_eq_dec Y (mask_xor B C)) as [HYeq|HYneq].
+    - subst Y. unfold val.
+      destruct (mask_eq_dec (mask_xor A (mask_xor B C)) U) as [HU|HnU].
+      + destruct (mask_eq_dec (mask_xor B C) (mask_xor B C)) as [_|Hbad];
+          [apply Qeq_refl | exfalso; apply Hbad; reflexivity].
+      + destruct (mask_eq_dec (mask_xor A (mask_xor B C)) U) as [Hbad|_];
+          [contradiction|].
+        destruct (mask_eq_dec (mask_xor B C) (mask_xor B C)) as [_|Hbad];
+          [apply Qeq_refl | exfalso; apply Hbad; reflexivity].
+    - destruct (mask_eq_dec (mask_xor A Y) U) as [_|_].
+      + destruct (mask_eq_dec (mask_xor B C) Y) as [Heq|_].
+        * exfalso; apply HYneq; symmetry; exact Heq.
+        * apply Qeq_refl.
+      + apply Qeq_refl.
+  }
+  eapply Qeq_trans.
+  { apply (@sumQ_all_masks_pick n (fun _ => val) (mask_xor B C)). }
+  unfold val. apply Qeq_refl.
+Qed.
+
+(* Helper: collapse the B-sum for fixed X, C, A *)
+Lemma K_LHS_B_collapse :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U X C A : Mask n),
+    sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n))
+    ==
+    if mask_eq_dec (mask_xor X C) U
+    then (F A * G (mask_xor A X) * H C
+          * basis_mul_coeff sq A (mask_xor A X)
+          * basis_mul_coeff sq X C)%Q
+    else 0%Q.
+Proof.
+  intros n sq F G H U X C A.
+
+  (* We'll reduce the sum to a pick-shape at B = A ⊕ X. *)
+  set (val :=
+    if mask_eq_dec (mask_xor X C) U
+    then (F A * G (mask_xor A X) * H C
+          * basis_mul_coeff sq A (mask_xor A X)
+          * basis_mul_coeff sq X C)%Q
+    else 0%Q).
+
+  (* Step 1: rewrite the integrand into: if B = A⊕X then val else 0 *)
+  eapply Qeq_trans.
+  { apply (@sumQ_map_ext (Mask n)
+      (fun B => K_LHS sq F G H U X C A B)
+      (fun B => if mask_eq_dec B (mask_xor A X) then val else 0%Q)
+      (all_masks n)).
+    intros B _.
+    unfold K_LHS.
+    unfold val.
+
+    (* split on the outer filter first *)
+    destruct (mask_eq_dec (mask_xor X C) U) as [HXC|HXC]; cbn.
+    - (* outer filter holds *)
+      destruct (mask_eq_dec (mask_xor A B) X) as [HAB|HAB]; cbn.
+      + (* inner filter holds: A⊕B = X, so B must be A⊕X *)
+        assert (HB : B = mask_xor A X).
+        { (* left-xor both sides of A⊕B = X by A *)
+          (* A ⊕ (A ⊕ B) = A ⊕ X *)
+          assert (H' : mask_xor A (mask_xor A B) = mask_xor A X).
+          { now rewrite HAB. }
+          (* reassociate: (A⊕A)⊕B = A⊕X *)
+          rewrite <- (@mask_xor_assoc n A A B) in H'.
+          (* simplify A⊕A = empty *)
+          rewrite (@mask_xor_self n A) in H'.
+          (* empty ⊕ B = B *)
+          rewrite (@mask_xor_empty_l n B) in H'.
+          exact H'.
+        }
+        subst B.
+        (* now the term is exactly val, and the guard B = A⊕X is true *)
+        destruct (mask_eq_dec (mask_xor A X) (mask_xor A X)) as [_|Hbad];
+          [reflexivity|exfalso; apply Hbad; reflexivity].
+
+      + (* inner filter fails: the K_LHS term is 0, and the pick-form must be 0 *)
+        destruct (mask_eq_dec B (mask_xor A X)) as [HB|HB]; cbn.
+        * (* if B = A⊕X then A⊕B = X, contradiction *)
+          exfalso; apply HAB.
+          subst B.
+          (* show mask_xor A (mask_xor A X) = X *)
+          rewrite <- (@mask_xor_assoc n A A X).
+          rewrite (@mask_xor_self n A).
+          rewrite (@mask_xor_empty_l n X).
+          reflexivity.
+        * reflexivity.
+
+    - (* outer filter fails: K_LHS is 0; val is 0; pick-form is 0 *)
+      destruct (mask_eq_dec B (mask_xor A X)); reflexivity.
+  }
+
+  (* Step 2: now the sum is a pick-sum at B = A⊕X *)
+  eapply Qeq_trans.
+  { apply (@sumQ_all_masks_pick n (fun _ => val) (mask_xor A X)). }
+
+  (* Step 3: unfold val *)
+  unfold val. reflexivity.
+Qed.
+
+Definition K_LHS_CAB {n} (sq : Vector.t Q n) (F G H : MV n) (U : Mask n)
+  (X C A B : Mask n) : Q :=
+  if mask_eq_dec (mask_xor X B) U then
+    if mask_eq_dec (mask_xor C A) X then
+      (F C * G A * H B
+       * basis_mul_coeff sq C A
+       * basis_mul_coeff sq X B)%Q
+    else 0%Q
+  else 0%Q.
+  
+(* Collapse X when the kernel is K_LHS ... X A B C *)
+Lemma K_LHS_X_collapse_CAB :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U A B C : Mask n),
+    sumQ (List.map (fun X => K_LHS sq F G H U X A B C) (all_masks n))
+    ==
+    if mask_eq_dec (mask_xor (mask_xor B C) A) U
+    then (F B * G C * H A
+          * basis_mul_coeff sq B C
+          * basis_mul_coeff sq (mask_xor B C) A)%Q
+    else 0%Q.
+Proof.
+  intros n sq F G H U A B C.
+
+  (* pick X = B ⊕ C *)
+  eapply Qeq_trans.
+  2: {
+    apply (@sumQ_all_masks_pick_eq_xor n
+      (fun X =>
+         if mask_eq_dec (mask_xor X A) U
+         then (F B * G C * H A
+               * basis_mul_coeff sq B C
+               * basis_mul_coeff sq X A)%Q
+         else 0%Q)
+      B C).
+  }
+
+  (* pointwise: rewrite K_LHS into pick-shape "if X = B⊕C then ... else 0" *)
+  apply (sumQ_map_ext (A:=Mask n)); intros X _.
+  unfold K_LHS.
+
+  (* outer filter is exactly (X ⊕ A = U) in this rotated instance *)
+  destruct (mask_eq_dec (mask_xor X A) U) as [HXA|HXA]; cbn.
+  - (* outer hit: flip the inner test to X = B⊕C form *)
+    rewrite (@if_mask_eq_dec_flip n (mask_xor B C) X
+      ((F B * G C * H A
+        * basis_mul_coeff sq B C
+        * basis_mul_coeff sq X A)%Q)
+      0%Q).
+    destruct (mask_eq_dec X (mask_xor B C)); reflexivity.
+  - (* outer miss: both sides are 0 *)
+  (* The RHS is literally "if ... then 0 else 0", which simplifies to 0 *)
+  destruct (mask_eq_dec X (mask_xor B C)) as [_|_]; cbn; apply Qeq_refl.
+Qed.
+
+Lemma mv_gp_assoc_RHS_triple :
+  forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
+    mv_gp sq F (mv_gp sq G H) U
     ==
     sumQ (List.map (fun A =>
     sumQ (List.map (fun B =>
     sumQ (List.map (fun C =>
-      if mask_eq_dec (mask_xor (mask_xor A B) C) U
+      if mask_eq_dec (mask_xor A (mask_xor B C)) U
       then (F A * G B * H C
-            * basis_mul_coeff sq A B
-            * basis_mul_coeff sq (mask_xor A B) C)%Q
+            * basis_mul_coeff sq B C
+            * basis_mul_coeff sq A (mask_xor B C))%Q
       else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
 Proof.
   intros n sq F G H U.
-
   eapply Qeq_trans.
-  - apply mv_gp_assoc_LHS_quad_kernel.
-  -
-    rewrite (@sumQ_fubini_masks n
-      (fun X C =>
-         sumQ (List.map (fun A =>
-           sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))
-         (all_masks n)))).
-
-    apply (sumQ_map_ext (A:=Mask n)); intros C HC.
-    rewrite (@sumQ_fubini_masks n
-      (fun X A =>
-         sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))).
-
-    apply (sumQ_map_ext (A:=Mask n)); intros A HA.
-    rewrite (@sumQ_fubini_masks n
-      (fun X B => K_LHS sq F G H U X C A B)).
-
-    apply (sumQ_map_ext (A:=Mask n)); intros B HB.
-
-    unfold K_LHS.
-
-    rename C into C0.
-    rename A into A0.
-    rename B into B0.
-    
-    eapply Qeq_trans.
-    2: {
-      apply (@sumQ_all_masks_pick_eq_xor n
-        (fun X =>
-           if mask_eq_dec (mask_xor X B0) U
-           then (F C0 * G A0 * H B0
-                 * basis_mul_coeff sq C0 A0
-                 * basis_mul_coeff sq X B0)%Q
-           else 0%Q)
-        C0 A0).
-    }
-
-    apply (sumQ_map_ext (A:=Mask n)); intros X HX.
-
-    destruct (mask_eq_dec (mask_xor X C0) U) as [HXC|HXC]; cbn.
-    
-    
-    +
-      rewrite (@if_mask_eq_dec_flip n (mask_xor A0 B0) X
-        ((F A0 * G B0 * H C0
-          * basis_mul_coeff sq A0 B0
-          * basis_mul_coeff sq X C0)%Q)
-        0%Q).
-      reflexivity. 
-    +
-      reflexivity.
- 
-    rewrite (sumQ_fubini_masks n
-      (fun C0 A0 =>
-         sumQ (List.map (fun B0 =>
-           if mask_eq_dec (mask_xor (mask_xor A0 B0) C0) U
-           then (F A0 * G B0 * H C0
-                 * basis_mul_coeff sq A0 B0
-                 * basis_mul_coeff sq (mask_xor A0 B0) C0)%Q
-           else 0%Q) (all_masks n)))).
-
-    apply (sumQ_map_ext (A:=Mask n)); intros A0 HA0.
-    rewrite (sumQ_fubini_masks n
-      (fun B0 C0 =>
-         if mask_eq_dec (mask_xor (mask_xor A0 B0) C0) U
-         then (F A0 * G B0 * H C0
-               * basis_mul_coeff sq A0 B0
-               * basis_mul_coeff sq (mask_xor A0 B0) C0)%Q
-         else 0%Q)).
-
-    reflexivity.
+  { apply mv_gp_assoc_RHS_quad_kernel. }
+  (* Order is (A, Y, B, C). Move Y innermost: (A, B, C, Y) *)
+  apply (sumQ_map_ext (A:=Mask n)); intros A _.
+  rewrite (@sumQ_fubini_masks n
+    (fun Y B =>
+       sumQ (List.map (fun C => K_RHS sq F G H U A Y B C) (all_masks n)))).
+  apply (sumQ_map_ext (A:=Mask n)); intros B _.
+  rewrite (@sumQ_fubini_masks n (fun Y C => K_RHS sq F G H U A Y B C)).
+  apply (sumQ_map_ext (A:=Mask n)); intros C _.
+  apply K_RHS_Y_collapse.
 Qed.
 
 Lemma mv_gp_assoc_LHS_triple :
@@ -3855,20 +4098,25 @@ Lemma mv_gp_assoc_LHS_triple :
 Proof.
 Admitted.
 
-Lemma mv_gp_assoc_RHS_triple :
+
+(* ---------------------------------------------------------------------- *)
+
+Lemma mv_gp_assoc_LHS_triple_shape :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
-    mv_gp sq F (mv_gp sq G H) U
+    mv_gp sq (mv_gp sq F G) H U
     ==
     sumQ (List.map (fun A =>
     sumQ (List.map (fun B =>
     sumQ (List.map (fun C =>
-      if mask_eq_dec (mask_xor A (mask_xor B C)) U
+      if mask_eq_dec (mask_xor (mask_xor A B) C) U
       then (F A * G B * H C
-            * basis_mul_coeff sq B C
-            * basis_mul_coeff sq A (mask_xor B C))%Q
+            * basis_mul_coeff sq A B
+            * basis_mul_coeff sq (mask_xor A B) C)%Q
       else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
 Proof.
 Admitted.
+
+(* ---------------------------------------------------------------------- *)
 
 Lemma mv_gp_assoc :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
@@ -3878,7 +4126,7 @@ Lemma mv_gp_assoc :
 Proof.
   intros n sq F G H U.
   eapply Qeq_trans.
-  - apply mv_gp_assoc_LHS_triple.
+  - apply mv_gp_assoc_LHS_triple_shape.
   - eapply Qeq_trans.
     2: { symmetry. apply mv_gp_assoc_RHS_triple. }
     apply (sumQ_map_ext (A:=Mask n)); intros A HA.
