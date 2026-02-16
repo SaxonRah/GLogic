@@ -96,7 +96,7 @@ Lemma sumQ_map_le :
     sumQ (map f l) <= sumQ (map g l).
 Proof.
   induction l as [|a tl IH]; intros H; simpl.
-  - lra.
+  - apply Qle_refl.
   - apply Qplus_le_compat.
     + apply H. left; reflexivity.
     + apply IH. intros x Hx. apply H. right; exact Hx.
@@ -124,16 +124,22 @@ Notation "∥ F ∥₁" := (l1_norm F) (at level 40).
 (* Absolute-value lemmas                                          *)
 (* ------------------------------------------------------------ *)
 
+
 Lemma Qplus_le_compat_l : forall x y z : Q,
   y <= z -> x + y <= x + z.
-Proof. intros. lra. Qed.
+Proof.
+  intros x y z H.
+  apply Qplus_le_compat.
+  - apply Qle_refl.
+  - exact H.
+Qed.
 
 Lemma Qabs_sumQ_le :
   forall xs : list Q,
     Qabs (sumQ xs) <= sumQ (map Qabs xs).
 Proof.
   induction xs as [|x tl IH]; simpl.
-  - rewrite Qabs_Q0. lra.
+  - apply Qle_refl.
   - eapply Qle_trans.
     + apply Qabs_triangle.
     + apply Qplus_le_compat_l. exact IH.
@@ -144,7 +150,11 @@ Lemma Qabs_sumQ_map_le :
     Qabs (sumQ (map f xs)) <= sumQ (map (fun a => Qabs (f a)) xs).
 Proof.
   intros A xs f.
-  exact (Qabs_sumQ_le (map f xs)).
+  eapply Qle_trans.
+  - exact (Qabs_sumQ_le (map f xs)).
+  - (* goal is now: sumQ (map Qabs (map f xs)) <= sumQ (map (fun a => Qabs (f a)) xs) *)
+    rewrite map_map.       (* rewrites map Qabs (map f xs) to map (fun a => Qabs (f a)) xs *)
+    apply Qle_refl.
 Qed.
 
 Lemma Qle_of_Qeq :
@@ -210,9 +220,18 @@ Lemma sumU_xor_delta :
 Proof.
   intros A B.
   eapply Qeq_trans.
-  2: { apply (sumQ_all_masks_pick (f:=fun _ => 1%Q) (U:=basis_mul_mask A B)). }
+  2: { apply (sumQ_all_masks_pick (fun _ => 1%Q) (basis_mul_mask A B)). }
   apply sumQ_map_ext. intros m Hm.
-  destruct (mask_eq_dec m (basis_mul_mask A B)); ring.
+  destruct (mask_eq_dec (basis_mul_mask A B) m) as [Hab|Hab].
+  - (* equal *)
+    subst m.
+    destruct (mask_eq_dec (basis_mul_mask A B) (basis_mul_mask A B)) as [_|Hneq].
+    + reflexivity.
+    + exfalso; apply Hneq; reflexivity.
+  - (* not equal *)
+    destruct (mask_eq_dec m (basis_mul_mask A B)) as [Hba|_].
+    + exfalso. apply Hab. now symmetry.
+    + reflexivity.
 Qed.
 
 (* ------------------------------------------------------------ *)
@@ -221,7 +240,7 @@ Qed.
 
 Theorem l1_gp_submultiplicative :
   forall (F G : MV n),
-    l1_norm (mv_gp n sq F G) <= l1_norm F * l1_norm G.
+    l1_norm (mv_gp sq F G) <= l1_norm F * l1_norm G.
 Proof.
   intros F G.
   unfold l1_norm, mv_gp.
@@ -260,140 +279,179 @@ Proof.
     (* Rewrite the bigsum to ∥F∥₁ · ∥G∥₁ *)
 
     (* Expand Qabs(term) and use |coeff|=1 *)
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun U =>
-          sumQ (map (fun A =>
-            sumQ (map (fun B => Qabs (term U A B)) MS)) MS))
-        (fun U =>
-          sumQ (map (fun A =>
-            sumQ (map (fun B =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B) * Qabs (basis_mul_coeff sq A B))%Q
-              else 0%Q) MS)) MS))
-        MS).
-      intros U HU.
-      apply sumQ_map_ext; intros A HA.
-      apply sumQ_map_ext; intros B HB.
-      unfold term.
-      destruct (mask_eq_dec (basis_mul_mask A B) U); simpl.
-      - repeat rewrite Qabs_Qmult. ring.
-      - rewrite Qabs_Q0. ring.
-    }
+    
+    eapply Qeq_trans with
+    (y :=
+      sumQ (map (fun U : Mask n =>
+        sumQ (map (fun A : Mask n =>
+          sumQ (map (fun B : Mask n =>
+            if mask_eq_dec (basis_mul_mask A B) U
+            then (Qabs (F A) * Qabs (G B) * Qabs (basis_mul_coeff sq A B))%Q
+            else 0%Q) MS)) MS)) MS)).
+      + (* Goal 1 *)
+        apply (sumQ_map_ext (A:=Mask n)
+          (fun U =>
+            sumQ (map (fun A =>
+              sumQ (map (fun B => Qabs (term U A B)) MS)) MS))
+          (fun U =>
+            sumQ (map (fun A =>
+              sumQ (map (fun B =>
+                if mask_eq_dec (basis_mul_mask A B) U
+                then (Qabs (F A) * Qabs (G B) * Qabs (basis_mul_coeff sq A B))%Q
+                else 0%Q) MS)) MS))
+          MS).
+        intros U HU.
+        apply sumQ_map_ext; intros A HA.
+        apply sumQ_map_ext; intros B HB.
+        unfold term.
+        destruct (mask_eq_dec (basis_mul_mask A B) U) as [Heq|Hneq].
+        * (* then-branch *)
+          (* term reduces to F A * G B * c *)
+          (* push abs through multiplication *)
+          repeat rewrite Qabs_Qmult.
+          (* now both sides are definitionally the same *)
+          apply Qeq_refl.
+        * (* else-branch *)
+          (* term reduces to 0, so Qabs 0 = 0 *)
+          (* after simpl, both sides are 0 *)
+          simpl.
+          apply Qeq_refl.
+    
+       + eapply Qeq_trans with
+        (y :=
+          sumQ
+            (map
+               (fun U : Mask n =>
+                sumQ
+                  (map
+                     (fun A : Mask n =>
+                      sumQ
+                        (map
+                           (fun B : Mask n =>
+                            if mask_eq_dec (basis_mul_mask A B) U
+                            then (Qabs (F A) * Qabs (G B))%Q
+                            else 0%Q) MS)) MS)) MS)).
+          * (* prove: old bigsum == new bigsum *)
+            apply (sumQ_map_ext (A:=Mask n)
+              (fun U =>
+                sumQ (map (fun A =>
+                  sumQ (map (fun B =>
+                    if mask_eq_dec (basis_mul_mask A B) U
+                    then (Qabs (F A) * Qabs (G B) * Qabs (basis_mul_coeff sq A B))%Q
+                    else 0%Q) MS)) MS))
+              (fun U =>
+                sumQ (map (fun A =>
+                  sumQ (map (fun B =>
+                    if mask_eq_dec (basis_mul_mask A B) U
+                    then (Qabs (F A) * Qabs (G B))%Q
+                    else 0%Q) MS)) MS))
+              MS).
+            intros U HU.
+            apply sumQ_map_ext; intros A HA.
+            apply sumQ_map_ext; intros B HB.
+            destruct (mask_eq_dec (basis_mul_mask A B) U) as [Heq|Hneq].
+            -- (* then: use |coeff| = 1 *)
+              rewrite basis_mul_coeff_abs1.
+              (* now: Qabs(F A)*Qabs(G B)*1 == Qabs(F A)*Qabs(G B) *)
+              (* avoid ring: just rewrite by 1 and reflexivity *)
+              rewrite Qmult_1_r.
+              apply Qeq_refl.
+            -- (* else: both sides are 0 *)
+              apply Qeq_refl.
+          * (* continue from the simplified bigsum *)
+            (* this is where your Fubini steps resume *)
+            (* Fubini: swap Σ_U Σ_A *)
+            rewrite (sumQ_fubini (A:=Mask n) (B:=Mask n)
+              MS MS
+              (fun U A =>
+                 sumQ (map (fun B =>
+                   if mask_eq_dec (basis_mul_mask A B) U
+                   then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS))).
 
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun U =>
-          sumQ (map (fun A =>
-            sumQ (map (fun B =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B) * Qabs (basis_mul_coeff sq A B))%Q
-              else 0%Q) MS)) MS))
-        (fun U =>
-          sumQ (map (fun A =>
-            sumQ (map (fun B =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B))%Q
-              else 0%Q) MS)) MS))
-        MS).
-      intros U HU.
-      apply sumQ_map_ext; intros A HA.
-      apply sumQ_map_ext; intros B HB.
-      destruct (mask_eq_dec (basis_mul_mask A B) U); simpl.
-      - rewrite basis_mul_coeff_abs1. ring.
-      - ring.
-    }
+            (* Now: Σ_A Σ_U Σ_B ...  ->  Σ_A Σ_B Σ_U ... *)
+            eapply Qeq_trans with
+              (y :=
+                sumQ (map (fun A : Mask n =>
+                  sumQ (map (fun B : Mask n =>
+                    sumQ (map (fun U : Mask n =>
+                      if mask_eq_dec (basis_mul_mask A B) U
+                      then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS)) MS)) MS)).
+            apply sumQ_map_ext; intros b Hb.
+            apply (sumQ_fubini MS MS
+              (fun a B : Mask n =>
+                if mask_eq_dec (basis_mul_mask b B) a
+                then (Qabs (F b) * Qabs (G B))%Q
+                else 0%Q)).
+            
+            eapply Qeq_trans with
+              (y :=
+                sumQ (map (fun A : Mask n =>
+                  sumQ (map (fun B : Mask n =>
+                    (Qabs (F A) * Qabs (G B))%Q *
+                    sumQ (map (fun U : Mask n =>
+                      if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q) MS)) MS)) MS)).
+            apply sumQ_map_ext; intros A HA.
+            apply sumQ_map_ext; intros B HB.
+            rewrite <- (sumQ_map_scale_l
+              (Qabs (F A) * Qabs (G B))%Q
+              (fun U : Mask n =>
+                 if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q)
+              MS).
 
-    (* Swap Σ_U Σ_A Σ_B to Σ_A Σ_B Σ_U using Fubini twice *)
-    rewrite (sumQ_fubini (A:=Mask n) (B:=Mask n)
-      (la:=MS) (lb:=MS)
-      (h:=fun U A =>
-        sumQ (map (fun B =>
-          if mask_eq_dec (basis_mul_mask A B) U
-          then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS))).
+            apply sumQ_map_ext; intros U HU.
+            destruct (mask_eq_dec (basis_mul_mask A B) U); ring.
+            
+              (* Collapse the U-sum to 1 using sumU_xor_delta *)
+              eapply Qeq_trans with
+                (y :=
+                  sumQ
+                    (map (fun A : Mask n =>
+                      sumQ
+                        (map (fun B : Mask n =>
+                          Qabs (F A) * Qabs (G B) * 1%Q) MS)) MS)).
+              apply sumQ_map_ext; intros A HA.
+              apply sumQ_map_ext; intros B HB.
+              unfold MS.
+              rewrite sumU_xor_delta.
+              apply Qeq_refl.
 
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun A =>
-          sumQ (map (fun U =>
-            sumQ (map (fun B =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS)) MS))
-        (fun A =>
-          sumQ (map (fun B =>
-            sumQ (map (fun U =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS)) MS))
-        MS).
-      intros A HA.
-      apply sumQ_fubini.
-    }
+              (* simplify *1 *)
+              eapply Qeq_trans with
+                (y :=
+                  sumQ
+                    (map (fun A : Mask n =>
+                      sumQ (map (fun B : Mask n =>
+                        (Qabs (F A) * Qabs (G B))%Q) MS)) MS)).
+              apply sumQ_map_ext; intros A HA.
+              apply sumQ_map_ext; intros B HB.
+              rewrite Qmult_1_r.
+              apply Qeq_refl.
 
-    (* Collapse the U-sum to 1 and factor constants *)
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun A =>
-          sumQ (map (fun B =>
-            sumQ (map (fun U =>
-              if mask_eq_dec (basis_mul_mask A B) U
-              then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS)) MS))
-        (fun A =>
-          sumQ (map (fun B =>
-            (Qabs (F A) * Qabs (G B))%Q *
-            sumQ (map (fun U =>
-              if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q) MS)) MS))
-        MS).
-      intros A HA.
-      apply sumQ_map_ext; intros B HB.
-      rewrite <- (sumQ_map_scale_l (A:=Mask n)
-        (k:=(Qabs (F A) * Qabs (G B))%Q)
-        (f:=fun U => if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q)
-        MS).
-      apply sumQ_map_ext; intros U HU.
-      destruct (mask_eq_dec (basis_mul_mask A B) U); ring.
-    }
+              (* Factor the B-sum: Σ_B |F A||G B| = |F A| * Σ_B |G B| *)
+              eapply Qeq_trans with
+                (y :=
+                  sumQ
+                    (map (fun A : Mask n =>
+                      (Qabs (F A) * sumQ (map (fun B : Mask n => Qabs (G B)) MS))%Q) MS)).
+              apply sumQ_map_ext; intros A HA.
+              rewrite <- (sumQ_map_scale_l (Qabs (F A))
+                (fun B : Mask n => Qabs (G B)) MS).
+              apply sumQ_map_ext; intros B HB. ring.
 
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun A =>
-          sumQ (map (fun B =>
-            (Qabs (F A) * Qabs (G B))%Q *
-            sumQ (map (fun U =>
-              if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q) MS)) MS))
-        (fun A =>
-          sumQ (map (fun B =>
-            (Qabs (F A) * Qabs (G B))%Q * 1%Q) MS))
-        MS).
-      intros A HA.
-      apply sumQ_map_ext; intros B HB.
-      rewrite sumU_xor_delta. ring.
-    }
+              (* Factor the A-sum: Σ_A |F A| * K = K * Σ_A |F A| *)
+              
+              set (K := sumQ (map (fun B : Mask n => Qabs (G B)) MS)).
 
-    (* Factor Σ_A Σ_B |F A||G B| = (Σ_A |F A|)(Σ_B |G B|) *)
-    eapply Qeq_trans.
-    2: {
-      apply (sumQ_map_ext (A:=Mask n)
-        (fun A =>
-          sumQ (map (fun B => (Qabs (F A) * Qabs (G B))%Q) MS))
-        (fun A =>
-          (Qabs (F A) * sumQ (map (fun B => Qabs (G B)) MS))%Q)
-        MS).
-      intros A HA.
-      rewrite <- (sumQ_map_scale_l (A:=Mask n)
-        (k:=Qabs (F A))
-        (f:=fun B => Qabs (G B)) MS).
-      apply sumQ_map_ext; intros B HB. ring.
-    }
-
-    rewrite <- (sumQ_map_scale_l (A:=Mask n)
-      (k:=sumQ (map (fun B => Qabs (G B)) MS))
-      (f:=fun A => Qabs (F A)) MS).
-    ring.
+              (* rewrite pointwise: Qabs(F A) * K  ==  K * Qabs(F A) *)
+              eapply Qeq_trans with
+                (y := sumQ (map (fun A : Mask n => (K * Qabs (F A))%Q) MS)).
+              apply sumQ_map_ext; intros A HA.
+              unfold K.
+              ring.  (* or: rewrite Qmult_comm; reflexivity *)
+              (* now scale out K *)
+              rewrite (sumQ_map_scale_l K (fun A : Mask n => Qabs (F A)) MS).
+              rewrite Qmult_comm.
+              apply Qeq_refl.
 Qed.
 
 End UnitMetric.
