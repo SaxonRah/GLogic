@@ -404,6 +404,8 @@ Definition MV (n : nat) : Type := Mask n -> Q.
 Definition mv_zero {n} : MV n := fun _ => 0%Q.
 Definition mv_add  {n} (F G : MV n) : MV n := fun m => (F m + G m)%Q.
 Definition mv_scale {n} (k : Q) (F : MV n) : MV n := fun m => (k * F m)%Q.
+Definition mv_neg {n} (F : MV n) : MV n := mv_scale (-1)%Q F.
+Definition mv_sub {n} (F G : MV n) : MV n := fun m => (F m - G m)%Q.
 
 Infix "⊕" := mv_add (at level 50, left associativity).
 

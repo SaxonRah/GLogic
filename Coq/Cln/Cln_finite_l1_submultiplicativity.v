@@ -30,21 +30,6 @@ Import ListNotations.
 Open Scope Q_scope.
 Set Implicit Arguments.
 
-(* -------------------------------------------------------------------------
-Definition Qabs (q:Q) : Q := if Qle_bool 0 q then q else (-q).
-
-Lemma l1_add_bound : forall n (F G : MV n),
-  l1_norm (mv_add F G) <= l1_norm F + l1_norm G.
-Proof.
-Admitted.
-
-Lemma l1_gp_bound : forall n sq (F G : MV n),
-  l1_norm (mv_gp n sq F G) <= l1_norm F * l1_norm G.
-Proof.
-Admitted.
-------------------------------------------------------------------------- *)
-
-
 (* ------------------------------------------------------------ *)
 (* sumQ and basic map lemmas (as in your codebase)                *)
 (* ------------------------------------------------------------ *)
@@ -198,19 +183,50 @@ Qed.
 (* Unit-metric assumptions + delta collapse                        *)
 (* ------------------------------------------------------------ *)
 
+Require Import Coq.Program.Equality.
+
+Lemma metric_factor_abs1_gen : forall n (sq : Vector.t Q n),
+  (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
+  forall (A B : Mask n),
+    Qabs (metric_factor sq A B) == 1.
+Proof.
+  induction n as [|p IH]; intros sq Hsq A B.
+  - dependent destruction sq. dependent destruction A. dependent destruction B.
+    unfold metric_factor. simpl. reflexivity.
+  - dependent destruction sq. dependent destruction A. dependent destruction B.
+    rewrite (@metric_factor_cons p h sq h0 h1 A B).
+    rewrite Qabs_Qmult.
+    rewrite (IH sq).
+    + destruct (h0 && h1) eqn:Hab.
+      * rewrite (Hsq Fin.F1). ring.
+      * rewrite Qabs_pos; [ring | discriminate].
+    + intros i. exact (Hsq (Fin.FS i)).
+Qed.
+
 Section UnitMetric.
 
 Context {n : nat}.
 Context (sq : Vector.t Q n).
 
-Hypothesis basis_mul_coeff_abs1 :
-  forall (A B : Mask n),
-    Qabs (basis_mul_coeff sq A B) == 1.
+Hypothesis sq_unit : forall (i : Fin.t n), Qabs (Vector.nth sq i) == 1.
 
-Hypothesis sumQ_all_masks_pick :
-  forall (f : Mask n -> Q) (U : Mask n),
-    sumQ (map (fun m => if mask_eq_dec m U then f m else 0%Q) (all_masks n))
-    == f U.
+
+Lemma metric_factor_abs1 : forall (A B : Mask n),
+  Qabs (metric_factor sq A B) == 1.
+Proof.
+  exact (metric_factor_abs1_gen sq sq_unit).
+Qed.
+
+Lemma basis_mul_coeff_abs1 : forall (A B : Mask n),
+  Qabs (basis_mul_coeff sq A B) == 1.
+Proof.
+  intros A B. unfold basis_mul_coeff.
+  rewrite Qabs_Qmult.
+  rewrite metric_factor_abs1.
+  assert (H : Qabs (sgnQ (swaps_parity A B)) == 1).
+  { destruct (swaps_parity A B); unfold sgnQ, Qabs; simpl; reflexivity. }
+  rewrite H. ring.
+Qed.
 
 Lemma sumU_xor_delta :
   forall (A B : Mask n),
@@ -484,7 +500,6 @@ Lemma l1_norm_nonneg : forall (F : MV n),
   0 <= l1_norm F.
 Proof.
   intro F. unfold l1_norm.
-  clear sumQ_all_masks_pick basis_mul_coeff_abs1.
   induction (all_masks n) as [|m tl IH]; simpl.
   - apply Qle_refl.
   - apply Qle_trans with (y := (0 + 0)%Q).
