@@ -483,3 +483,302 @@ Qed.
     - exact (XOR_has_grade_n_component Hn).
   Qed.
 *)
+
+(* ============================================================ *)
+(* XOR / Parity function                                         *)
+(* ============================================================ *)
+
+Definition sign_to_bool (s : Sign) : bool :=
+  match s with Pos => true | Neg => false end.
+
+Definition XOR_n_func {n} (c : Corner n) : bool :=
+  List.fold_right xorb false
+    (Vector.to_list (Vector.map sign_to_bool c)).
+
+Lemma XOR_n_func_cons :
+  forall n (h : Sign) (c : Corner n),
+    @XOR_n_func (S n) (Vector.cons _ h _ c)
+    = xorb (sign_to_bool h) (@XOR_n_func n c).
+Proof.
+  intros n h c.
+  unfold XOR_n_func.
+  cbn [Vector.map].
+  rewrite to_list_cons.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma bQ_negb : forall b : bool, bQ (negb b) == (1 - bQ b)%Q.
+Proof. destruct b; unfold bQ; simpl; ring. Qed.
+
+(* ============================================================ *)
+(* The inner Fourier sum at the full mask                        *)
+(* ============================================================ *)
+
+Definition xor_sum (n : nat) : Q :=
+  sumQ (List.map
+    (fun a : Corner n =>
+       (bQ (@XOR_n_func n a) * chi' (Vector.const true n) a)%Q)
+    (all_corners n)).
+
+Lemma embed_XOR_full_mask :
+  forall n,
+    embed (@XOR_n_func n) (Vector.const true n)
+    == ((1 / pow2 n) * xor_sum n)%Q.
+Proof.
+  intro n.
+  unfold embed, xor_sum, Pi.
+  unfold chi'.              (* <— this is the key line *)
+  rewrite <- sumQ_map_scale_l.
+  apply sumQ_map_ext; intros a Ha.
+  ring.
+Qed.
+
+(* ============================================================ *)
+(* Sum of chi(full mask, ·) over all corners = 0  (dim >= 1)    *)
+(* ============================================================ *)
+
+Lemma chi_full_sum_zero :
+  forall n,
+    sumQ (List.map
+      (fun a : Corner (S n) =>
+         chi' (Vector.const true (S n)) a)
+      (all_corners (S n)))
+    == 0.
+Proof.
+  intro n.
+  simpl (all_corners (S n)).
+  rewrite List.map_app.
+  rewrite !List.map_map.
+  rewrite sumQ_app.
+  (* Pos half: sQ Pos = 1, so chi(full, Pos::a) = 1 * chi(full_tail, a) *)
+  assert (HPos :
+    sumQ (List.map
+      (fun x => chi' (Vector.const true (S n)) (Pos :: x))
+      (all_corners n))
+    ==
+    sumQ (List.map
+      (fun a => chi' (Vector.const true n) a)
+      (all_corners n))).
+  { apply sumQ_map_ext; intros a Ha.
+    rewrite (@chi_true_cons n (Vector.const true n) a Pos).
+    simpl (sQ Pos). ring. }
+  (* Neg half: sQ Neg = -1, so chi(full, Neg::a) = -chi(full_tail, a) *)
+  assert (HNeg :
+    sumQ (List.map
+      (fun x => chi' (Vector.const true (S n)) (Neg :: x))
+      (all_corners n))
+    ==
+    ((-1) * sumQ (List.map
+      (fun a => chi' (Vector.const true n) a)
+      (all_corners n)))%Q).
+  { rewrite <- sumQ_map_scale_l.
+    apply sumQ_map_ext; intros a Ha.
+    rewrite (@chi_true_cons n (Vector.const true n) a Neg).
+    simpl (sQ Neg). ring. }
+  rewrite HPos, HNeg. ring.
+Qed.
+
+(* ============================================================ *)
+(* Base case: xor_sum 1 = 1                                      *)
+(* ============================================================ *)
+
+Lemma xor_sum_base : xor_sum 1 == 1.
+Proof.
+  unfold xor_sum, XOR_n_func, sign_to_bool, bQ.
+  simpl.
+  unfold chi', chi, sQ.
+  ring.
+Qed.
+
+(* ============================================================ *)
+(* Recurrence: xor_sum (S n) = -2 * xor_sum n   (for n >= 1)   *)
+(* ============================================================ *)
+
+From Coq Require Import FunctionalExtensionality.
+
+Lemma sumQ_map_sub :
+  forall (A : Type) (f g : A -> Q) (l : list A),
+    sumQ (List.map (fun x => (f x - g x)%Q) l) ==
+    (sumQ (List.map f l) - sumQ (List.map g l))%Q.
+Proof.
+  intros A f g l.
+
+  (* (f - g) == (f + (-g)) pointwise under sumQ(map ...) *)
+  transitivity (sumQ (List.map (fun x => (f x + (- g x))%Q) l)).
+  - apply sumQ_map_ext; intros x Hx; ring.
+  - (* use sumQ_map_add *)
+    rewrite (sumQ_map_add (A:=A) f (fun x => (- g x)%Q) l).
+
+    (* rewrite the second summand: sumQ(map (fun x => -g x)) == (-1) * sumQ(map g) *)
+    assert (Hneg :
+      sumQ (List.map (fun x => (- g x)%Q) l) ==
+      ((-1) * sumQ (List.map g l))%Q).
+    {
+      transitivity (sumQ (List.map (fun x => ((-1) * g x)%Q) l)).
+      - apply sumQ_map_ext; intros x Hx; ring.
+      - rewrite (sumQ_map_scale_l (A:=A) (-1)%Q g l).
+        reflexivity.
+    }
+    rewrite Hneg.
+
+    (* now: a + (-1)*b == a - b *)
+    ring.
+Qed.
+
+Lemma xor_sum_step :
+  forall n, (n > 0)%nat ->
+    xor_sum (S n) == ((-2) * xor_sum n)%Q.
+Proof.
+  intros n Hn.
+  unfold xor_sum at 1.
+  simpl (all_corners (S n)).
+  rewrite List.map_app.
+  rewrite !List.map_map.
+  rewrite sumQ_app.
+
+  (* --- Pos branch --- *)
+  assert (HPos :
+    sumQ (List.map
+      (fun a =>
+        (bQ (@XOR_n_func (S n) (Pos :: a)) *
+         chi' (Vector.const true (S n)) (Pos :: a))%Q)
+      (all_corners n))
+    ==
+    (sumQ (List.map
+      (fun a => chi' (Vector.const true n) a)
+      (all_corners n))
+     - xor_sum n)%Q).
+  {
+    unfold xor_sum.
+    (* fold RHS difference into one map using sumQ_map_sub *)      
+    rewrite <- (@sumQ_map_sub (Corner n)
+      (fun a => chi' (Vector.const true n) a)
+      (fun a => (bQ (@XOR_n_func n a) * chi' (Vector.const true n) a)%Q)
+      (all_corners n)).
+
+
+    apply sumQ_map_ext; intros a Ha.
+    rewrite XOR_n_func_cons. simpl (sign_to_bool Pos).
+    rewrite Bool.xorb_true_l.
+    rewrite (@chi_true_cons n (Vector.const true n) a Pos).
+    simpl (sQ Pos).
+    rewrite bQ_negb.
+    ring.
+  }
+
+  (* --- Neg branch --- *)
+  assert (HNeg :
+    sumQ (List.map
+      (fun a =>
+        (bQ (@XOR_n_func (S n) (Neg :: a)) *
+         chi' (Vector.const true (S n)) (Neg :: a))%Q)
+      (all_corners n))
+    ==
+    ((-1) * xor_sum n)%Q).
+  {
+    unfold xor_sum.
+    rewrite <- sumQ_map_scale_l.
+    apply sumQ_map_ext; intros a Ha.
+    rewrite XOR_n_func_cons. simpl (sign_to_bool Neg).
+    rewrite Bool.xorb_false_l.
+    rewrite (@chi_true_cons n (Vector.const true n) a Neg).
+    simpl (sQ Neg).
+    ring.
+  }
+
+  rewrite HPos, HNeg.
+
+  (* chi full sum is 0 for dimension >= 1 *)
+  destruct n as [|n']; [lia|].
+  rewrite (chi_full_sum_zero n').
+  ring.
+Qed.
+
+(* ============================================================ *)
+(* Rational nonzero helpers                                      *)
+(* ============================================================ *)
+
+Lemma Qmul_nonzero_l :
+  forall p q : Q, ~(p == 0) -> ~(q == 0) -> ~(p * q == 0).
+Proof.
+  intros p q Hp Hq Hpq.
+  apply Qmult_integral in Hpq.
+  destruct Hpq; contradiction.
+Qed.
+
+Lemma Qneg2_nonzero : ~((-2)%Q == 0).
+Proof. unfold Qeq; simpl; discriminate. Qed.
+
+Lemma Qinv_nonzero : forall q : Q, ~(q == 0) -> ~(/q == 0).
+Proof.
+  intros q Hq Hinv.
+  assert (H1 : q * /q == 1) by (apply Qmult_inv_r; exact Hq).
+  assert (H2 : q * /q == 0) by (rewrite Hinv; ring).
+  assert (H3 : (1 == 0)%Q) by (eapply Qeq_trans; [symmetry; exact H1 | exact H2]).
+  unfold Qeq in H3; simpl in H3; discriminate H3.
+Qed.
+
+Lemma Qdiv1_nonzero : forall q : Q, ~(q == 0) -> ~((1 / q) == 0).
+Proof.
+  intros q Hq. unfold Qdiv.
+  apply Qmul_nonzero_l.
+  - unfold Qeq; simpl; discriminate.
+  - exact (Qinv_nonzero Hq).
+Qed.
+
+(* ============================================================ *)
+(* xor_sum n is nonzero for n >= 1                               *)
+(* ============================================================ *)
+
+Lemma xor_sum_nonzero :
+  forall n, (n > 0)%nat -> ~(xor_sum n == 0).
+Proof.
+  intro n.
+  induction n as [|n IHn]; intro Hn.
+  - lia.
+  - destruct n as [|n'].
+    + (* n = 0, proving xor_sum 1 ≠ 0 *)
+      rewrite xor_sum_base.
+      unfold Qeq; simpl; discriminate.
+    + (* n = S n', proving xor_sum (S (S n')) ≠ 0 *)
+      rewrite (@xor_sum_step (S n') ltac:(lia)).
+      apply Qmul_nonzero_l.
+      * exact Qneg2_nonzero.
+      * apply IHn. lia.
+Qed.
+
+(* ============================================================ *)
+(* XOR has nonzero grade-n component (pseudoscalar coefficient)  *)
+(* ============================================================ *)
+
+Lemma XOR_has_grade_n_component :
+  forall n,
+    (n > 0)%nat ->
+    ~(embed (@XOR_n_func n) (Vector.const true n) == 0).
+Proof.
+  intros n Hn Hembed.
+  rewrite embed_XOR_full_mask in Hembed.
+  apply Qmult_integral in Hembed.
+  destruct Hembed as [Hdiv | Hxor].
+  - exact (Qdiv1_nonzero (pow2_nonzero n) Hdiv).
+  - exact (xor_sum_nonzero Hn Hxor).
+Qed.
+
+(* ============================================================ *)
+(* Parity excursion lower bound                                  *)
+(* ============================================================ *)
+
+Theorem parity_excursion :
+  forall n sq (e : GA_expr n),
+    (n > 0)%nat ->
+    eval_expr sq e = embed (@XOR_n_func n) ->
+    (max_grade_during sq e >= n)%nat.
+Proof.
+  intros n sq e Hn Heval.
+  apply (excursion_lower_bound sq e Heval).
+  exists (Vector.const true n).
+  split.
+  - rewrite grade_full_mask. lia.
+  - exact (XOR_has_grade_n_component Hn).
+Qed.
