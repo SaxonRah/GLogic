@@ -19,9 +19,8 @@
     - sumQ_all_masks_pick  : you already proved this; import it and delete the Hypothesis
 *)
 
-Require Import Cln_Basis.
-Require Import Cln_Multivector.
-Require Import Cln_GeometricProduct.
+Require Import Cln_Full.
+Require Import Cln_Grade.
 
 From Coq Require Import List Bool Arith Lia QArith.
 From Coq Require Import QArith.Qabs.
@@ -30,6 +29,21 @@ Import ListNotations.
 
 Open Scope Q_scope.
 Set Implicit Arguments.
+
+(* -------------------------------------------------------------------------
+Definition Qabs (q:Q) : Q := if Qle_bool 0 q then q else (-q).
+
+Lemma l1_add_bound : forall n (F G : MV n),
+  l1_norm (mv_add F G) <= l1_norm F + l1_norm G.
+Proof.
+Admitted.
+
+Lemma l1_gp_bound : forall n sq (F G : MV n),
+  l1_norm (mv_gp n sq F G) <= l1_norm F * l1_norm G.
+Proof.
+Admitted.
+------------------------------------------------------------------------- *)
+
 
 (* ------------------------------------------------------------ *)
 (* sumQ and basic map lemmas (as in your codebase)                *)
