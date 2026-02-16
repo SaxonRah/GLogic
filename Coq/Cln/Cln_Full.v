@@ -3823,41 +3823,60 @@ Lemma mv_gp_assoc_RHS_quad_kernel :
       (all_masks n)))
     (all_masks n)).
 Proof.
-Admitted.
-(*
   intros n sq F G H U.
   unfold mv_gp.
+  
   apply (sumQ_map_ext (A:=Mask n)); intros A _.
   apply (sumQ_map_ext (A:=Mask n)); intros Y _.
-  cbn [basis_mul_mask].
+  
   destruct (mask_eq_dec (mask_xor A Y) U) as [Hhit|Hmiss].
-  - subst U.
-    destruct (mask_eq_dec (mask_xor A Y) (mask_xor A Y)) as [_|Hbad];
-      [|exfalso; apply Hbad; reflexivity].
-    cbn. cbn [basis_mul_mask].
+  - (* mask_xor A Y = U *)
+    subst U.
+    
+    (* Resolve the outer if on LHS *)
+    destruct (mask_eq_dec (basis_mul_mask A Y) (mask_xor A Y)) as [_|Hbad].
+    2: { exfalso. apply Hbad. reflexivity. }
+    
+    set (innerSum := sumQ (List.map (fun B : Mask n =>
+           sumQ (List.map (fun C : Mask n =>
+             if mask_eq_dec (basis_mul_mask B C) Y
+             then (G B * H C * basis_mul_coeff sq B C)%Q
+             else 0%Q) (all_masks n))) (all_masks n))).
+    
     set (k := (F A * basis_mul_coeff sq A Y)%Q).
-    rewrite <- (@sumQ_map_scale_r (Mask n) k
-      (fun B =>
-         sumQ (List.map (fun C =>
-           if mask_eq_dec (mask_xor B C) Y
-           then (G B * H C * basis_mul_coeff sq B C)%Q
-           else 0%Q) (all_masks n)))
-      (all_masks n)).
+    
+    (* LHS is (F A * innerSum * basis_mul_coeff sq A Y) = innerSum * k *)
+    eapply Qeq_trans.
+    { apply Qeq_trans with (y := (innerSum * k)%Q).
+      - unfold k. ring.
+      - apply Qeq_refl. }
+    
+    subst innerSum.
+    rewrite <- (@sumQ_map_scale_r (Mask n) k _ (all_masks n)).
+    
     apply (sumQ_map_ext (A:=Mask n)); intros B _.
-    rewrite <- (@sumQ_map_scale_r (Mask n) k
-      (fun C =>
-         if mask_eq_dec (mask_xor B C) Y
-         then (G B * H C * basis_mul_coeff sq B C)%Q
-         else 0%Q)
-      (all_masks n)).
+    rewrite <- (@sumQ_map_scale_r (Mask n) k _ (all_masks n)).
+    
     apply (sumQ_map_ext (A:=Mask n)); intros C _.
+    
     unfold K_RHS.
-    destruct (mask_eq_dec (mask_xor A Y) (mask_xor A Y)) as [_|Hbad];
-      [|exfalso; apply Hbad; reflexivity]. cbn.
-    destruct (mask_eq_dec (mask_xor B C) Y); unfold k; ring.
-  - eapply Qeq_trans.
-    2: {
-      apply Qeq_sym.
+    destruct (mask_eq_dec (mask_xor A Y) (mask_xor A Y)) as [_|Hbad2];
+      [|exfalso; apply Hbad2; reflexivity].
+    cbn.
+    
+    destruct (mask_eq_dec (basis_mul_mask B C) Y) as [HBC|HBC];
+    destruct (mask_eq_dec (mask_xor B C) Y) as [HBC'|HBC'].
+    + unfold k; ring.
+    + exfalso. apply HBC'. exact HBC.
+    + exfalso. apply HBC. exact HBC'.
+    + ring.
+    
+  - (* mask_xor A Y ≠ U *)
+    destruct (mask_eq_dec (basis_mul_mask A Y) U) as [Heq|_].
+    + exfalso. apply Hmiss. exact Heq.
+    + cbn.
+      
+      symmetry.
       eapply Qeq_trans.
       { apply (@sumQ_map_ext (Mask n)
           (fun B => sumQ (List.map (fun C => K_RHS sq F G H U A Y B C) (all_masks n)))
@@ -3871,15 +3890,10 @@ Admitted.
             (all_masks n)).
           intros C _.
           unfold K_RHS.
-          destruct (mask_eq_dec (mask_xor A Y) U) as [Heq|_];
-            [contradiction | apply Qeq_refl]. }
+          destruct (mask_eq_dec (mask_xor A Y) U); [contradiction | apply Qeq_refl]. }
         apply sumQ_map_const0. }
-      apply sumQ_map_const0. }
-    destruct (mask_eq_dec (basis_mul_mask A Y) U) as [Heq|_].
-    + exfalso; apply Hmiss; cbn [basis_mul_mask] in Heq; exact Heq.
-    + ring.
+      apply sumQ_map_const0.
 Qed.
-*)
 
 Lemma K_RHS_Y_collapse :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U A B C : Mask n),
@@ -4096,27 +4110,51 @@ Lemma mv_gp_assoc_LHS_triple :
             * basis_mul_coeff sq (mask_xor A B) C)%Q
       else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
 Proof.
-Admitted.
-
-
-(* ---------------------------------------------------------------------- *)
-
-Lemma mv_gp_assoc_LHS_triple_shape :
-  forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
-    mv_gp sq (mv_gp sq F G) H U
-    ==
-    sumQ (List.map (fun A =>
-    sumQ (List.map (fun B =>
-    sumQ (List.map (fun C =>
-      if mask_eq_dec (mask_xor (mask_xor A B) C) U
-      then (F A * G B * H C
-            * basis_mul_coeff sq A B
-            * basis_mul_coeff sq (mask_xor A B) C)%Q
-      else 0%Q) (all_masks n))) (all_masks n))) (all_masks n)).
-Proof.
-Admitted.
-
-(* ---------------------------------------------------------------------- *)
+  intros n sq F G H U.
+  eapply Qeq_trans.
+  { apply mv_gp_assoc_LHS_quad_kernel. }
+  
+  (* Current order: X, C, A, B. Target: A, B, C with X collapsed. *)
+  
+  (* Step 1: Inside each X, swap C and A. Result: X, A, C, B *)
+  eapply Qeq_trans.
+  { apply (sumQ_map_ext (A:=Mask n)); intros X _.
+    exact (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n)
+      (fun C A => sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))). }
+  
+  (* Step 2: Swap outer X and A. Result: A, X, C, B *)
+  eapply Qeq_trans.
+  { exact (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n)
+      (fun X A => sumQ (List.map (fun C =>
+        sumQ (List.map (fun B => K_LHS sq F G H U X C A B) (all_masks n)))
+      (all_masks n)))). }
+  
+  (* Step 3: Inside each A, X, swap C and B. Result: A, X, B, C *)
+  eapply Qeq_trans.
+  { apply (sumQ_map_ext (A:=Mask n)); intros A _.
+    apply (sumQ_map_ext (A:=Mask n)); intros X _.
+    exact (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n)
+      (fun C B => K_LHS sq F G H U X C A B)). }
+  
+  (* Step 4: Inside each A, swap X and B. Result: A, B, X, C *)
+  eapply Qeq_trans.
+  { apply (sumQ_map_ext (A:=Mask n)); intros A _.
+    exact (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n)
+      (fun X B => sumQ (List.map (fun C => K_LHS sq F G H U X C A B) (all_masks n)))). }
+  
+  (* Step 5: Inside each A, B, swap X and C. Result: A, B, C, X *)
+  eapply Qeq_trans.
+  { apply (sumQ_map_ext (A:=Mask n)); intros A _.
+    apply (sumQ_map_ext (A:=Mask n)); intros B _.
+    exact (@sumQ_fubini (Mask n) (Mask n) (all_masks n) (all_masks n)
+      (fun X C => K_LHS sq F G H U X C A B)). }
+  
+  (* Step 6: Collapse the X sum using K_LHS_X_collapse *)
+  apply (sumQ_map_ext (A:=Mask n)); intros A _.
+  apply (sumQ_map_ext (A:=Mask n)); intros B _.
+  apply (sumQ_map_ext (A:=Mask n)); intros C _.
+  apply K_LHS_X_collapse.
+Qed.
 
 Lemma mv_gp_assoc :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
@@ -4126,7 +4164,7 @@ Lemma mv_gp_assoc :
 Proof.
   intros n sq F G H U.
   eapply Qeq_trans.
-  - apply mv_gp_assoc_LHS_triple_shape.
+  - apply mv_gp_assoc_LHS_triple.
   - eapply Qeq_trans.
     2: { symmetry. apply mv_gp_assoc_RHS_triple. }
     apply (sumQ_map_ext (A:=Mask n)); intros A HA.
