@@ -1402,8 +1402,6 @@ Proof.
   induction n; intro B.
   - dependent destruction B. reflexivity.
   - dependent destruction B.
-    simpl [mask_xor mask_empty].
-    (* mask_empty = false :: ... ; xorb false h = h *)
     simpl. f_equal. apply IHn.
 Qed.
 
@@ -1513,7 +1511,7 @@ Proof.
   - dependent destruction U.
     rename h into Uh.
     rename U into Ut.
-    simpl [all_masks].
+    cbn [all_masks].
 
     rewrite map_app.
     rewrite sumQ_app.
@@ -1769,7 +1767,8 @@ Proof.
   induction n as [|n IH]; intro A.
   - dependent destruction A. reflexivity.
   - dependent destruction A.
-    simpl [mask_xor mask_empty]. simpl.
+    cbn [mask_xor mask_empty].
+    simpl.
     f_equal.
     + (* head bit *)
       destruct h; reflexivity.   (* xorb true false = true, xorb false false = false *)
