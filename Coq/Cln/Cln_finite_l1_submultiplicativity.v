@@ -358,9 +358,7 @@ Proof.
               apply Qeq_refl.
             -- (* else: both sides are 0 *)
               apply Qeq_refl.
-          * (* continue from the simplified bigsum *)
-            (* this is where your Fubini steps resume *)
-            (* Fubini: swap Σ_U Σ_A *)
+          *
             rewrite (sumQ_fubini (A:=Mask n) (B:=Mask n)
               MS MS
               (fun U A =>
@@ -454,4 +452,137 @@ Proof.
               apply Qeq_refl.
 Qed.
 
+Lemma l1_add_bound : forall n (F G : MV n),
+  l1_norm (mv_add F G) <= l1_norm F + l1_norm G.
+Proof.
+  intros m F G.
+  unfold l1_norm, mv_add.
+  rewrite <- sumQ_map_add.
+  apply sumQ_map_le.
+  intros U _.
+  apply Qabs_triangle.
+Qed.
+
+Lemma l1_gp_bound : forall (F G : MV n),
+  l1_norm (mv_gp sq F G) <= l1_norm F * l1_norm G.
+Proof.
+  intros; apply l1_gp_submultiplicative.
+Qed.
+
+From Coq Require Import Setoid Morphisms Ring.
+
+(* Static ℓ₁ bound from expression structure *)
+Fixpoint l1_bound {n} (e : GA_expr n) : Q :=
+  match e with
+  | Basis _   => 1
+  | Scalar c  => Qabs c
+  | Cln_Grade.Add e1 e2 => l1_bound e1 + l1_bound e2
+  | Cln_Grade.Mul e1 e2 => l1_bound e1 * l1_bound e2
+  end.
+
+Lemma l1_norm_nonneg : forall (F : MV n),
+  0 <= l1_norm F.
+Proof.
+  intro F. unfold l1_norm.
+  clear sumQ_all_masks_pick basis_mul_coeff_abs1.
+  induction (all_masks n) as [|m tl IH]; simpl.
+  - apply Qle_refl.
+  - apply Qle_trans with (y := (0 + 0)%Q).
+    + ring_simplify. apply Qle_refl.
+    + apply Qplus_le_compat.
+      * apply Qabs_nonneg.
+      * exact IH.
+Qed.
+
+Lemma l1_norm_basis : forall (i : Fin.t n),
+  l1_norm (basis (mask_single i)) == 1.
+Proof.
+  intro i. unfold l1_norm, basis.
+  eapply Qeq_trans.
+  - apply (sumQ_map_ext _
+      (fun m => if mask_eq_dec m (mask_single i) then 1 else 0)).
+    intros m Hm.
+    destruct (mask_eq_dec m (mask_single i)) as [Heq|Hneq].
+    + rewrite Qabs_pos; [reflexivity | discriminate].
+    + rewrite Qabs_pos; [reflexivity | apply Qle_refl].
+  - apply sumQ_all_masks_pick.
+Qed.
+
+Lemma l1_norm_scale_one : forall (c : Q),
+  l1_norm (mv_scale c (@mv_one n)) == Qabs c.
+Proof.
+  intro c. unfold l1_norm, mv_scale, mv_one, basis.
+  eapply Qeq_trans.
+  - apply (sumQ_map_ext _
+      (fun m => if mask_eq_dec m (mask_empty (n:=n)) then Qabs c else 0)).
+    intros m Hm.
+    destruct (mask_eq_dec m (mask_empty (n:=n))) as [Heq|Hneq].
+    + rewrite Qabs_Qmult.
+      assert (H1 : Qabs 1 == 1) by (rewrite Qabs_pos; [reflexivity | discriminate]).
+      rewrite H1. ring.
+      
+    + rewrite Qmult_0_r. rewrite Qabs_pos; [reflexivity | apply Qle_refl].
+  - apply sumQ_all_masks_pick.
+Qed.
+
+Theorem l1_norm_eval_le :
+  forall (e : GA_expr n),
+    l1_norm (eval_expr sq e) <= l1_bound e.
+Proof.
+  intros e.
+  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
+  - (* Basis *)
+    apply Qle_of_Qeq. apply l1_norm_basis.
+  - (* Scalar *)
+    apply Qle_of_Qeq. apply l1_norm_scale_one.
+  - (* Add *)
+    eapply Qle_trans.
+    + apply l1_add_bound.
+    + apply Qplus_le_compat; assumption.
+  - (* Mul *)
+    eapply Qle_trans.
+    + apply l1_gp_bound.
+    + apply Qmult_le_compat_nonneg; [split|split]; try assumption.
+      * apply l1_norm_nonneg.
+      * apply l1_norm_nonneg.
+Qed.
+
+Lemma Qmult_le_compat_nonneg : forall a b c d : Q,
+  0 <= a -> 0 <= c -> a <= b -> c <= d -> a * c <= b * d.
+Proof.
+  intros a b c d Ha Hc Hab Hcd.
+  apply Qle_trans with (y := (b * c)%Q).
+  - destruct (Qle_lt_or_eq _ _ Hc) as [Hc'|Hc'].
+    + apply Qmult_le_r; assumption.
+    + setoid_rewrite <- Hc'. ring_simplify. apply Qle_refl.
+  - destruct (Qle_lt_or_eq _ _ (Qle_trans _ _ _ Ha Hab)) as [Hb'|Hb'].
+    + apply Qmult_le_l; assumption.
+    + setoid_rewrite <- Hb'. ring_simplify. apply Qle_refl.
+Qed.
+
+Theorem l1_norm_eval_le__ :
+  forall (e : GA_expr n),
+    l1_norm (eval_expr sq e) <= l1_bound e.
+Proof.
+  intros e.
+  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
+  - (* Basis *)
+    apply Qle_of_Qeq. apply l1_norm_basis.
+  - (* Scalar *)
+    apply Qle_of_Qeq. apply l1_norm_scale_one.
+  - (* Add *)
+    eapply Qle_trans.
+    + apply l1_add_bound.
+    + apply Qplus_le_compat; assumption.
+  - (* Mul *)
+    eapply Qle_trans.
+    + apply l1_gp_bound.
+    + apply Qmult_le_compat_nonneg.
+      * apply l1_norm_nonneg.
+      * apply l1_norm_nonneg.
+      * exact IH1.
+      * exact IH2.
+Qed.
+
 End UnitMetric.
+
