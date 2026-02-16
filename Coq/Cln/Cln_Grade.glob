@@ -1,0 +1,930 @@
+DIGEST 2ddd51059f4aec686be73c6fb7b6ccec
+FCln.Cln_Grade
+R227:234 Cln.Cln_Full <> <> lib
+R262:265 Coq.Lists.List <> <> lib
+R267:270 Coq.Bool.Bool <> <> lib
+R272:276 Coq.Arith.Arith <> <> lib
+R278:283 Coq.QArith.QArith <> <> lib
+R285:298 Coq.Vectors.Vector <> <> lib
+R325:330 Coq.Setoids.Setoid <> <> lib
+R332:340 Coq.Classes.Morphisms <> <> lib
+R342:344 Coq.micromega.Lia <> <> lib
+R362:381 Coq.Program.Equality <> <> lib
+R408:418 Coq.Arith.Compare_dec <> <> lib
+R429:441 Coq.Lists.List ListNotations <> mod
+R451:465 Coq.Vectors.Vector VectorNotations <> mod
+R493:504 Coq.QArith.Qring <> <> lib
+def 767:771 <> grade
+binder 774:774 <> n:1
+R782:785 Cln.Cln_Full <> Mask def
+R787:787 Cln.Cln_Grade <> n:1 var
+binder 778:778 <> m:2
+R792:794 Coq.Init.Datatypes <> nat ind
+R801:814 Coq.Lists.List <> count_occ def
+R849:852 Coq.Init.Datatypes <> true constr
+R831:844 Coq.Vectors.Vector <> to_list def
+R846:846 Cln.Cln_Grade <> m:2 var
+R816:828 Coq.Bool.Bool <> bool_dec thm
+prf 862:876 <> grade_cons_true
+binder 887:887 <> n:3
+R894:897 Cln.Cln_Full <> Mask def
+R899:899 Cln.Cln_Grade <> n:3 var
+binder 890:890 <> m:4
+R935:937 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R905:909 Cln.Cln_Grade <> grade def
+R912:922 Coq.Vectors.Vector <> cons constr
+R926:929 Coq.Init.Datatypes <> true constr
+R933:933 Cln.Cln_Grade <> m:4 var
+R938:938 Coq.Init.Datatypes <> S constr
+R941:945 Cln.Cln_Grade <> grade def
+R947:947 Cln.Cln_Grade <> m:4 var
+R981:985 Cln.Cln_Grade <> grade def
+R996:1007 Coq.Vectors.Vector <> to_list_cons thm
+R996:1007 Coq.Vectors.Vector <> to_list_cons thm
+R996:1007 Coq.Vectors.Vector <> to_list_cons thm
+R1029:1041 Coq.Bool.Bool <> bool_dec thm
+R1043:1046 Coq.Init.Datatypes <> true constr
+R1048:1051 Coq.Init.Datatypes <> true constr
+R1029:1041 Coq.Bool.Bool <> bool_dec thm
+R1043:1046 Coq.Init.Datatypes <> true constr
+R1048:1051 Coq.Init.Datatypes <> true constr
+prf 1128:1143 <> grade_cons_false
+binder 1154:1154 <> n:5
+R1161:1164 Cln.Cln_Full <> Mask def
+R1166:1166 Cln.Cln_Grade <> n:5 var
+binder 1157:1157 <> m:6
+R1203:1205 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1172:1176 Cln.Cln_Grade <> grade def
+R1179:1189 Coq.Vectors.Vector <> cons constr
+R1193:1197 Coq.Init.Datatypes <> false constr
+R1201:1201 Cln.Cln_Grade <> m:6 var
+R1206:1210 Cln.Cln_Grade <> grade def
+R1212:1212 Cln.Cln_Grade <> m:6 var
+R1245:1249 Cln.Cln_Grade <> grade def
+R1260:1271 Coq.Vectors.Vector <> to_list_cons thm
+R1260:1271 Coq.Vectors.Vector <> to_list_cons thm
+R1260:1271 Coq.Vectors.Vector <> to_list_cons thm
+R1293:1305 Coq.Bool.Bool <> bool_dec thm
+R1307:1311 Coq.Init.Datatypes <> false constr
+R1313:1316 Coq.Init.Datatypes <> true constr
+R1293:1305 Coq.Bool.Bool <> bool_dec thm
+R1307:1311 Coq.Init.Datatypes <> false constr
+R1313:1316 Coq.Init.Datatypes <> true constr
+prf 1579:1594 <> grade_empty_mask
+binder 1605:1605 <> n:7
+R1635:1637 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1610:1614 Cln.Cln_Grade <> grade def
+R1617:1626 Cln.Cln_Full <> mask_empty def
+R1632:1632 Cln.Cln_Grade <> n:7 var
+R1706:1715 Cln.Cln_Full <> mask_empty def
+R1735:1746 Coq.Vectors.Vector <> const def
+R1755:1755 Coq.Init.Datatypes <> S constr
+R1748:1752 Coq.Init.Datatypes <> false constr
+R1773:1783 Coq.Vectors.Vector <> cons constr
+R1787:1791 Coq.Init.Datatypes <> false constr
+R1796:1807 Coq.Vectors.Vector <> const def
+R1809:1813 Coq.Init.Datatypes <> false constr
+R1735:1746 Coq.Vectors.Vector <> const def
+R1755:1755 Coq.Init.Datatypes <> S constr
+R1748:1752 Coq.Init.Datatypes <> false constr
+R1773:1783 Coq.Vectors.Vector <> cons constr
+R1787:1791 Coq.Init.Datatypes <> false constr
+R1796:1807 Coq.Vectors.Vector <> const def
+R1809:1813 Coq.Init.Datatypes <> false constr
+R1832:1847 Cln.Cln_Grade <> grade_cons_false thm
+R1832:1847 Cln.Cln_Grade <> grade_cons_false thm
+R1832:1847 Cln.Cln_Grade <> grade_cons_false thm
+prf 1876:1890 <> grade_full_mask
+binder 1901:1901 <> n:8
+R1933:1935 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1906:1910 Cln.Cln_Grade <> grade def
+R1913:1924 Coq.Vectors.Vector <> const def
+R1931:1931 Cln.Cln_Grade <> n:8 var
+R1926:1929 Coq.Init.Datatypes <> true constr
+R1936:1936 Cln.Cln_Grade <> n:8 var
+R2001:2012 Coq.Vectors.Vector <> const def
+R2020:2020 Coq.Init.Datatypes <> S constr
+R2014:2017 Coq.Init.Datatypes <> true constr
+R2038:2048 Coq.Vectors.Vector <> cons constr
+R2052:2055 Coq.Init.Datatypes <> true constr
+R2060:2071 Coq.Vectors.Vector <> const def
+R2073:2076 Coq.Init.Datatypes <> true constr
+R2001:2012 Coq.Vectors.Vector <> const def
+R2020:2020 Coq.Init.Datatypes <> S constr
+R2014:2017 Coq.Init.Datatypes <> true constr
+R2038:2048 Coq.Vectors.Vector <> cons constr
+R2052:2055 Coq.Init.Datatypes <> true constr
+R2060:2071 Coq.Vectors.Vector <> const def
+R2073:2076 Coq.Init.Datatypes <> true constr
+R2095:2109 Cln.Cln_Grade <> grade_cons_true thm
+R2095:2109 Cln.Cln_Grade <> grade_cons_true thm
+R2095:2109 Cln.Cln_Grade <> grade_cons_true thm
+prf 2151:2162 <> grade_single
+binder 2173:2173 <> n:9
+R2180:2184 Coq.Vectors.Fin <> t ind
+R2186:2186 Cln.Cln_Grade <> n:9 var
+binder 2176:2176 <> i:10
+R2213:2215 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2192:2196 Cln.Cln_Grade <> grade def
+R2199:2209 Cln.Cln_Full <> mask_single def
+R2211:2211 Cln.Cln_Grade <> i:10 var
+R2267:2277 Cln.Cln_Full <> mask_single def
+R2293:2307 Cln.Cln_Grade <> grade_cons_true thm
+R2293:2307 Cln.Cln_Grade <> grade_cons_true thm
+R2293:2307 Cln.Cln_Grade <> grade_cons_true thm
+R2318:2333 Cln.Cln_Grade <> grade_empty_mask thm
+R2318:2333 Cln.Cln_Grade <> grade_empty_mask thm
+R2318:2333 Cln.Cln_Grade <> grade_empty_mask thm
+R2358:2368 Cln.Cln_Full <> mask_single def
+R2384:2399 Cln.Cln_Grade <> grade_cons_false thm
+R2384:2399 Cln.Cln_Grade <> grade_cons_false thm
+R2384:2399 Cln.Cln_Grade <> grade_cons_false thm
+prf 2627:2636 <> grade_le_n
+binder 2647:2647 <> n:11
+R2654:2657 Cln.Cln_Full <> Mask def
+R2659:2659 Cln.Cln_Grade <> n:11 var
+binder 2650:2650 <> m:12
+R2671:2674 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2664:2668 Cln.Cln_Grade <> grade def
+R2670:2670 Cln.Cln_Grade <> m:12 var
+R2675:2675 Cln.Cln_Grade <> n:11 var
+R2844:2858 Cln.Cln_Grade <> grade_cons_true thm
+R2844:2858 Cln.Cln_Grade <> grade_cons_true thm
+R2844:2858 Cln.Cln_Grade <> grade_cons_true thm
+R2899:2914 Cln.Cln_Grade <> grade_cons_false thm
+R2899:2914 Cln.Cln_Grade <> grade_cons_false thm
+R2899:2914 Cln.Cln_Grade <> grade_cons_false thm
+prf 2953:2964 <> grade_xor_le
+binder 2975:2975 <> n:13
+R2984:2987 Cln.Cln_Full <> Mask def
+R2989:2989 Cln.Cln_Grade <> n:13 var
+binder 2978:2978 <> A:14
+binder 2980:2980 <> B:15
+R3016:3019 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2996:3000 Cln.Cln_Grade <> grade def
+R3003:3010 Cln.Cln_Full <> mask_xor def
+R3014:3014 Cln.Cln_Grade <> B:15 var
+R3012:3012 Cln.Cln_Grade <> A:14 var
+R3027:3029 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R3020:3024 Cln.Cln_Grade <> grade def
+R3026:3026 Cln.Cln_Grade <> A:14 var
+R3030:3034 Cln.Cln_Grade <> grade def
+R3036:3036 Cln.Cln_Grade <> B:15 var
+R3221:3233 Cln.Cln_Full <> mask_xor_cons thm
+R3221:3233 Cln.Cln_Full <> mask_xor_cons thm
+R3221:3233 Cln.Cln_Full <> mask_xor_cons thm
+R3263:3266 Coq.Init.Datatypes <> xorb def
+R3263:3266 Coq.Init.Datatypes <> xorb def
+R3263:3266 Coq.Init.Datatypes <> xorb def
+R3263:3266 Coq.Init.Datatypes <> xorb def
+R3263:3266 Coq.Init.Datatypes <> xorb def
+R3288:3303 Cln.Cln_Grade <> grade_cons_false thm
+R3306:3320 Cln.Cln_Grade <> grade_cons_true thm
+R3323:3337 Cln.Cln_Grade <> grade_cons_true thm
+R3288:3303 Cln.Cln_Grade <> grade_cons_false thm
+R3288:3303 Cln.Cln_Grade <> grade_cons_false thm
+R3306:3320 Cln.Cln_Grade <> grade_cons_true thm
+R3306:3320 Cln.Cln_Grade <> grade_cons_true thm
+R3323:3337 Cln.Cln_Grade <> grade_cons_true thm
+R3323:3337 Cln.Cln_Grade <> grade_cons_true thm
+R3386:3400 Cln.Cln_Grade <> grade_cons_true thm
+R3403:3417 Cln.Cln_Grade <> grade_cons_true thm
+R3420:3435 Cln.Cln_Grade <> grade_cons_false thm
+R3386:3400 Cln.Cln_Grade <> grade_cons_true thm
+R3386:3400 Cln.Cln_Grade <> grade_cons_true thm
+R3403:3417 Cln.Cln_Grade <> grade_cons_true thm
+R3403:3417 Cln.Cln_Grade <> grade_cons_true thm
+R3420:3435 Cln.Cln_Grade <> grade_cons_false thm
+R3420:3435 Cln.Cln_Grade <> grade_cons_false thm
+R3484:3498 Cln.Cln_Grade <> grade_cons_true thm
+R3501:3516 Cln.Cln_Grade <> grade_cons_false thm
+R3519:3533 Cln.Cln_Grade <> grade_cons_true thm
+R3484:3498 Cln.Cln_Grade <> grade_cons_true thm
+R3484:3498 Cln.Cln_Grade <> grade_cons_true thm
+R3501:3516 Cln.Cln_Grade <> grade_cons_false thm
+R3501:3516 Cln.Cln_Grade <> grade_cons_false thm
+R3519:3533 Cln.Cln_Grade <> grade_cons_true thm
+R3519:3533 Cln.Cln_Grade <> grade_cons_true thm
+R3582:3597 Cln.Cln_Grade <> grade_cons_false thm
+R3600:3615 Cln.Cln_Grade <> grade_cons_false thm
+R3618:3633 Cln.Cln_Grade <> grade_cons_false thm
+R3582:3597 Cln.Cln_Grade <> grade_cons_false thm
+R3582:3597 Cln.Cln_Grade <> grade_cons_false thm
+R3600:3615 Cln.Cln_Grade <> grade_cons_false thm
+R3600:3615 Cln.Cln_Grade <> grade_cons_false thm
+R3618:3633 Cln.Cln_Grade <> grade_cons_false thm
+R3618:3633 Cln.Cln_Grade <> grade_cons_false thm
+prf 3670:3692 <> grade_basis_mul_mask_le
+binder 3703:3703 <> n:16
+R3712:3715 Cln.Cln_Full <> Mask def
+R3717:3717 Cln.Cln_Grade <> n:16 var
+binder 3706:3706 <> A:17
+binder 3708:3708 <> B:18
+R3750:3753 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R3724:3728 Cln.Cln_Grade <> grade def
+R3731:3744 Cln.Cln_Full <> basis_mul_mask def
+R3748:3748 Cln.Cln_Grade <> B:18 var
+R3746:3746 Cln.Cln_Grade <> A:17 var
+R3761:3763 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R3754:3758 Cln.Cln_Grade <> grade def
+R3760:3760 Cln.Cln_Grade <> A:17 var
+R3764:3768 Cln.Cln_Grade <> grade def
+R3770:3770 Cln.Cln_Grade <> B:18 var
+R3808:3821 Cln.Cln_Full <> basis_mul_mask def
+R3830:3841 Cln.Cln_Grade <> grade_xor_le thm
+R3830:3841 Cln.Cln_Grade <> grade_xor_le thm
+prf 4059:4076 <> Qeq_bool_false_neq
+R4093:4093 Coq.QArith.QArith_base <> Q rec
+binder 4087:4087 <> x:19
+binder 4089:4089 <> y:20
+R4118:4121 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4110:4112 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4098:4105 Coq.QArith.QArith_base <> Qeq_bool def
+R4107:4107 Cln.Cln_Grade <> x:19 var
+R4109:4109 Cln.Cln_Grade <> y:20 var
+R4113:4117 Coq.Init.Datatypes <> false constr
+R4122:4123 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4130:4130 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4125:4128 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4124:4124 Cln.Cln_Grade <> x:19 var
+R4129:4129 Cln.Cln_Grade <> y:20 var
+R4168:4178 Coq.QArith.QArith_base <> Qeq_eq_bool thm
+R4168:4178 Coq.QArith.QArith_base <> Qeq_eq_bool thm
+def 4217:4223 <> Qeq_dec
+R4232:4232 Coq.QArith.QArith_base <> Q rec
+binder 4226:4226 <> x:21
+binder 4228:4228 <> y:22
+R4237:4237 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R4244:4248 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R4258:4258 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R4239:4242 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4238:4238 Cln.Cln_Grade <> x:21 var
+R4243:4243 Cln.Cln_Grade <> y:22 var
+R4249:4250 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4257:4257 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4252:4255 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4251:4251 Cln.Cln_Grade <> x:21 var
+R4256:4256 Cln.Cln_Grade <> y:22 var
+R4280:4287 Coq.QArith.QArith_base <> Qeq_bool def
+R4280:4287 Coq.QArith.QArith_base <> Qeq_bool def
+R4317:4327 Coq.QArith.QArith_base <> Qeq_bool_eq thm
+R4317:4327 Coq.QArith.QArith_base <> Qeq_bool_eq thm
+R4358:4375 Cln.Cln_Grade <> Qeq_bool_false_neq thm
+R4358:4375 Cln.Cln_Grade <> Qeq_bool_false_neq thm
+def 4609:4617 <> max_grade
+binder 4620:4620 <> n:23
+R4628:4629 Cln.Cln_Full <> MV def
+R4631:4631 Cln.Cln_Grade <> n:23 var
+binder 4624:4624 <> F:24
+R4636:4638 Coq.Init.Datatypes <> nat ind
+R4645:4659 Coq.Lists.List <> fold_right def
+R4680:4687 Coq.Lists.List <> map def
+R4759:4767 Cln.Cln_Full <> all_masks def
+R4769:4769 Cln.Cln_Grade <> n:23 var
+binder 4694:4694 <> m:25
+R4702:4709 Coq.QArith.QArith_base <> Qeq_bool def
+R4712:4712 Cln.Cln_Grade <> F:24 var
+R4714:4714 Cln.Cln_Grade <> m:25 var
+R4735:4739 Cln.Cln_Grade <> grade def
+R4741:4741 Cln.Cln_Grade <> m:25 var
+R4661:4667 Coq.Arith.PeanoNat Nat max def
+prf 4827:4840 <> fold_max_ge_In
+R4858:4861 Coq.Init.Datatypes <> list ind
+R4863:4865 Coq.Init.Datatypes <> nat ind
+binder 4854:4854 <> l:26
+R4873:4875 Coq.Init.Datatypes <> nat ind
+binder 4869:4869 <> x:27
+R4894:4897 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4883:4889 Coq.Lists.List <> In def
+R4893:4893 Cln.Cln_Grade <> l:26 var
+R4891:4891 Cln.Cln_Grade <> x:27 var
+R4900:4903 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4899:4899 Cln.Cln_Grade <> x:27 var
+R4904:4918 Coq.Lists.List <> fold_right def
+R4934:4934 Cln.Cln_Grade <> l:26 var
+R4920:4926 Coq.Arith.PeanoNat Nat max def
+prf 5104:5120 <> fold_max_le_bound
+R5138:5141 Coq.Init.Datatypes <> list ind
+R5143:5145 Coq.Init.Datatypes <> nat ind
+binder 5134:5134 <> l:28
+R5153:5155 Coq.Init.Datatypes <> nat ind
+binder 5149:5149 <> k:29
+R5163:5163 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5201:5209 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+binder 5171:5171 <> x:30
+R5185:5188 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5174:5180 Coq.Lists.List <> In def
+R5184:5184 Cln.Cln_Grade <> l:28 var
+R5182:5182 Cln.Cln_Grade <> x:30 var
+R5191:5194 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5190:5190 Cln.Cln_Grade <> x:30 var
+R5195:5195 Cln.Cln_Grade <> k:29 var
+R5242:5245 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5211:5225 Coq.Lists.List <> fold_right def
+R5241:5241 Cln.Cln_Grade <> l:28 var
+R5227:5233 Coq.Arith.PeanoNat Nat max def
+R5246:5246 Cln.Cln_Grade <> k:29 var
+R5338:5341 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5338:5341 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5435:5438 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5403:5417 Coq.Lists.List <> fold_right def
+R5419:5425 Coq.Arith.PeanoNat Nat max def
+R5435:5438 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5403:5417 Coq.Lists.List <> fold_right def
+R5419:5425 Coq.Arith.PeanoNat Nat max def
+prf 5563:5576 <> max_grade_spec
+binder 5589:5589 <> n:31
+R5596:5597 Cln.Cln_Full <> MV def
+R5599:5599 Cln.Cln_Grade <> n:31 var
+binder 5592:5592 <> F:32
+R5607:5610 Cln.Cln_Full <> Mask def
+R5612:5612 Cln.Cln_Grade <> n:31 var
+binder 5603:5603 <> m:33
+R5631:5634 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5620:5621 Coq.Init.Logic <> ::type_scope:'~'_x not
+R5630:5630 Coq.Init.Logic <> ::type_scope:'~'_x not
+R5625:5628 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R5622:5622 Cln.Cln_Grade <> F:32 var
+R5624:5624 Cln.Cln_Grade <> m:33 var
+R5643:5646 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5636:5640 Cln.Cln_Grade <> grade def
+R5642:5642 Cln.Cln_Grade <> m:33 var
+R5647:5655 Cln.Cln_Grade <> max_grade def
+R5657:5657 Cln.Cln_Grade <> F:32 var
+R5701:5709 Cln.Cln_Grade <> max_grade def
+R5720:5733 Cln.Cln_Grade <> fold_max_ge_In thm
+R5720:5733 Cln.Cln_Grade <> fold_max_ge_In thm
+R5744:5758 Coq.Lists.List <> in_map_iff thm
+R5744:5758 Coq.Lists.List <> in_map_iff thm
+R5794:5801 Coq.QArith.QArith_base <> Qeq_bool def
+R5794:5801 Coq.QArith.QArith_base <> Qeq_bool def
+R5853:5863 Coq.QArith.QArith_base <> Qeq_bool_eq thm
+R5853:5863 Coq.QArith.QArith_base <> Qeq_bool_eq thm
+R5906:5923 Cln.Cln_Full <> all_masks_complete thm
+R5906:5923 Cln.Cln_Full <> all_masks_complete thm
+prf 5938:5951 <> max_grade_le_n
+binder 5964:5964 <> n:34
+R5971:5972 Cln.Cln_Full <> MV def
+R5974:5974 Cln.Cln_Grade <> n:34 var
+binder 5967:5967 <> F:35
+R5990:5993 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5979:5987 Cln.Cln_Grade <> max_grade def
+R5989:5989 Cln.Cln_Grade <> F:35 var
+R5994:5994 Cln.Cln_Grade <> n:34 var
+R6032:6040 Cln.Cln_Grade <> max_grade def
+R6051:6067 Cln.Cln_Grade <> fold_max_le_bound thm
+R6051:6067 Cln.Cln_Grade <> fold_max_le_bound thm
+R6093:6107 Coq.Lists.List <> in_map_iff thm
+R6093:6107 Coq.Lists.List <> in_map_iff thm
+R6166:6173 Coq.QArith.QArith_base <> Qeq_bool def
+R6166:6173 Coq.QArith.QArith_base <> Qeq_bool def
+R6204:6213 Cln.Cln_Grade <> grade_le_n thm
+R6204:6213 Cln.Cln_Grade <> grade_le_n thm
+def 6436:6448 <> grade_bounded
+binder 6451:6451 <> n:36
+R6459:6460 Cln.Cln_Full <> MV def
+R6462:6462 Cln.Cln_Grade <> n:36 var
+binder 6455:6455 <> F:37
+R6470:6472 Coq.Init.Datatypes <> nat ind
+binder 6466:6466 <> k:38
+R6498:6501 Cln.Cln_Full <> Mask def
+R6503:6503 Cln.Cln_Grade <> n:36 var
+binder 6494:6494 <> m:39
+R6523:6526 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6514:6516 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R6507:6511 Cln.Cln_Grade <> grade def
+R6513:6513 Cln.Cln_Grade <> m:39 var
+R6517:6517 Cln.Cln_Grade <> k:38 var
+R6530:6533 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R6527:6527 Cln.Cln_Grade <> F:37 var
+R6529:6529 Cln.Cln_Grade <> m:39 var
+prf 6544:6560 <> max_grade_bounded
+binder 6573:6573 <> n:40
+R6580:6581 Cln.Cln_Full <> MV def
+R6583:6583 Cln.Cln_Grade <> n:40 var
+binder 6576:6576 <> F:41
+R6587:6599 Cln.Cln_Grade <> grade_bounded def
+R6604:6612 Cln.Cln_Grade <> max_grade def
+R6614:6614 Cln.Cln_Grade <> F:41 var
+R6601:6601 Cln.Cln_Grade <> F:41 var
+R6657:6663 Cln.Cln_Grade <> Qeq_dec def
+R6657:6663 Cln.Cln_Grade <> Qeq_dec def
+R6726:6739 Cln.Cln_Grade <> max_grade_spec thm
+R6726:6739 Cln.Cln_Grade <> max_grade_spec thm
+prf 6768:6795 <> bounded_implies_max_grade_le
+binder 6808:6808 <> n:42
+R6815:6816 Cln.Cln_Full <> MV def
+R6818:6818 Cln.Cln_Grade <> n:42 var
+binder 6811:6811 <> F:43
+R6826:6828 Coq.Init.Datatypes <> nat ind
+binder 6822:6822 <> k:44
+R6853:6856 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6836:6848 Cln.Cln_Grade <> grade_bounded def
+R6852:6852 Cln.Cln_Grade <> k:44 var
+R6850:6850 Cln.Cln_Grade <> F:43 var
+R6869:6872 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R6858:6866 Cln.Cln_Grade <> max_grade def
+R6868:6868 Cln.Cln_Grade <> F:43 var
+R6873:6873 Cln.Cln_Grade <> k:44 var
+R6916:6924 Cln.Cln_Grade <> max_grade def
+R6935:6951 Cln.Cln_Grade <> fold_max_le_bound thm
+R6935:6951 Cln.Cln_Grade <> fold_max_le_bound thm
+R6977:6991 Coq.Lists.List <> in_map_iff thm
+R6977:6991 Coq.Lists.List <> in_map_iff thm
+R7052:7059 Coq.QArith.QArith_base <> Qeq_bool def
+R7052:7059 Coq.QArith.QArith_base <> Qeq_bool def
+R7102:7110 Coq.Arith.Compare_dec <> le_gt_dec def
+R7113:7117 Cln.Cln_Grade <> grade def
+R7102:7110 Coq.Arith.Compare_dec <> le_gt_dec def
+R7113:7117 Cln.Cln_Grade <> grade def
+R7185:7202 Cln.Cln_Grade <> Qeq_bool_false_neq thm
+R7185:7202 Cln.Cln_Grade <> Qeq_bool_false_neq thm
+prf 7250:7267 <> grade_bounded_mono
+binder 7280:7280 <> n:45
+R7287:7288 Cln.Cln_Full <> MV def
+R7290:7290 Cln.Cln_Grade <> n:45 var
+binder 7283:7283 <> F:46
+R7300:7302 Coq.Init.Datatypes <> nat ind
+binder 7294:7294 <> j:47
+binder 7296:7296 <> k:48
+R7327:7330 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7310:7322 Cln.Cln_Grade <> grade_bounded def
+R7326:7326 Cln.Cln_Grade <> j:47 var
+R7324:7324 Cln.Cln_Grade <> F:46 var
+R7343:7346 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7333:7336 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R7332:7332 Cln.Cln_Grade <> j:47 var
+R7337:7337 Cln.Cln_Grade <> k:48 var
+R7347:7359 Cln.Cln_Grade <> grade_bounded def
+R7363:7363 Cln.Cln_Grade <> k:48 var
+R7361:7361 Cln.Cln_Grade <> F:46 var
+prf 7430:7447 <> grade_bounded_zero
+binder 7460:7460 <> n:49
+R7467:7469 Coq.Init.Datatypes <> nat ind
+binder 7463:7463 <> k:50
+R7473:7485 Cln.Cln_Grade <> grade_bounded def
+R7500:7500 Cln.Cln_Grade <> k:50 var
+R7489:7495 Cln.Cln_Full <> mv_zero def
+R7497:7497 Cln.Cln_Grade <> n:49 var
+R7535:7541 Cln.Cln_Full <> mv_zero def
+prf 7772:7788 <> grade_bounded_add
+binder 7801:7801 <> n:51
+R7810:7811 Cln.Cln_Full <> MV def
+R7813:7813 Cln.Cln_Grade <> n:51 var
+binder 7804:7804 <> F:52
+binder 7806:7806 <> G:53
+R7823:7825 Coq.Init.Datatypes <> nat ind
+binder 7817:7817 <> j:54
+binder 7819:7819 <> k:55
+R7850:7857 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7833:7845 Cln.Cln_Grade <> grade_bounded def
+R7849:7849 Cln.Cln_Grade <> j:54 var
+R7847:7847 Cln.Cln_Grade <> F:52 var
+R7875:7882 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7858:7870 Cln.Cln_Grade <> grade_bounded def
+R7874:7874 Cln.Cln_Grade <> k:55 var
+R7872:7872 Cln.Cln_Grade <> G:53 var
+R7883:7895 Cln.Cln_Grade <> grade_bounded def
+R7911:7917 Coq.Arith.PeanoNat Nat max def
+R7919:7919 Cln.Cln_Grade <> j:54 var
+R7921:7921 Cln.Cln_Grade <> k:55 var
+R7898:7903 Cln.Cln_Full <> mv_add def
+R7907:7907 Cln.Cln_Grade <> G:53 var
+R7905:7905 Cln.Cln_Grade <> F:52 var
+R7972:7977 Cln.Cln_Full <> mv_add def
+R7999:8002 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R7999:8002 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R8045:8048 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R8045:8048 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+prf 8110:8125 <> max_grade_add_le
+binder 8138:8138 <> n:56
+R8147:8148 Cln.Cln_Full <> MV def
+R8150:8150 Cln.Cln_Grade <> n:56 var
+binder 8141:8141 <> F:57
+binder 8143:8143 <> G:58
+R8181:8184 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R8159:8167 Cln.Cln_Grade <> max_grade def
+R8170:8175 Cln.Cln_Full <> mv_add def
+R8179:8179 Cln.Cln_Grade <> G:58 var
+R8177:8177 Cln.Cln_Grade <> F:57 var
+R8185:8191 Coq.Arith.PeanoNat Nat max def
+R8194:8202 Cln.Cln_Grade <> max_grade def
+R8204:8204 Cln.Cln_Grade <> F:57 var
+R8208:8216 Cln.Cln_Grade <> max_grade def
+R8218:8218 Cln.Cln_Grade <> G:58 var
+R8258:8285 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R8258:8285 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R8296:8312 Cln.Cln_Grade <> grade_bounded_add thm
+R8321:8337 Cln.Cln_Grade <> max_grade_bounded thm
+R8296:8312 Cln.Cln_Grade <> grade_bounded_add thm
+R8321:8337 Cln.Cln_Grade <> max_grade_bounded thm
+R8321:8337 Cln.Cln_Grade <> max_grade_bounded thm
+prf 8555:8570 <> grade_bounded_gp
+binder 8583:8583 <> n:59
+R8591:8598 Coq.Vectors.Vector <> t ind
+R8600:8600 Coq.QArith.QArith_base <> Q rec
+R8602:8602 Cln.Cln_Grade <> n:59 var
+binder 8586:8587 <> sq:60
+R8612:8613 Cln.Cln_Full <> MV def
+R8615:8615 Cln.Cln_Grade <> n:59 var
+binder 8606:8606 <> F:61
+binder 8608:8608 <> G:62
+R8625:8627 Coq.Init.Datatypes <> nat ind
+binder 8619:8619 <> j:63
+binder 8621:8621 <> k:64
+R8652:8659 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8635:8647 Cln.Cln_Grade <> grade_bounded def
+R8651:8651 Cln.Cln_Grade <> j:63 var
+R8649:8649 Cln.Cln_Grade <> F:61 var
+R8677:8684 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8660:8672 Cln.Cln_Grade <> grade_bounded def
+R8676:8676 Cln.Cln_Grade <> k:64 var
+R8674:8674 Cln.Cln_Grade <> G:62 var
+R8685:8697 Cln.Cln_Grade <> grade_bounded def
+R8716:8718 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R8715:8715 Cln.Cln_Grade <> j:63 var
+R8719:8719 Cln.Cln_Grade <> k:64 var
+R8700:8704 Cln.Cln_Full <> mv_gp def
+R8711:8711 Cln.Cln_Grade <> G:62 var
+R8709:8709 Cln.Cln_Grade <> F:61 var
+R8706:8707 Cln.Cln_Grade <> sq:60 var
+R8777:8781 Cln.Cln_Full <> mv_gp def
+R8794:8802 Coq.QArith.QArith_base <> Qeq_trans thm
+R8794:8802 Coq.QArith.QArith_base <> Qeq_trans thm
+R8817:8828 Cln.Cln_Full <> sumQ_map_ext thm
+R8831:8834 Cln.Cln_Full <> Mask def
+R8863:8871 Cln.Cln_Full <> all_masks def
+R8817:8828 Cln.Cln_Full <> sumQ_map_ext thm
+R8831:8834 Cln.Cln_Full <> Mask def
+R8863:8871 Cln.Cln_Full <> all_masks def
+R8906:8914 Coq.QArith.QArith_base <> Qeq_trans thm
+R8906:8914 Coq.QArith.QArith_base <> Qeq_trans thm
+R8931:8942 Cln.Cln_Full <> sumQ_map_ext thm
+R8945:8948 Cln.Cln_Full <> Mask def
+R8979:8987 Cln.Cln_Full <> all_masks def
+R8931:8942 Cln.Cln_Full <> sumQ_map_ext thm
+R8945:8948 Cln.Cln_Full <> Mask def
+R8979:8987 Cln.Cln_Full <> all_masks def
+R9036:9046 Cln.Cln_Full <> mask_eq_dec def
+R9049:9062 Cln.Cln_Full <> basis_mul_mask def
+R9036:9046 Cln.Cln_Full <> mask_eq_dec def
+R9049:9062 Cln.Cln_Full <> basis_mul_mask def
+R9127:9129 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9117:9119 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R9110:9114 Cln.Cln_Grade <> grade def
+R9120:9124 Cln.Cln_Grade <> grade def
+R9131:9133 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R9127:9129 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9117:9119 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R9110:9114 Cln.Cln_Grade <> grade def
+R9120:9124 Cln.Cln_Grade <> grade def
+R9131:9133 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R9165:9187 Cln.Cln_Grade <> grade_basis_mul_mask_le thm
+R9165:9187 Cln.Cln_Grade <> grade_basis_mul_mask_le thm
+R9268:9276 Coq.Arith.Compare_dec <> le_gt_dec def
+R9279:9283 Cln.Cln_Grade <> grade def
+R9268:9276 Coq.Arith.Compare_dec <> le_gt_dec def
+R9279:9283 Cln.Cln_Grade <> grade def
+R9371:9373 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9364:9368 Cln.Cln_Grade <> grade def
+R9371:9373 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9364:9368 Cln.Cln_Grade <> grade def
+R9530:9544 Cln.Cln_Full <> sumQ_map_const0 thm
+R9559:9567 Cln.Cln_Full <> all_masks def
+R9550:9553 Cln.Cln_Full <> Mask def
+R9530:9544 Cln.Cln_Full <> sumQ_map_const0 thm
+R9559:9567 Cln.Cln_Full <> all_masks def
+R9550:9553 Cln.Cln_Full <> Mask def
+R9587:9601 Cln.Cln_Full <> sumQ_map_const0 thm
+R9616:9624 Cln.Cln_Full <> all_masks def
+R9607:9610 Cln.Cln_Full <> Mask def
+R9587:9601 Cln.Cln_Full <> sumQ_map_const0 thm
+R9616:9624 Cln.Cln_Full <> all_masks def
+R9607:9610 Cln.Cln_Full <> Mask def
+prf 9643:9657 <> max_grade_gp_le
+binder 9670:9670 <> n:65
+R9678:9685 Coq.Vectors.Vector <> t ind
+R9687:9687 Coq.QArith.QArith_base <> Q rec
+R9689:9689 Cln.Cln_Grade <> n:65 var
+binder 9673:9674 <> sq:66
+R9699:9700 Cln.Cln_Full <> MV def
+R9702:9702 Cln.Cln_Grade <> n:65 var
+binder 9693:9693 <> F:67
+binder 9695:9695 <> G:68
+R9735:9738 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9711:9719 Cln.Cln_Grade <> max_grade def
+R9722:9726 Cln.Cln_Full <> mv_gp def
+R9733:9733 Cln.Cln_Grade <> G:68 var
+R9731:9731 Cln.Cln_Grade <> F:67 var
+R9728:9729 Cln.Cln_Grade <> sq:66 var
+R9750:9752 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R9739:9747 Cln.Cln_Grade <> max_grade def
+R9749:9749 Cln.Cln_Grade <> F:67 var
+R9753:9761 Cln.Cln_Grade <> max_grade def
+R9763:9763 Cln.Cln_Grade <> G:68 var
+R9805:9832 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R9805:9832 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R9843:9858 Cln.Cln_Grade <> grade_bounded_gp thm
+R9867:9883 Cln.Cln_Grade <> max_grade_bounded thm
+R9843:9858 Cln.Cln_Grade <> grade_bounded_gp thm
+R9867:9883 Cln.Cln_Grade <> max_grade_bounded thm
+R9867:9883 Cln.Cln_Grade <> max_grade_bounded thm
+prf 10101:10126 <> grade_bounded_basis_single
+binder 10139:10139 <> n:69
+R10146:10150 Coq.Vectors.Fin <> t ind
+R10152:10152 Cln.Cln_Grade <> n:69 var
+binder 10142:10142 <> i:70
+R10156:10168 Cln.Cln_Grade <> grade_bounded def
+R10171:10175 Cln.Cln_Full <> basis def
+R10178:10188 Cln.Cln_Full <> mask_single def
+R10190:10190 Cln.Cln_Grade <> i:70 var
+R10234:10238 Cln.Cln_Full <> basis def
+R10253:10263 Cln.Cln_Full <> mask_eq_dec def
+R10268:10278 Cln.Cln_Full <> mask_single def
+R10253:10263 Cln.Cln_Full <> mask_eq_dec def
+R10268:10278 Cln.Cln_Full <> mask_single def
+R10336:10347 Cln.Cln_Grade <> grade_single thm
+R10336:10347 Cln.Cln_Grade <> grade_single thm
+R10336:10347 Cln.Cln_Grade <> grade_single thm
+prf 10390:10412 <> grade_bounded_scale_one
+binder 10425:10425 <> n:71
+R10432:10432 Coq.QArith.QArith_base <> Q rec
+binder 10428:10428 <> c:72
+R10436:10448 Cln.Cln_Grade <> grade_bounded def
+R10451:10458 Cln.Cln_Full <> mv_scale def
+R10464:10469 Cln.Cln_Full <> mv_one def
+R10471:10471 Cln.Cln_Grade <> n:71 var
+R10460:10460 Cln.Cln_Grade <> c:72 var
+R10515:10522 Cln.Cln_Full <> mv_scale def
+R10525:10530 Cln.Cln_Full <> mv_one def
+R10533:10537 Cln.Cln_Full <> basis def
+R10552:10562 Cln.Cln_Full <> mask_eq_dec def
+R10567:10576 Cln.Cln_Full <> mask_empty def
+R10552:10562 Cln.Cln_Full <> mask_eq_dec def
+R10567:10576 Cln.Cln_Full <> mask_empty def
+R10639:10654 Cln.Cln_Grade <> grade_empty_mask thm
+R10639:10654 Cln.Cln_Grade <> grade_empty_mask thm
+R10639:10654 Cln.Cln_Grade <> grade_empty_mask thm
+ind 10897:10903 <> GA_expr
+constr 10929:10933 <> Basis
+constr 10963:10968 <> Scalar
+constr 10991:10993 <> Add
+constr 11040:11042 <> Mul
+R10910:10912 Coq.Init.Datatypes <> nat ind
+binder 10906:10906 <> n:73
+R10945:10948 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R10938:10942 Coq.Vectors.Fin <> t ind
+R10944:10944 Cln.Cln_Grade <> n:73 var
+R10949:10955 Cln.Cln_Grade <> GA_expr:74 ind
+R10957:10957 Cln.Cln_Grade <> n:73 var
+R10973:10976 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R10972:10972 Coq.QArith.QArith_base <> Q rec
+R10977:10983 Cln.Cln_Grade <> GA_expr:74 ind
+R10985:10985 Cln.Cln_Grade <> n:73 var
+R11009:11012 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11000:11006 Cln.Cln_Grade <> GA_expr:74 ind
+R11008:11008 Cln.Cln_Grade <> n:73 var
+R11022:11025 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11013:11019 Cln.Cln_Grade <> GA_expr:74 ind
+R11021:11021 Cln.Cln_Grade <> n:73 var
+R11026:11032 Cln.Cln_Grade <> GA_expr:74 ind
+R11034:11034 Cln.Cln_Grade <> n:73 var
+R11058:11061 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11049:11055 Cln.Cln_Grade <> GA_expr:74 ind
+R11057:11057 Cln.Cln_Grade <> n:73 var
+R11071:11074 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11062:11068 Cln.Cln_Grade <> GA_expr:74 ind
+R11070:11070 Cln.Cln_Grade <> n:73 var
+R11075:11081 Cln.Cln_Grade <> GA_expr:74 ind
+R11083:11083 Cln.Cln_Grade <> n:73 var
+scheme 10897:10903 <> GA_expr_rect
+scheme 10897:10903 <> GA_expr_ind
+scheme 10897:10903 <> GA_expr_rec
+scheme 10897:10903 <> GA_expr_sind
+R11097:11101 Cln.Cln_Grade <> Basis constr
+R11097:11101 Cln.Cln_Grade <> Basis constr
+R11118:11123 Cln.Cln_Grade <> Scalar constr
+R11118:11123 Cln.Cln_Grade <> Scalar constr
+R11140:11142 Cln.Cln_Grade <> Add constr
+R11140:11142 Cln.Cln_Grade <> Add constr
+R11159:11161 Cln.Cln_Grade <> Mul constr
+R11159:11161 Cln.Cln_Grade <> Mul constr
+def 11178:11186 <> eval_expr
+binder 11189:11189 <> n:76
+R11198:11205 Coq.Vectors.Vector <> t ind
+R11207:11207 Coq.QArith.QArith_base <> Q rec
+R11209:11209 Cln.Cln_Grade <> n:76 var
+binder 11193:11194 <> sq:77
+R11217:11223 Cln.Cln_Grade <> GA_expr ind
+R11225:11225 Cln.Cln_Grade <> n:76 var
+binder 11213:11213 <> e:78
+R11230:11231 Cln.Cln_Full <> MV def
+R11233:11233 Cln.Cln_Grade <> n:76 var
+R11246:11246 Cln.Cln_Grade <> e:78 var
+R11257:11261 Cln.Cln_Grade <> Basis constr
+R11270:11274 Cln.Cln_Full <> basis def
+R11277:11287 Cln.Cln_Full <> mask_single def
+R11296:11301 Cln.Cln_Grade <> Scalar constr
+R11309:11316 Cln.Cln_Full <> mv_scale def
+R11320:11325 Cln.Cln_Full <> mv_one def
+R11331:11333 Cln.Cln_Grade <> Add constr
+R11344:11349 Cln.Cln_Full <> mv_add def
+R11370:11378 Cln.Cln_Grade <> eval_expr:79 def
+R11380:11381 Cln.Cln_Grade <> sq:77 var
+R11352:11360 Cln.Cln_Grade <> eval_expr:79 def
+R11362:11363 Cln.Cln_Grade <> sq:77 var
+R11391:11393 Cln.Cln_Grade <> Mul constr
+R11404:11408 Cln.Cln_Full <> mv_gp def
+R11432:11440 Cln.Cln_Grade <> eval_expr:79 def
+R11442:11443 Cln.Cln_Grade <> sq:77 var
+R11414:11422 Cln.Cln_Grade <> eval_expr:79 def
+R11424:11425 Cln.Cln_Grade <> sq:77 var
+R11410:11411 Cln.Cln_Grade <> sq:77 var
+def 11466:11476 <> grade_bound
+binder 11479:11479 <> n:81
+R11487:11493 Cln.Cln_Grade <> GA_expr ind
+R11495:11495 Cln.Cln_Grade <> n:81 var
+binder 11483:11483 <> e:82
+R11500:11502 Coq.Init.Datatypes <> nat ind
+R11515:11515 Cln.Cln_Grade <> e:82 var
+R11526:11530 Cln.Cln_Grade <> Basis constr
+R11549:11554 Cln.Cln_Grade <> Scalar constr
+R11572:11574 Cln.Cln_Grade <> Add constr
+R11585:11591 Coq.Arith.PeanoNat Nat max def
+R11594:11604 Cln.Cln_Grade <> grade_bound:83 def
+R11611:11621 Cln.Cln_Grade <> grade_bound:83 def
+R11631:11633 Cln.Cln_Grade <> Mul constr
+R11659:11661 Coq.Init.Peano <> ::nat_scope:x_'+'_x not
+R11645:11655 Cln.Cln_Grade <> grade_bound:83 def
+R11662:11672 Cln.Cln_Grade <> grade_bound:83 def
+prf 11698:11715 <> eval_grade_bounded
+binder 11728:11728 <> n:85
+R11736:11743 Coq.Vectors.Vector <> t ind
+R11745:11745 Coq.QArith.QArith_base <> Q rec
+R11747:11747 Cln.Cln_Grade <> n:85 var
+binder 11731:11732 <> sq:86
+R11755:11761 Cln.Cln_Grade <> GA_expr ind
+R11763:11763 Cln.Cln_Grade <> n:85 var
+binder 11751:11751 <> e:87
+R11771:11783 Cln.Cln_Grade <> grade_bounded def
+R11803:11813 Cln.Cln_Grade <> grade_bound def
+R11815:11815 Cln.Cln_Grade <> e:87 var
+R11786:11794 Cln.Cln_Grade <> eval_expr def
+R11799:11799 Cln.Cln_Grade <> e:87 var
+R11796:11797 Cln.Cln_Grade <> sq:86 var
+R11919:11944 Cln.Cln_Grade <> grade_bounded_basis_single thm
+R11919:11944 Cln.Cln_Grade <> grade_bounded_basis_single thm
+R11961:11983 Cln.Cln_Grade <> grade_bounded_scale_one thm
+R11961:11983 Cln.Cln_Grade <> grade_bounded_scale_one thm
+R12000:12016 Cln.Cln_Grade <> grade_bounded_add thm
+R12000:12016 Cln.Cln_Grade <> grade_bounded_add thm
+R12039:12054 Cln.Cln_Grade <> grade_bounded_gp thm
+R12039:12054 Cln.Cln_Grade <> grade_bounded_gp thm
+prf 12085:12101 <> max_grade_eval_le
+binder 12114:12114 <> n:88
+R12122:12129 Coq.Vectors.Vector <> t ind
+R12131:12131 Coq.QArith.QArith_base <> Q rec
+R12133:12133 Cln.Cln_Grade <> n:88 var
+binder 12117:12118 <> sq:89
+R12141:12147 Cln.Cln_Grade <> GA_expr ind
+R12149:12149 Cln.Cln_Grade <> n:88 var
+binder 12137:12137 <> e:90
+R12184:12187 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R12158:12166 Cln.Cln_Grade <> max_grade def
+R12169:12177 Cln.Cln_Grade <> eval_expr def
+R12182:12182 Cln.Cln_Grade <> e:90 var
+R12179:12180 Cln.Cln_Grade <> sq:89 var
+R12188:12198 Cln.Cln_Grade <> grade_bound def
+R12200:12200 Cln.Cln_Grade <> e:90 var
+R12231:12258 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R12231:12258 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R12267:12284 Cln.Cln_Grade <> eval_grade_bounded thm
+R12267:12284 Cln.Cln_Grade <> eval_grade_bounded thm
+def 12505:12520 <> max_grade_during
+binder 12523:12523 <> n:91
+R12532:12539 Coq.Vectors.Vector <> t ind
+R12541:12541 Coq.QArith.QArith_base <> Q rec
+R12543:12543 Cln.Cln_Grade <> n:91 var
+binder 12527:12528 <> sq:92
+R12551:12557 Cln.Cln_Grade <> GA_expr ind
+R12559:12559 Cln.Cln_Grade <> n:91 var
+binder 12547:12547 <> e:93
+R12564:12566 Coq.Init.Datatypes <> nat ind
+R12579:12579 Cln.Cln_Grade <> e:93 var
+R12590:12594 Cln.Cln_Grade <> Basis constr
+R12613:12618 Cln.Cln_Grade <> Scalar constr
+R12636:12638 Cln.Cln_Grade <> Add constr
+R12655:12661 Coq.Arith.PeanoNat Nat max def
+R12664:12679 Cln.Cln_Grade <> max_grade_during:94 def
+R12681:12682 Cln.Cln_Grade <> sq:92 var
+R12703:12718 Cln.Cln_Grade <> max_grade_during:94 def
+R12720:12721 Cln.Cln_Grade <> sq:92 var
+R12731:12733 Cln.Cln_Grade <> Mul constr
+R12750:12756 Coq.Arith.PeanoNat Nat max def
+R12767:12773 Coq.Arith.PeanoNat Nat max def
+R12776:12791 Cln.Cln_Grade <> max_grade_during:94 def
+R12793:12794 Cln.Cln_Grade <> sq:92 var
+R12818:12833 Cln.Cln_Grade <> max_grade_during:94 def
+R12835:12836 Cln.Cln_Grade <> sq:92 var
+R12852:12860 Cln.Cln_Grade <> max_grade def
+R12863:12867 Cln.Cln_Full <> mv_gp def
+R12891:12899 Cln.Cln_Grade <> eval_expr def
+R12901:12902 Cln.Cln_Grade <> sq:92 var
+R12873:12881 Cln.Cln_Grade <> eval_expr def
+R12883:12884 Cln.Cln_Grade <> sq:92 var
+R12869:12870 Cln.Cln_Grade <> sq:92 var
+prf 12924:12942 <> max_grade_le_during
+binder 12955:12955 <> n:96
+R12963:12970 Coq.Vectors.Vector <> t ind
+R12972:12972 Coq.QArith.QArith_base <> Q rec
+R12974:12974 Cln.Cln_Grade <> n:96 var
+binder 12958:12959 <> sq:97
+R12982:12988 Cln.Cln_Grade <> GA_expr ind
+R12990:12990 Cln.Cln_Grade <> n:96 var
+binder 12978:12978 <> e:98
+R13025:13028 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R12999:13007 Cln.Cln_Grade <> max_grade def
+R13010:13018 Cln.Cln_Grade <> eval_expr def
+R13023:13023 Cln.Cln_Grade <> e:98 var
+R13020:13021 Cln.Cln_Grade <> sq:97 var
+R13029:13044 Cln.Cln_Grade <> max_grade_during def
+R13049:13049 Cln.Cln_Grade <> e:98 var
+R13046:13047 Cln.Cln_Grade <> sq:97 var
+R13156:13183 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R13156:13183 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R13197:13222 Cln.Cln_Grade <> grade_bounded_basis_single thm
+R13197:13222 Cln.Cln_Grade <> grade_bounded_basis_single thm
+R13238:13265 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R13238:13265 Cln.Cln_Grade <> bounded_implies_max_grade_le thm
+R13279:13301 Cln.Cln_Grade <> grade_bounded_scale_one thm
+R13279:13301 Cln.Cln_Grade <> grade_bounded_scale_one thm
+R13318:13329 Coq.Arith.PeanoNat Nat le_trans thm
+R13318:13329 Coq.Arith.PeanoNat Nat le_trans thm
+R13345:13360 Cln.Cln_Grade <> max_grade_add_le thm
+R13381:13389 Cln.Cln_Grade <> eval_expr def
+R13363:13371 Cln.Cln_Grade <> eval_expr def
+R13345:13360 Cln.Cln_Grade <> max_grade_add_le thm
+R13381:13389 Cln.Cln_Grade <> eval_expr def
+R13363:13371 Cln.Cln_Grade <> eval_expr def
+R13412:13428 Coq.Arith.PeanoNat Nat max_le_compat thm
+R13412:13428 Coq.Arith.PeanoNat Nat max_le_compat thm
+R13453:13464 Coq.Arith.PeanoNat Nat le_max_r thm
+R13453:13464 Coq.Arith.PeanoNat Nat le_max_r thm
+prf 13684:13704 <> excursion_lower_bound
+binder 13717:13717 <> n:99
+R13725:13732 Coq.Vectors.Vector <> t ind
+R13734:13734 Coq.QArith.QArith_base <> Q rec
+R13736:13736 Cln.Cln_Grade <> n:99 var
+binder 13720:13721 <> sq:100
+R13744:13750 Cln.Cln_Grade <> GA_expr ind
+R13752:13752 Cln.Cln_Grade <> n:99 var
+binder 13740:13740 <> e:101
+R13760:13761 Cln.Cln_Full <> MV def
+R13763:13763 Cln.Cln_Grade <> n:99 var
+binder 13756:13756 <> F:102
+R13789:13796 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13785:13787 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13771:13779 Cln.Cln_Grade <> eval_expr def
+R13784:13784 Cln.Cln_Grade <> e:101 var
+R13781:13782 Cln.Cln_Grade <> sq:100 var
+R13788:13788 Cln.Cln_Grade <> F:102 var
+R13797:13797 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13850:13858 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13798:13804 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R13815:13816 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R13809:13812 Cln.Cln_Full <> Mask def
+R13814:13814 Cln.Cln_Grade <> n:99 var
+binder 13805:13805 <> m:103
+R13835:13838 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R13825:13828 Coq.Init.Peano <> ::nat_scope:x_'>='_x not
+R13818:13822 Cln.Cln_Grade <> grade def
+R13824:13824 Cln.Cln_Grade <> m:103 var
+R13829:13829 Cln.Cln_Grade <> n:99 var
+R13839:13840 Coq.Init.Logic <> ::type_scope:'~'_x not
+R13849:13849 Coq.Init.Logic <> ::type_scope:'~'_x not
+R13844:13847 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R13841:13841 Cln.Cln_Grade <> F:102 var
+R13843:13843 Cln.Cln_Grade <> m:103 var
+R13881:13884 Coq.Init.Peano <> ::nat_scope:x_'>='_x not
+R13860:13875 Cln.Cln_Grade <> max_grade_during def
+R13880:13880 Cln.Cln_Grade <> e:101 var
+R13877:13878 Cln.Cln_Grade <> sq:100 var
+R13885:13885 Cln.Cln_Grade <> n:99 var
+R13965:13968 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R13958:13962 Cln.Cln_Grade <> grade def
+R13969:13977 Cln.Cln_Grade <> max_grade def
+R13965:13968 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R13958:13962 Cln.Cln_Grade <> grade def
+R13969:13977 Cln.Cln_Grade <> max_grade def
+R13998:14011 Cln.Cln_Grade <> max_grade_spec thm
+R13998:14011 Cln.Cln_Grade <> max_grade_spec thm
+R14069:14072 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R14043:14051 Cln.Cln_Grade <> max_grade def
+R14054:14062 Cln.Cln_Grade <> eval_expr def
+R14073:14088 Cln.Cln_Grade <> max_grade_during def
+R14069:14072 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R14043:14051 Cln.Cln_Grade <> max_grade def
+R14054:14062 Cln.Cln_Grade <> eval_expr def
+R14073:14088 Cln.Cln_Grade <> max_grade_during def
+R14112:14130 Cln.Cln_Grade <> max_grade_le_during thm
+R14112:14130 Cln.Cln_Grade <> max_grade_le_during thm
