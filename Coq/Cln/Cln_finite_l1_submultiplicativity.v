@@ -25,55 +25,12 @@ Require Import Cln_Grade.
 From Coq Require Import List Bool Arith Lia QArith.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import Setoid Morphisms Ring.
+Require Import Coq.Program.Equality.
+
 Import ListNotations.
 
 Open Scope Q_scope.
 Set Implicit Arguments.
-
-(* ------------------------------------------------------------ *)
-(* sumQ and basic map lemmas (as in your codebase)                *)
-(* ------------------------------------------------------------ *)
-
-Fixpoint sumQ (xs : list Q) : Q :=
-  match xs with
-  | [] => 0%Q
-  | x :: tl => (x + sumQ tl)%Q
-  end.
-
-Lemma sumQ_map_ext :
-  forall (A : Type) (f g : A -> Q) (l : list A),
-    (forall x, In x l -> f x == g x) ->
-    sumQ (map f l) == sumQ (map g l).
-Proof.
-  intros A f g l.
-  induction l as [|a tl IH]; intros H; simpl.
-  - reflexivity.
-  - apply Qplus_comp.
-    + apply H. left; reflexivity.
-    + apply IH. intros x Hx. apply H. right; exact Hx.
-Qed.
-
-Lemma sumQ_map_add :
-  forall (A : Type) (f g : A -> Q) (l : list A),
-    sumQ (map (fun x => (f x + g x)%Q) l)
-    ==
-    (sumQ (map f l) + sumQ (map g l))%Q.
-Proof.
-  induction l as [|a tl IH]; simpl.
-  - ring.
-  - rewrite IH. ring.
-Qed.
-
-Lemma sumQ_map_scale_l :
-  forall (A : Type) (k : Q) (f : A -> Q) (l : list A),
-    sumQ (map (fun x => (k * f x)%Q) l)
-    ==
-    (k * sumQ (map f l))%Q.
-Proof.
-  induction l as [|a tl IH]; simpl.
-  - ring.
-  - rewrite IH. ring.
-Qed.
 
 Lemma sumQ_map_le :
   forall (A : Type) (f g : A -> Q) (l : list A),
@@ -85,15 +42,6 @@ Proof.
   - apply Qplus_le_compat.
     + apply H. left; reflexivity.
     + apply IH. intros x Hx. apply H. right; exact Hx.
-Qed.
-
-Lemma sumQ_map_const0 :
-  forall (A : Type) (l : list A),
-    sumQ (map (fun _ => 0%Q) l) == 0%Q.
-Proof.
-  induction l as [|a tl IH]; simpl.
-  - reflexivity.
-  - rewrite IH. ring.
 Qed.
 
 (* ------------------------------------------------------------ *)
@@ -183,8 +131,6 @@ Qed.
 (* Unit-metric assumptions + delta collapse                        *)
 (* ------------------------------------------------------------ *)
 
-Require Import Coq.Program.Equality.
-
 Lemma metric_factor_abs1_gen : forall n (sq : Vector.t Q n),
   (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
   forall (A B : Mask n),
@@ -209,7 +155,6 @@ Context {n : nat}.
 Context (sq : Vector.t Q n).
 
 Hypothesis sq_unit : forall (i : Fin.t n), Qabs (Vector.nth sq i) == 1.
-
 
 Lemma metric_factor_abs1 : forall (A B : Mask n),
   Qabs (metric_factor sq A B) == 1.
@@ -484,8 +429,6 @@ Lemma l1_gp_bound : forall (F G : MV n),
 Proof.
   intros; apply l1_gp_submultiplicative.
 Qed.
-
-From Coq Require Import Setoid Morphisms Ring.
 
 (* Static ℓ₁ bound from expression structure *)
 Fixpoint l1_bound {n} (e : GA_expr n) : Q :=
