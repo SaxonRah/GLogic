@@ -525,28 +525,6 @@ Proof.
   - apply sumQ_all_masks_pick.
 Qed.
 
-Theorem l1_norm_eval_le :
-  forall (e : GA_expr n),
-    l1_norm (eval_expr sq e) <= l1_bound e.
-Proof.
-  intros e.
-  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
-  - (* Basis *)
-    apply Qle_of_Qeq. apply l1_norm_basis.
-  - (* Scalar *)
-    apply Qle_of_Qeq. apply l1_norm_scale_one.
-  - (* Add *)
-    eapply Qle_trans.
-    + apply l1_add_bound.
-    + apply Qplus_le_compat; assumption.
-  - (* Mul *)
-    eapply Qle_trans.
-    + apply l1_gp_bound.
-    + apply Qmult_le_compat_nonneg; [split|split]; try assumption.
-      * apply l1_norm_nonneg.
-      * apply l1_norm_nonneg.
-Qed.
-
 Lemma Qmult_le_compat_nonneg : forall a b c d : Q,
   0 <= a -> 0 <= c -> a <= b -> c <= d -> a * c <= b * d.
 Proof.
@@ -560,7 +538,7 @@ Proof.
     + setoid_rewrite <- Hb'. ring_simplify. apply Qle_refl.
 Qed.
 
-Theorem l1_norm_eval_le__ :
+Theorem l1_norm_eval_le :
   forall (e : GA_expr n),
     l1_norm (eval_expr sq e) <= l1_bound e.
 Proof.
