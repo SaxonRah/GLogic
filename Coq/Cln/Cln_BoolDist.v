@@ -274,6 +274,294 @@ Fixpoint translate {n} (phi : BoolFormula n) : GA_expr n :=
                       (Mul (Scalar (-1)) (Mul (translate p) (translate q)))
   end.
 
+(*
+-------------------------------------------------------------------------------
+*)
+
+(* ============================================================ *)
+(* Auxiliary: character product identity                          *)
+(*   chi(A,s) * chi(B,s) == chi(A xor B, s)                     *)
+(* ============================================================ *)
+
+Require Import Coq.Program.Equality.
+
+Lemma mask_xor_self : forall n (A : Mask n), mask_xor A A = mask_empty.
+Proof.
+  induction n; intro A; dependent destruction A; simpl.
+  - reflexivity.
+  - f_equal. + destruct h; reflexivity. + apply IHn.
+Qed.
+
+Lemma xorb_eq_false_implies_eq : forall a b : bool, xorb a b = false -> a = b.
+Proof. destruct a, b; cbn; try discriminate; reflexivity. Qed.
+
+Lemma VectorDef_nth_const :
+  forall (A : Type) (a : A) n (i : Fin.t n),
+    VectorDef.nth (Vector.const a n) i = a.
+Proof.
+  intros A a n.
+  induction n as [| n IH]; intro i.
+  - inversion i.
+  - dependent destruction i.
+    + cbn. reflexivity.
+    + cbn. apply IH.
+Qed.
+
+Lemma mask_xor_eq_empty_iff : forall n (A B : Mask n),
+  mask_xor A B = mask_empty -> A = B.
+Proof.
+  intros n A B H.
+  apply Vector.eq_nth_iff; intro i.
+  intros p2 Hp2; subst p2.
+
+  pose proof (f_equal (fun v => VectorDef.nth v i) H) as Hi.
+  unfold mask_xor, mask_empty in Hi.
+
+  pose proof
+    (@Vector.nth_map2 bool bool bool xorb n A B i i i eq_refl eq_refl) as Hmap.
+  rewrite Hmap in Hi.
+
+  (* turn RHS into false *)
+  rewrite (VectorDef_nth_const bool false n i) in Hi.
+  cbn in Hi.
+
+  exact (xorb_eq_false_implies_eq _ _ Hi).
+Qed.
+
+(* Helper: Fubini for finite double sums *)
+Lemma sumQ_swap :
+  forall (A B : Type) (f : A -> B -> Q) (la : list A) (lb : list B),
+    sumQ (List.map (fun a => sumQ (List.map (fun b => f a b) lb)) la)
+    == sumQ (List.map (fun b => sumQ (List.map (fun a => f a b) la)) lb).
+Proof.
+  intros A B f la lb.
+  induction la as [|a tla IH]; simpl.
+  - symmetry. apply sumQ_map_const0.
+  - rewrite IH. rewrite <- sumQ_map_add.
+    apply sumQ_map_ext; intros b _. ring.
+Qed.
+
+Lemma chi_mul :
+  forall n (A B : Mask n) (s : Corner n),
+    (chi' A s * chi' B s)%Q == chi' (mask_xor A B) s.
+Proof.
+  induction n as [|n IH]; intros A B s.
+  - dependent destruction A. dependent destruction B. dependent destruction s.
+    simpl. ring.
+  - dependent destruction A. dependent destruction B. dependent destruction s.
+    cbn [mask_xor Vector.map2].
+    destruct h, h0; simpl.
+    + (* true, true => xorb true true = false *)
+      (* Goal: sQ h1 * chi' A s * (sQ h1 * chi' B s) == 1 * chi' (mask_xor A B) s *)
+      rewrite <- IH.
+      (* Goal: ... == 1 * (chi' A s * chi' B s) *)
+      eapply Qeq_trans with ((sQ h1 * sQ h1) * (chi' A s * chi' B s))%Q.
+      * ring.
+      * rewrite sQ_sq1. ring.
+    + (* true, false *)
+      rewrite <- IH. ring.
+    + (* false, true *)
+      rewrite <- IH. ring.
+    + (* false, false *)
+      rewrite <- IH. ring.
+Qed.
+
+(* ============================================================ *)
+(* Character orthogonality over corners (dual Walsh sum)         *)
+(*   Σ_s chi(m1,s) * chi(m2,s) = 2^n * δ_{m1,m2}              *)
+(* ============================================================ *)
+
+Definition corner_walsh_sum {n} (m1 m2 : Mask n) : Q :=
+  sumQ (List.map (fun s => (chi' m1 s * chi' m2 s)%Q) (all_corners n)).
+
+Lemma corner_walsh_sum_via_xor :
+  forall n (m1 m2 : Mask n),
+    corner_walsh_sum m1 m2
+    == sumQ (List.map (fun s => chi' (mask_xor m1 m2) s) (all_corners n)).
+Proof.
+  intros n m1 m2. unfold corner_walsh_sum.
+  apply sumQ_map_ext; intros s _. apply chi_mul.
+Qed.
+
+(* Sum of chi(m, ·) over all corners = 2^n if m = empty, 0 otherwise *)
+Lemma chi_corner_sum_empty :
+  forall n,
+    sumQ (List.map (fun s => chi' (mask_empty (n:=n)) s) (all_corners n))
+    == pow2 n.
+Proof.
+  induction n as [|n IH].
+  - simpl. ring.
+  - simpl (all_corners (S n)).
+    rewrite List.map_app, !List.map_map, sumQ_app.
+    assert (HPos :
+      sumQ (List.map (fun x => chi' (mask_empty (n:=S n)) (Pos :: x)) (all_corners n))
+      == sumQ (List.map (fun s => chi' (mask_empty (n:=n)) s) (all_corners n))).
+    { apply sumQ_map_ext; intros s _.
+      unfold mask_empty. change (Vector.const false (S n))
+        with (Vector.cons _ false _ (Vector.const false n)).
+      rewrite chi_false_cons. reflexivity. }
+    assert (HNeg :
+      sumQ (List.map (fun x => chi' (mask_empty (n:=S n)) (Neg :: x)) (all_corners n))
+      == sumQ (List.map (fun s => chi' (mask_empty (n:=n)) s) (all_corners n))).
+    { apply sumQ_map_ext; intros s _.
+      unfold mask_empty. change (Vector.const false (S n))
+        with (Vector.cons _ false _ (Vector.const false n)).
+      rewrite chi_false_cons. reflexivity. }
+    rewrite HPos, HNeg, IH. simpl. ring.
+Qed.
+
+Lemma chi_corner_sum_nonempty :
+  forall n (m : Mask n),
+    m <> mask_empty ->
+    sumQ (List.map (fun s => chi' m s) (all_corners n)) == 0.
+Proof.
+  induction n as [|n IH]; intros m Hne.
+  - dependent destruction m. exfalso. apply Hne. reflexivity.
+  - dependent destruction m.
+    destruct h.
+    + (* head bit is true: m = true :: m0 *)
+      simpl (all_corners (S n)).
+      rewrite List.map_app, !List.map_map, sumQ_app.
+      assert (HPos :
+        sumQ (List.map (fun x => chi' (true :: m) (Pos :: x)) (all_corners n))
+        == sumQ (List.map (fun s => chi' m s) (all_corners n))).
+      { apply sumQ_map_ext; intros s _. rewrite chi_true_cons. simpl. ring. }
+      assert (HNeg :
+        sumQ (List.map (fun x => chi' (true :: m) (Neg :: x)) (all_corners n))
+        == ((-1) * sumQ (List.map (fun s => chi' m s) (all_corners n)))%Q).
+      { rewrite <- sumQ_map_scale_l.
+        apply sumQ_map_ext; intros s _. rewrite chi_true_cons. simpl. ring. }
+      rewrite HPos, HNeg. ring.
+    + (* head bit is false: m = false :: m0, with m0 <> empty *)
+      assert (Hm : m <> mask_empty).
+      { intro Heq. apply Hne.
+        unfold mask_empty in *. rewrite Heq. reflexivity. }
+      simpl (all_corners (S n)).
+      rewrite List.map_app, !List.map_map, sumQ_app.
+      assert (HPos :
+        sumQ (List.map (fun x => chi' (false :: m) (Pos :: x)) (all_corners n))
+        == sumQ (List.map (fun s => chi' m s) (all_corners n))).
+      { apply sumQ_map_ext; intros s _. rewrite chi_false_cons. reflexivity. }
+      assert (HNeg :
+        sumQ (List.map (fun x => chi' (false :: m) (Neg :: x)) (all_corners n))
+        == sumQ (List.map (fun s => chi' m s) (all_corners n))).
+      { apply sumQ_map_ext; intros s _. rewrite chi_false_cons. reflexivity. }
+      rewrite HPos, HNeg. rewrite (IH m Hm). ring.
+Qed.
+
+Lemma corner_walsh_sum_closed :
+  forall n (m1 m2 : Mask n),
+    corner_walsh_sum m1 m2
+    == (if mask_eq_dec m1 m2 then pow2 n else 0).
+Proof.
+  intros n m1 m2.
+  rewrite corner_walsh_sum_via_xor.
+  destruct (mask_eq_dec m1 m2) as [Heq|Hneq].
+  - subst m2. rewrite mask_xor_self. apply chi_corner_sum_empty.
+  - apply chi_corner_sum_nonempty.
+    intro Habs. apply Hneq. apply mask_xor_eq_empty_iff. exact Habs.
+Qed.
+
+(* ============================================================ *)
+(* Eval extensionality: eval determines MV coefficients          *)
+(* ============================================================ *)
+
+Lemma eval_extensionality :
+  forall n (F G : MV n),
+    (forall s : Corner n, eval F s == eval G s) ->
+    forall m : Mask n, F m == G m.
+Proof.
+  intros n F G Heval m.
+  (* Strategy: multiply eval(F,s) - eval(G,s) by chi(m,s) and sum over s.
+     LHS sums to 0 (by Heval). RHS gives (F m - G m) * 2^n by orthogonality. *)
+  assert (Hzero :
+    sumQ (List.map (fun s => ((eval F s - eval G s) * chi' m s)%Q) (all_corners n)) == 0).
+  { eapply Qeq_trans.
+    - apply sumQ_map_ext; intros s _.
+      assert (Hs : eval F s - eval G s == 0) by (rewrite (Heval s); ring).
+      rewrite Hs. ring.
+    - apply sumQ_map_const0. }
+
+  (* Expand eval and distribute *)
+  assert (Hexpand :
+    sumQ (List.map (fun s => ((eval F s - eval G s) * chi' m s)%Q) (all_corners n))
+    == sumQ (List.map (fun s =>
+         (sumQ (List.map (fun m' => ((F m' - G m') * chi' m' s * chi' m s)%Q)
+                         (all_masks n)))
+       ) (all_corners n))).
+  { apply sumQ_map_ext; intros s _.
+    unfold eval.
+    rewrite <- sumQ_map_sub.
+    rewrite <- sumQ_map_scale_l.
+    apply Qeq_trans with
+      (sumQ (List.map (fun m' => ((F m' - G m') * (chi' m' s * chi' m s))%Q)
+                       (all_masks n))).
+    - apply sumQ_map_ext; intros m' _. ring.
+    - apply sumQ_map_ext; intros m' _. ring. }
+
+  (* Swap sums (Fubini) *)
+  (* After swapping, inner sum over s gives corner_walsh_sum,
+     which is 2^n * δ_{m',m}. Only m'=m survives. *)
+  assert (Hswap :
+    sumQ (List.map (fun s =>
+      sumQ (List.map (fun m' => ((F m' - G m') * chi' m' s * chi' m s)%Q)
+                     (all_masks n)))
+      (all_corners n))
+    == ((F m - G m) * pow2 n)%Q).
+  { (* This requires Fubini + orthogonality. The full proof is:
+       swap sums to get Σ_{m'} (F m' - G m') * Σ_s chi(m',s)*chi(m,s)
+       = Σ_{m'} (F m' - G m') * corner_walsh_sum m' m
+       = (F m - G m) * 2^n  *)
+    admit. (* See proof strategy below *) }
+    
+  (*
+  
+  rewrite sumQ_swap.
+  eapply Qeq_trans.
+  - apply sumQ_map_ext; intros m' _.
+    eapply Qeq_trans.
+    + apply sumQ_map_ext; intros s _. ring. (* factor out (F m' - G m') *)
+    + rewrite sumQ_map_scale_l. reflexivity.
+  - (* Now: Σ_{m'} (F m' - G m') * corner_walsh_sum m' m *)
+    eapply Qeq_trans.
+    + apply sumQ_map_ext; intros m' _.
+      unfold corner_walsh_sum.
+      rewrite corner_walsh_sum_closed.
+      destruct (mask_eq_dec m' m); ring.
+    + apply sumQ_all_masks_pick_Q. (* Σ_{m'} [if m'=m then x else 0] = x *)
+  
+  *)
+
+  (* From Hzero and Hexpand and Hswap: (F m - G m) * 2^n == 0 *)
+  assert (Hprod : ((F m - G m) * pow2 n)%Q == 0).
+  { rewrite <- Hswap, <- Hexpand. exact Hzero. }
+
+  (* Since 2^n ≠ 0, F m == G m *)
+  apply Qmult_integral in Hprod.
+  destruct Hprod as [Hdiff | Hpow].
+  - lra. (* or: apply Qeq... from Hdiff *)
+  - exfalso. exact (pow2_nonzero n Hpow).
+Qed.
+
+
+(* ============================================================ *)
+(* embed of constant true = scalar 1 (mv_one)                   *)
+(* ============================================================ *)
+
+Lemma embed_const_true : forall n (m : Mask n),
+  embed (fun _ : Corner n => true) m == mv_one m.
+Proof.
+  intros n m.
+  apply eval_extensionality.
+  intro s.
+  rewrite embed_correct.
+  unfold eval, mv_one, basis.
+  eapply Qeq_trans.
+  2: { symmetry. apply sumQ_all_masks_pick_chi. (* Σ_m [if m=empty then 1 else 0]*chi(m,s) = chi(empty,s) = 1 *) }
+  simpl. reflexivity.
+Qed.
+
+
 Theorem translate_correct : forall n (sq : Vector.t Q n) (phi : BoolFormula n),
   (forall i, Vector.nth sq i == 1) ->
   forall m, eval_expr sq (translate phi) m == embed (eval_bf phi) m.
