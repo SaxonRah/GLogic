@@ -744,13 +744,16 @@ Proof.
   - apply chi_mask_empty.
 Qed.
 
+(*
+
+                                        This cannot be proven True (AND is Geometric Product)
+
 Lemma translate_eval_correct :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
     (forall i, Vector.nth sq i == 1) ->
     forall s : Corner n,
       eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
 Proof.
-  (* This cannot be proven True*)
 Admitted.
 
 Lemma eval_gp_embed :
@@ -768,7 +771,6 @@ Lemma Pi_gp_delta :
 Proof.
 Admitted.
 
-
 Theorem translate_correct :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
     (forall i, Vector.nth sq i == 1) ->
@@ -781,7 +783,7 @@ Proof.
             (embed (eval_bf phi))
             _ m).
   intro s.
-  rewrite (translate_eval_correct n sq phi Hsq s). (* This cannot be proven*)
+  rewrite (translate_eval_correct n sq phi Hsq s). 
   rewrite embed_correct.
   reflexivity.
 Qed.
@@ -793,6 +795,7 @@ Lemma translate_eval_correct_final :
       eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
 Proof.
 Admitted.
+*)
 
 (* ------------------------------------------------------------------------- *)
 
@@ -810,5 +813,25 @@ Definition mv_conv {n : nat} (F G : MV n) : MV n :=
       ) (all_masks n))
     ) (all_masks n)).
 
-This now exists in Cln_Full.v
+This convolution stuff now exists in Cln_Full.v, Cln_Grade.v, Cln_finite_l1_submultiplicativity.v
 *)
+
+
+(* Corner-Walsh orthogonality *)
+Lemma corner_walsh_sum_ortho : forall n (A B : Mask n),
+  sumQ (List.map (fun s => (chi' A s * chi' B s)%Q) (all_corners n))
+  == if mask_eq_dec A B then pow2 n else 0%Q.
+Proof.
+Admitted.
+
+Theorem translate_correct : forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+  (forall i, Vector.nth sq i == 1) ->
+  forall m, eval_expr sq (translate phi) m == embed (eval_bf phi) m.
+Proof.
+  intros.
+  apply eval_extensionality.
+  intro s.
+  rewrite <- embed_correct.
+  apply translate_eval_correct.
+  assumption.
+Qed.
