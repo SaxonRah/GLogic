@@ -333,8 +333,59 @@ Proof.
   apply grade_bounded_gp; apply max_grade_bounded.
 Qed.
 
+
 (* ============================================================ *)
-(* Base cases for GA expression building blocks                  *)
+(* Grade evolution under convolution product                    *)
+(* ============================================================ *)
+
+Lemma grade_bounded_conv :
+  forall n (F G : MV n) (j k : nat),
+    grade_bounded F j ->
+    grade_bounded G k ->
+    grade_bounded (mv_conv F G) (j + k)%nat.
+Proof.
+  intros n F G j k HF HG U HU.
+  unfold mv_conv.
+
+  eapply Qeq_trans.
+  { apply (@sumQ_map_ext (Mask n)
+      _ (fun _ => 0%Q) (all_masks n)).
+    intros A _.
+
+    eapply Qeq_trans.
+    { apply (@sumQ_map_ext (Mask n)
+        _ (fun _ => 0%Q) (all_masks n)).
+      intros B _.
+
+      destruct (mask_eq_dec (mask_xor A B) U) as [HAB|_].
+      - assert (Hgrade : (grade A + grade B > j + k)%nat).
+        { pose proof (grade_xor_le A B) as Hle.
+          rewrite HAB in Hle. lia. }
+
+        destruct (le_gt_dec (grade A) j) as [HleA | HgtA].
+        + (* grade A <= j, so grade B > k *)
+          assert (HgtB : (grade B > k)%nat) by lia.
+          rewrite (HG B HgtB). ring.
+        + (* grade A > j *)
+          rewrite (HF A HgtA). ring.
+      - reflexivity.
+    }
+    exact (sumQ_map_const0 (A:=Mask n) (all_masks n)).
+  }
+  exact (sumQ_map_const0 (A:=Mask n) (all_masks n)).
+Qed.
+
+Lemma max_grade_conv_le :
+  forall n (F G : MV n),
+    (max_grade (mv_conv F G) <= max_grade F + max_grade G)%nat.
+Proof.
+  intros n F G.
+  apply bounded_implies_max_grade_le.
+  apply grade_bounded_conv; apply max_grade_bounded.
+Qed.
+
+(* ============================================================ *)
+(* Base cases for GA expression building blocks                 *)
 (* ============================================================ *)
 
 Lemma grade_bounded_basis_single :
@@ -363,12 +414,14 @@ Inductive GA_expr (n : nat) : Type :=
   | Basis  : Fin.t n -> GA_expr n
   | Scalar : Q -> GA_expr n
   | Add    : GA_expr n -> GA_expr n -> GA_expr n
-  | Mul    : GA_expr n -> GA_expr n -> GA_expr n.
+  | Mul    : GA_expr n -> GA_expr n -> GA_expr n   (* geometric product *)
+  | Conv   : GA_expr n -> GA_expr n -> GA_expr n.  (* convolution *)
 
 Arguments Basis {n}.
 Arguments Scalar {n}.
 Arguments Add {n}.
 Arguments Mul {n}.
+Arguments Conv {n}.
 
 Fixpoint eval_expr {n} (sq : Vector.t Q n) (e : GA_expr n) : MV n :=
   match e with
@@ -376,6 +429,7 @@ Fixpoint eval_expr {n} (sq : Vector.t Q n) (e : GA_expr n) : MV n :=
   | Scalar c  => mv_scale c mv_one
   | Add e1 e2 => mv_add (eval_expr sq e1) (eval_expr sq e2)
   | Mul e1 e2 => mv_gp sq (eval_expr sq e1) (eval_expr sq e2)
+  | Conv e1 e2 => mv_conv (eval_expr sq e1) (eval_expr sq e2)
   end.
 
 Fixpoint grade_bound {n} (e : GA_expr n) : nat :=
@@ -384,6 +438,7 @@ Fixpoint grade_bound {n} (e : GA_expr n) : nat :=
   | Scalar _  => 0%nat
   | Add e1 e2 => Nat.max (grade_bound e1) (grade_bound e2)
   | Mul e1 e2 => (grade_bound e1 + grade_bound e2)%nat
+  | Conv e1 e2 => (grade_bound e1 + grade_bound e2)%nat
   end.
 
 Theorem eval_grade_bounded :
@@ -391,11 +446,12 @@ Theorem eval_grade_bounded :
     grade_bounded (eval_expr sq e) (grade_bound e).
 Proof.
   intros n sq e.
-  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
+  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
   - exact (grade_bounded_basis_single i).
   - exact (grade_bounded_scale_one c).
   - exact (grade_bounded_add IH1 IH2).
   - exact (grade_bounded_gp sq IH1 IH2).
+  - exact (grade_bounded_conv IH1 IH2).
 Qed.
 
 Corollary max_grade_eval_le :
@@ -421,6 +477,11 @@ Fixpoint max_grade_during {n} (sq : Vector.t Q n) (e : GA_expr n) : nat :=
         (Nat.max (max_grade_during sq e1)
                  (max_grade_during sq e2))
         (max_grade (mv_gp sq (eval_expr sq e1) (eval_expr sq e2)))
+  | Conv e1 e2 =>
+      Nat.max
+        (Nat.max (max_grade_during sq e1)
+                 (max_grade_during sq e2))
+        (max_grade (mv_conv (eval_expr sq e1) (eval_expr sq e2)))
   end.
 
 Lemma max_grade_le_during :
@@ -428,7 +489,7 @@ Lemma max_grade_le_during :
     (max_grade (eval_expr sq e) <= max_grade_during sq e)%nat.
 Proof.
   intros n sq e.
-  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
+  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
   - apply bounded_implies_max_grade_le.
     exact (grade_bounded_basis_single i).
   - apply bounded_implies_max_grade_le.
@@ -436,6 +497,7 @@ Proof.
   - eapply Nat.le_trans.
     + exact (max_grade_add_le (eval_expr sq e1) (eval_expr sq e2)).
     + apply Nat.max_le_compat; assumption.
+  - apply Nat.le_max_r.
   - apply Nat.le_max_r.
 Qed.
 

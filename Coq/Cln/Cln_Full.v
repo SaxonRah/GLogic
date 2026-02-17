@@ -1072,6 +1072,28 @@ Definition mask_empty {n} : Mask n := Vector.const false n.
 Definition grade_parity {n} (m : Mask n) : bool :=
   List.fold_right xorb false (Vector.to_list m).
 
+(* Signless convolution: group algebra product of (Z_2)^n *)
+Definition mv_conv {n : nat} (F G : MV n) : MV n :=
+  fun U =>
+    sumQ (List.map (fun A =>
+      sumQ (List.map (fun B =>
+        if mask_eq_dec (mask_xor A B) U
+        then (F A * G B)%Q else 0%Q
+      ) (all_masks n))
+    ) (all_masks n)).
+
+(* Character multiplicativity — the key identity *)
+Lemma chi_mul : forall n (A B : Mask n) (s : Corner n),
+  (chi' A s * chi' B s)%Q == chi' (mask_xor A B) s.
+Proof.
+Admitted.
+
+(* Eval is multiplicative under convolution *)
+Lemma eval_conv : forall n (F G : MV n) (s : Corner n),
+  eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+Proof.
+Admitted.
+
 (* ============================================================ *)
 (* Swap parity: (-1)^(# { (i in A, j in B) | j < i })             *)
 (* ============================================================ *)

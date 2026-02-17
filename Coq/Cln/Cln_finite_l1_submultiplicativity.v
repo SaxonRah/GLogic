@@ -195,9 +195,167 @@ Proof.
     + reflexivity.
 Qed.
 
+
+(* Delta collapse for convolution (no sq dependency) *)
+Lemma sumU_xor_delta_conv :
+  forall n (A B : Mask n),
+    sumQ (map (fun U =>
+      if mask_eq_dec (mask_xor A B) U then 1%Q else 0%Q) (all_masks n))
+    == 1%Q.
+Proof.
+  intros m A B.
+  eapply Qeq_trans.
+  2: { apply (sumQ_all_masks_pick (fun _ => 1%Q) (mask_xor A B)). }
+  apply sumQ_map_ext. intros l Hm.
+  destruct (mask_eq_dec (mask_xor A B) l) as [Hab|Hab].
+  - subst l.
+    destruct (mask_eq_dec (mask_xor A B) (mask_xor A B)) as [_|Hneq].
+    + reflexivity.
+    + exfalso; apply Hneq; reflexivity.
+  - destruct (mask_eq_dec l (mask_xor A B)) as [Hba|_].
+    + exfalso. apply Hab. now symmetry.
+    + reflexivity.
+Qed.
+
 (* ------------------------------------------------------------ *)
 (* Main theorem                                                   *)
 (* ------------------------------------------------------------ *)
+
+Lemma l1_conv_bound :
+  forall n (F G : MV n),
+    l1_norm (mv_conv F G) <= l1_norm F * l1_norm G.
+Proof.
+  intros m F G.
+  unfold l1_norm, mv_conv.
+  set (MS := all_masks n).
+
+  set (term := fun (U A B : Mask n) =>
+    if mask_eq_dec (mask_xor A B) U
+    then (F A * G B)%Q else 0%Q).
+
+  set (inner := fun (U : Mask n) =>
+    sumQ (map (fun A : Mask n =>
+      sumQ (map (fun B : Mask n => term U A B) MS)) MS)).
+
+  (* Step 1: push abs through both finite sums *)
+  assert (Hstep1 :
+    sumQ (map (fun U => Qabs (inner U)) MS)
+    <=
+    sumQ (map (fun U =>
+      sumQ (map (fun A =>
+        sumQ (map (fun B => Qabs (term U A B)) MS)) MS)) MS)).
+  {
+    apply sumQ_map_le.
+    intros U HU.
+    eapply Qle_trans.
+    - apply Qabs_sumQ_map_le.
+    - apply sumQ_map_le.
+      intros A HA.
+      apply Qabs_sumQ_map_le.
+  }
+
+  eapply Qle_trans.
+  - exact Hstep1.
+  - apply Qle_of_Qeq.
+
+    (* Step 2: Expand |term| — no coefficient to worry about *)
+    eapply Qeq_trans with
+      (y :=
+        sumQ (map (fun U : Mask n =>
+          sumQ (map (fun A : Mask n =>
+            sumQ (map (fun B : Mask n =>
+              if mask_eq_dec (mask_xor A B) U
+              then (Qabs (F A) * Qabs (G B))%Q
+              else 0%Q) MS)) MS)) MS)).
+    + apply sumQ_map_ext; intros U HU.
+      apply sumQ_map_ext; intros A HA.
+      apply sumQ_map_ext; intros B HB.
+      unfold term.
+      destruct (mask_eq_dec (mask_xor A B) U) as [Heq|Hneq].
+      * rewrite Qabs_Qmult. apply Qeq_refl.
+      * simpl. apply Qeq_refl.
+
+    + (* Step 3: Fubini — swap U innermost *)
+      rewrite (sumQ_fubini (A:=Mask n) (B:=Mask n)
+        MS MS
+        (fun U A =>
+           sumQ (map (fun B =>
+             if mask_eq_dec (mask_xor A B) U
+             then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS))).
+
+      eapply Qeq_trans with
+        (y :=
+          sumQ (map (fun A : Mask n =>
+            sumQ (map (fun B : Mask n =>
+              sumQ (map (fun U : Mask n =>
+                if mask_eq_dec (mask_xor A B) U
+                then (Qabs (F A) * Qabs (G B))%Q else 0%Q) MS)) MS)) MS)).
+      { apply sumQ_map_ext; intros A HA.
+        apply (sumQ_fubini MS MS
+          (fun U B : Mask n =>
+            if mask_eq_dec (mask_xor A B) U
+            then (Qabs (F A) * Qabs (G B))%Q
+            else 0%Q)). }
+
+      (* Step 4: Collapse U-sum via delta *)
+      eapply Qeq_trans with
+        (y :=
+          sumQ (map (fun A : Mask n =>
+            sumQ (map (fun B : Mask n =>
+              (Qabs (F A) * Qabs (G B))%Q *
+              sumQ (map (fun U : Mask n =>
+                if mask_eq_dec (mask_xor A B) U then 1%Q else 0%Q) MS)) MS)) MS)).
+      { apply sumQ_map_ext; intros A HA.
+        apply sumQ_map_ext; intros B HB.
+        rewrite <- (sumQ_map_scale_l
+          (Qabs (F A) * Qabs (G B))%Q
+          (fun U : Mask n =>
+             if mask_eq_dec (mask_xor A B) U then 1%Q else 0%Q)
+          MS).
+        apply sumQ_map_ext; intros U HU.
+        destruct (mask_eq_dec (mask_xor A B) U); ring. }
+
+      eapply Qeq_trans with
+        (y :=
+          sumQ (map (fun A : Mask n =>
+            sumQ (map (fun B : Mask n =>
+              Qabs (F A) * Qabs (G B) * 1%Q) MS)) MS)).
+      { apply sumQ_map_ext; intros A HA.
+        apply sumQ_map_ext; intros B HB.
+        unfold MS.
+        rewrite sumU_xor_delta_conv.
+        apply Qeq_refl. }
+
+      (* Step 5: Simplify *1 *)
+      eapply Qeq_trans with
+        (y :=
+          sumQ (map (fun A : Mask n =>
+            sumQ (map (fun B : Mask n =>
+              (Qabs (F A) * Qabs (G B))%Q) MS)) MS)).
+      { apply sumQ_map_ext; intros A HA.
+        apply sumQ_map_ext; intros B HB.
+        rewrite Qmult_1_r. apply Qeq_refl. }
+
+      (* Step 6: Factor into ‖F‖₁ · ‖G‖₁ *)
+      eapply Qeq_trans with
+        (y :=
+          sumQ (map (fun A : Mask n =>
+            (Qabs (F A) * sumQ (map (fun B : Mask n => Qabs (G B)) MS))%Q) MS)).
+      { apply sumQ_map_ext; intros A HA.
+        rewrite <- (sumQ_map_scale_l (Qabs (F A))
+          (fun B : Mask n => Qabs (G B)) MS).
+        apply sumQ_map_ext; intros B HB. ring. }
+
+      set (K := sumQ (map (fun B : Mask n => Qabs (G B)) MS)).
+
+      eapply Qeq_trans with
+        (y := sumQ (map (fun A : Mask n => (K * Qabs (F A))%Q) MS)).
+      { apply sumQ_map_ext; intros A HA. unfold K. ring. }
+
+      rewrite (sumQ_map_scale_l K (fun A : Mask n => Qabs (F A)) MS).
+      rewrite Qmult_comm.
+      apply Qeq_refl.
+Qed.
 
 Theorem l1_gp_submultiplicative :
   forall (F G : MV n),
@@ -430,6 +588,12 @@ Proof.
   intros; apply l1_gp_submultiplicative.
 Qed.
 
+Lemma l1_conv_bound :
+  forall n (F G : MV n),
+    l1_norm (mv_conv F G) <= l1_norm F * l1_norm G.
+Proof.
+Qed.
+
 (* Static ℓ₁ bound from expression structure *)
 Fixpoint l1_bound {n} (e : GA_expr n) : Q :=
   match e with
@@ -437,6 +601,7 @@ Fixpoint l1_bound {n} (e : GA_expr n) : Q :=
   | Scalar c  => Qabs c
   | Cln_Grade.Add e1 e2 => l1_bound e1 + l1_bound e2
   | Cln_Grade.Mul e1 e2 => l1_bound e1 * l1_bound e2
+  | Cln_Grade.Conv e1 e2 => l1_bound e1 * l1_bound e2
   end.
 
 Lemma l1_norm_nonneg : forall (F : MV n),
@@ -494,6 +659,38 @@ Proof.
   - destruct (Qle_lt_or_eq _ _ (Qle_trans _ _ _ Ha Hab)) as [Hb'|Hb'].
     + apply Qmult_le_l; assumption.
     + setoid_rewrite <- Hb'. ring_simplify. apply Qle_refl.
+Qed.
+
+Theorem l1_norm_eval_le :
+  forall (e : GA_expr n),
+    l1_norm (eval_expr sq e) <= l1_bound e.
+Proof.
+  intros e.
+  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
+  - (* Basis *)
+    apply Qle_of_Qeq. apply l1_norm_basis.
+  - (* Scalar *)
+    apply Qle_of_Qeq. apply l1_norm_scale_one.
+  - (* Add *)
+    eapply Qle_trans.
+    + apply l1_add_bound.
+    + apply Qplus_le_compat; assumption.
+  - (* Mul *)
+    eapply Qle_trans.
+    + apply l1_gp_bound.
+    + apply Qmult_le_compat_nonneg.
+      * apply l1_norm_nonneg.
+      * apply l1_norm_nonneg.
+      * exact IH1.
+      * exact IH2.
+  - (* Conv *)
+    eapply Qle_trans.
+    + apply l1_conv_bound.
+    + apply Qmult_le_compat_nonneg.
+      * apply l1_norm_nonneg.
+      * apply l1_norm_nonneg.
+      * exact IH1.
+      * exact IH2.
 Qed.
 
 Theorem l1_norm_eval_le :

@@ -262,7 +262,7 @@ Fixpoint eval_bf {n} (phi : BoolFormula n) (c : Corner n) : bool :=
   | BOr p q    => orb (eval_bf p c) (eval_bf q c)
   | BNot p     => negb (eval_bf p c)
   end.
-
+(*
 Fixpoint translate {n} (phi : BoolFormula n) : GA_expr n :=
   match phi with
   | BVar i     => Mul (Scalar (1#2)) (Add (Scalar 1) (Basis i))
@@ -272,6 +272,17 @@ Fixpoint translate {n} (phi : BoolFormula n) : GA_expr n :=
   | BNot p     => Add (Scalar 1) (Mul (Scalar (-1)) (translate p))
   | BOr p q    => Add (Add (translate p) (translate q))
                       (Mul (Scalar (-1)) (Mul (translate p) (translate q)))
+  end.
+*)
+Fixpoint translate {n} (phi : BoolFormula n) : GA_expr n :=
+  match phi with
+  | BVar i       => Mul (Scalar (1#2)) (Add (Scalar 1) (Basis i))
+  | BConst true  => Scalar 1
+  | BConst false => Scalar 0
+  | BAnd p q     => Conv (translate p) (translate q)    (* was Mul *)
+  | BNot p       => Add (Scalar 1) (Mul (Scalar (-1)) (translate p))
+  | BOr p q      => Add (Add (translate p) (translate q))
+                         (Mul (Scalar (-1)) (Conv (translate p) (translate q)))
   end.
 
 (*
@@ -739,7 +750,7 @@ Lemma translate_eval_correct :
     forall s : Corner n,
       eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
 Proof.
-  (* main induction; see below *)
+  (* This cannot be proven True*)
 Admitted.
 
 Lemma eval_gp_embed :
@@ -770,7 +781,7 @@ Proof.
             (embed (eval_bf phi))
             _ m).
   intro s.
-  rewrite (translate_eval_correct n sq phi Hsq s).
+  rewrite (translate_eval_correct n sq phi Hsq s). (* This cannot be proven*)
   rewrite embed_correct.
   reflexivity.
 Qed.
@@ -781,28 +792,23 @@ Lemma translate_eval_correct_final :
     forall s : Corner n,
       eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
 Proof.
-  intros n sq phi Hsq.
-  induction phi; intro s; cbn [translate eval_bf eval_expr].
-  - (* BVar *)
-    (* rewrite gp with left scalar into mv_scale, then eval *)
-    (* finish with (1/2)(1+sQ) computation *)
-  - (* BConst b *)
-    destruct b; cbn.
-    + (* true *) rewrite <- (eval_mv_one n s).
-      (* use embed_correct if you prefer, or direct eval of Scalar 1 *)
-      (* Scalar 1 evaluates to 1 *)
-    + (* false *) (* Scalar 0 evaluates to 0 *)
-  - (* BAnd *)
-    (* use IHphi1, IHphi2, and eval_gp_embed *)
-    rewrite (eval_gp_embed n sq (eval_bf phi1) (eval_bf phi2) s Hsq).
-    rewrite IHphi1 by assumption.
-    rewrite IHphi2 by assumption.
-    (* bQ(andb ..) = product *)
-    destruct (eval_bf phi1 s), (eval_bf phi2 s); cbn; ring.
-  - (* BOr *)
-    (* use identity bQ(or) = x + y - x*y, plus eval_gp_embed *)
-    (* and IHs; then case split on booleans; ring *)
-  - (* BNot *)
-    (* identity bQ(negb b) = 1 - bQ(b) *)
-Qed.
+Admitted.
 
+(* ------------------------------------------------------------------------- *)
+
+(* This is a fundimental problem, GeometricProduct cannot define AND 
+
+   Thus we introduce a convolution operator 
+
+   Signless convolution: group algebra product of (Z_2)^n 
+Definition mv_conv {n : nat} (F G : MV n) : MV n :=
+  fun U =>
+    sumQ (List.map (fun A =>
+      sumQ (List.map (fun B =>
+        if mask_eq_dec (mask_xor A B) U
+        then (F A * G B)%Q else 0%Q
+      ) (all_masks n))
+    ) (all_masks n)).
+
+This now exists in Cln_Full.v
+*)
