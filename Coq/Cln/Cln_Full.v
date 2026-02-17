@@ -1083,10 +1083,31 @@ Definition mv_conv {n : nat} (F G : MV n) : MV n :=
     ) (all_masks n)).
 
 (* Character multiplicativity — the key identity *)
-Lemma chi_mul : forall n (A B : Mask n) (s : Corner n),
-  (chi' A s * chi' B s)%Q == chi' (mask_xor A B) s.
+
+Lemma chi_mul :
+  forall n (A B : Mask n) (s : Corner n),
+    (chi' A s * chi' B s)%Q == chi' (mask_xor A B) s.
 Proof.
-Admitted.
+  induction n as [|n IH]; intros A B s.
+  - dependent destruction A. dependent destruction B. dependent destruction s.
+    simpl. ring.
+  - dependent destruction A. dependent destruction B. dependent destruction s.
+    cbn [mask_xor Vector.map2].
+    destruct h, h0; simpl.
+    + (* true, true => xorb true true = false *)
+      (* Goal: sQ h1 * chi' A s * (sQ h1 * chi' B s) == 1 * chi' (mask_xor A B) s *)
+      rewrite <- IH.
+      (* Goal: ... == 1 * (chi' A s * chi' B s) *)
+      eapply Qeq_trans with ((sQ h1 * sQ h1) * (chi' A s * chi' B s))%Q.
+      * ring.
+      * rewrite sQ_sq1. ring.
+    + (* true, false *)
+      rewrite <- IH. ring.
+    + (* false, true *)
+      rewrite <- IH. ring.
+    + (* false, false *)
+      rewrite <- IH. ring.
+Qed.
 
 (* Eval is multiplicative under convolution *)
 Lemma eval_conv : forall n (F G : MV n) (s : Corner n),

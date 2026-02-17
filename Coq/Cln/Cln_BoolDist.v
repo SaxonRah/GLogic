@@ -13,6 +13,16 @@ From Coq Require Import QArith.Qabs.
 
 Open Scope Q_scope.
 
+Lemma bQ_andb : forall a b, bQ (andb a b) == (bQ a * bQ b)%Q.
+Proof. destruct a, b; simpl; ring. Qed.
+
+Lemma bQ_negb : forall b, bQ (negb b) == (1 - bQ b)%Q.
+Proof. destruct b; simpl; ring. Qed.
+
+Lemma bQ_orb : forall a b, 
+  bQ (orb a b) == (bQ a + bQ b - bQ a * bQ b)%Q.
+Proof. destruct a, b; simpl; ring. Qed.
+
 Definition bool_dist_le {n} (F : MV n) (d : Q) : Prop :=
   exists g : Corner n -> bool,
     l1_norm (mv_sub F (embed g)) <= d.
@@ -350,31 +360,6 @@ Proof.
   - symmetry. apply sumQ_map_const0.
   - rewrite IH. rewrite <- sumQ_map_add.
     apply sumQ_map_ext; intros b _. ring.
-Qed.
-
-Lemma chi_mul :
-  forall n (A B : Mask n) (s : Corner n),
-    (chi' A s * chi' B s)%Q == chi' (mask_xor A B) s.
-Proof.
-  induction n as [|n IH]; intros A B s.
-  - dependent destruction A. dependent destruction B. dependent destruction s.
-    simpl. ring.
-  - dependent destruction A. dependent destruction B. dependent destruction s.
-    cbn [mask_xor Vector.map2].
-    destruct h, h0; simpl.
-    + (* true, true => xorb true true = false *)
-      (* Goal: sQ h1 * chi' A s * (sQ h1 * chi' B s) == 1 * chi' (mask_xor A B) s *)
-      rewrite <- IH.
-      (* Goal: ... == 1 * (chi' A s * chi' B s) *)
-      eapply Qeq_trans with ((sQ h1 * sQ h1) * (chi' A s * chi' B s))%Q.
-      * ring.
-      * rewrite sQ_sq1. ring.
-    + (* true, false *)
-      rewrite <- IH. ring.
-    + (* false, true *)
-      rewrite <- IH. ring.
-    + (* false, false *)
-      rewrite <- IH. ring.
 Qed.
 
 (* ============================================================ *)
@@ -822,7 +807,44 @@ Lemma corner_walsh_sum_ortho : forall n (A B : Mask n),
   sumQ (List.map (fun s => (chi' A s * chi' B s)%Q) (all_corners n))
   == if mask_eq_dec A B then pow2 n else 0%Q.
 Proof.
-Admitted.
+  intros n A B.
+  exact (corner_walsh_sum_closed n A B).
+Qed.
+
+Lemma translate_eval_correct :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    forall s : Corner n,
+      eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
+Proof.
+  intros n sq phi Hsq.
+  induction phi; intro s; simpl.
+  - (* BVar i *)
+    apply eval_var_projector; assumption.
+  - (* BConst b *)
+    destruct b; simpl.
+    + (* true: eval(Scalar 1) = 1 = bQ true *)
+      rewrite eval_scale, eval_mv_one. ring.
+    + (* false: eval(Scalar 0) = 0 = bQ false *)
+      rewrite eval_scale, eval_mv_one. ring.
+  - (* BAnd p q: Conv case *)
+    (* eval(mv_conv (eval_expr sq (translate p)) (eval_expr sq (translate q)), s) *)
+    rewrite eval_conv.
+    rewrite IHphi1, IHphi2.
+    symmetry. apply bQ_andb.
+  - (* BOr p q *)
+    (* translate = Add (Add tp tq) (Mul (Scalar (-1)) (Conv tp tq)) *)
+    rewrite eval_add, eval_add.
+    rewrite eval_scale, eval_conv.
+    rewrite IHphi1, IHphi2.
+    symmetry. apply bQ_orb.
+  - (* BNot p *)
+    (* translate = Add (Scalar 1) (Mul (Scalar (-1)) (translate p)) *)
+    rewrite eval_add, eval_scale.
+    rewrite eval_scale, eval_mv_one.
+    rewrite IHphi.
+    symmetry. apply bQ_negb.
+Qed.
 
 Theorem translate_correct : forall n (sq : Vector.t Q n) (phi : BoolFormula n),
   (forall i, Vector.nth sq i == 1) ->
@@ -831,7 +853,7 @@ Proof.
   intros.
   apply eval_extensionality.
   intro s.
-  rewrite <- embed_correct.
+  rewrite embed_correct.
   apply translate_eval_correct.
   assumption.
 Qed.
