@@ -1,3 +1,92 @@
+# Layman Story
+
+Imagine you want to visit Grandma.
+
+You have a **map** that shows exactly where everything is and how locations connect. On the map, directions combine perfectly. If you go east then north, the map tells you exactly where you land. Nothing bends or surprises you.
+
+That map is like the **flat rulebook for logic** (the *untwisted algebra* or *convolution*).
+
+It tells you what’s true and how things combine. It’s clean. Predictable. Logical.
+
+But here’s the catch:
+
+You can’t physically travel on the map.
+
+The real world isn’t flat paper. It’s a **mountain range**.
+
+The same places exist in real life. The same directions exist. But now there are hills, slopes, cliffs, and valleys. Moving from one place to another might require climbing.
+
+That real terrain is like the **geometric product** (the *twisted algebra*).
+
+It’s the same underlying space (the same *representation space*), but now it has curvature (the *cocycle*).
+
+---
+
+When you write a computer program, it’s like choosing a hiking route.
+
+Each step of the hike is an intermediate state of the computation (an intermediate *multivector*). The whole hike is the program (a *GA expression*).
+
+To know if you succeeded, you look back at the map and check:
+
+“Did I reach Grandma’s house?”
+
+That’s evaluation (the *semantic check* via convolution).
+
+---
+
+Now here’s where complexity enters.
+
+Some destinations are in valleys. You can reach them without climbing much. Those are easy problems.
+
+But some destinations are on top of very tall mountains.
+
+No matter how cleverly you plan your path, you must climb to that altitude at some point. That unavoidable climb is the *excursion* (measured by things like *grade*).
+
+A hard problem is one where **every possible hiking route requires climbing very high**.
+
+For example, the parity function is like a house at the very top ridge. You can’t reach it without climbing all the way up.
+
+---
+
+So in this picture:
+
+* The **map** (convolution / untwisted algebra) defines meaning.
+* The **mountain terrain** (geometric product / twisted algebra) defines how you’re allowed to move.
+* A **program** is a hiking route.
+* **Excursion** (grade, etc.) is how high you had to climb.
+* A **hard function** is one located at high altitude.
+* Complexity measures the minimum altitude required to reach the destination.
+
+---
+
+Now here’s the big dream.
+
+If we could prove two things:
+
+1. Any efficient algorithm (polynomial-time computation) can only hike routes that stay below a certain height.
+2. There exists a problem in NP (like SAT) that requires climbing exponentially high mountains.
+
+Then it would follow that efficient algorithms simply cannot reach that destination.
+
+That would mean P ≠ NP.
+
+Not because we invented a tricky puzzle —
+but because the terrain itself makes it impossible.
+
+---
+
+In short:
+
+The map tells you what’s correct.
+The mountains determine what’s possible.
+Complexity is how high you’re forced to climb.
+
+---
+---
+---
+---
+---
+
 # Program B: Structural Lower Bounds with Convolution-Based Simulation
 
 ## 1. Strategic Positioning
