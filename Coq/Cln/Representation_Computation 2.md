@@ -10,11 +10,11 @@
 
 ## 1. The semantic base is not chosen — it is discovered
 
-Let (G=(\mathbb Z_2)^n) and let
+Let $G=(\mathbb Z_2)^n$ and let
 ```math
 MV_n ;\cong; \mathbb Q[G]
 ```
-with basis ({e_A}_{A\subseteq[n]}).
+with basis ${e_A}_{A\subseteq[n]}$.
 
 There is a canonical, “semantic” multiplication on this space:
 
@@ -23,9 +23,9 @@ There is a canonical, “semantic” multiplication on this space:
   e_A \odot e_B ;=; e_{A\oplus B}.
   ```
 
-Under Walsh/Fourier evaluation, ((MV_n,\odot)) is (morally) the algebra of functions on the hypercube with pointwise multiplication. That’s why it simulates Boolean formulas cleanly: evaluation becomes multiplicative.
+Under Walsh/Fourier evaluation, $MV_n,\odot$ is (morally) the algebra of functions on the hypercube with pointwise multiplication. That’s why it simulates Boolean formulas cleanly: evaluation becomes multiplicative.
 
-So the Boolean datatype layer is not something we bolt on: it’s already the natural algebra structure of (\mathbb Q[(\mathbb Z_2)^n]).
+So the Boolean datatype layer is not something we bolt on: it’s already the natural algebra structure of $\mathbb Q[(\mathbb Z_2)^n]$.
 
 ---
 
@@ -68,17 +68,17 @@ This is why it feels like discovery: once you notice “Clifford = twisted group
 
 ## 4. What the invariant is really measuring
 
-Pick an excursion measure (\mathcal{E}) (grade, (\ell_1), BoolDist, or a lexicographic combo).
+Pick an excursion measure $\mathcal{E}$ $grade$, $\ell_1$, BoolDist, or a lexicographic combo).
 
 The key property you’ve uncovered is:
 
-* the *support dynamics* are controlled by the underlying group law (A\oplus B),
+* the *support dynamics* are controlled by the underlying group law $A\oplus B$,
 * while the *semantic correctness* lives in the untwisted algebra,
-* and the *obstruction* lives in the twist (\omega).
+* and the *obstruction* lives in the twist $\omega$.
 
-So (\mathcal{E}(f)) measures something like:
+So $\mathcal{E}(f)$ measures something like:
 
-> the smallest region of (MV_n) in which the twist becomes “locally harmless enough” to implement the semantic computation of (f).
+> the smallest region of $MV_n$ in which the twist becomes “locally harmless enough” to implement the semantic computation of $f$.
 
 That’s a cohomological obstruction story, not a circuit gadget story.
 
@@ -88,12 +88,12 @@ That’s a cohomological obstruction story, not a circuit gadget story.
 
 With convolution available, you restore a clean “upper bound direction”:
 
-* Boolean formulas compute in the semantic algebra ((MV_n,\odot)) because evaluation is multiplicative there.
+* Boolean formulas compute in the semantic algebra $(MV_n,\odot)$ because evaluation is multiplicative there.
 * The twist is reserved for the dynamics/invariant layer (excursion).
 
-So the simulation theorem stops trying to force (\star) to be AND. Instead it states:
+So the simulation theorem stops trying to force $\star$ to be AND. Instead it states:
 
-> **Boolean computation embeds canonically into (MV_n)** via the untwisted product, while lower bounds arise from how computations behave under the twisted deformation.
+> **Boolean computation embeds canonically into $MV_n$** via the untwisted product, while lower bounds arise from how computations behave under the twisted deformation.
 
 This separation is the conceptual breakthrough.
 
@@ -105,17 +105,17 @@ This framework doesn’t magically prove P≠NP by itself. But it suggests a *ve
 
 ### Step A — Define a “GA-deformation complexity” for Boolean functions
 
-Define (\mathcal{E}(f)) as the minimal excursion needed by *any* program in the model that computes (f) (with semantics guaranteed via (\odot), and excursion measured via the dynamics/invariants you care about).
+Define $\mathcal{E}(f)$ as the minimal excursion needed by *any* program in the model that computes $f$ (with semantics guaranteed via $\odot$, and excursion measured via the dynamics/invariants you care about).
 
 ### Step B — Prove a polynomial simulation for *general computation*
 
 You already have:
 
-* **Formula size (s)** ⇒ **GA program** with controlled excursion ( \le \mathrm{poly}(s)).
+* **Formula size (s)** ⇒ **GA program** with controlled excursion $\le \mathrm{poly}(s)$.
 
 To reach P≠NP, you’d need a stronger bridge:
 
-> **If (f) is computable in polynomial time (or has poly-size circuits), then there exists a poly-size GA program whose excursion is bounded by (\mathrm{poly}(n)).**
+> **If (f) is computable in polynomial time (or has poly-size circuits), then there exists a poly-size GA program whose excursion is bounded by $\mathrm{poly}(n)$.**
 
 This is the “P (or P/poly) ⇒ poly-excursion” theorem.
 
