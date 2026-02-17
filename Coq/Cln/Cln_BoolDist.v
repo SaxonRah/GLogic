@@ -788,7 +788,7 @@ Admitted.
 
    Thus we introduce a convolution operator 
 
-   Signless convolution: group algebra product of (Z_2)^n 
+   Signless convolution: group algebra product of (Z_2)^n
 Definition mv_conv {n : nat} (F G : MV n) : MV n :=
   fun U =>
     sumQ (List.map (fun A =>
@@ -810,6 +810,51 @@ Proof.
   intros n A B.
   exact (corner_walsh_sum_closed n A B).
 Qed.
+
+(* BVar case: eval of (1/2)(1 + e_i) at corner s = bQ(s_i = Pos) *)
+Lemma eval_var_projector :
+  forall n (sq : Vector.t Q n) (i : Fin.t n) (s : Corner n),
+    (forall j, Vector.nth sq j == 1) ->
+    eval (eval_expr sq (Mul (Scalar (1#2)) (Add (Scalar 1) (Basis i)))) s
+    == bQ (match Vector.nth s i with Pos => true | Neg => false end).
+Proof.
+  intros n sq i s Hsq.
+
+  (* Push eval through the expression using the existing evaluation lemmas. *)
+  (* In your infrastructure:
+       eval_expr sq (Scalar q)   = mv_scalar q
+       eval_expr sq (Add e1 e2)  = mv_add ...
+       eval_expr sq (Mul e1 e2)  = mv_gp ...
+     and eval satisfies:
+       eval_add, eval_mul, eval_scalar, and eval_basis (corner sign). *)
+
+  (* Step 1: turn the big term into (1/2) * (1 + eval(Basis i) s) *)
+  rewrite eval_mul.                      (* eval of Mul becomes product *)
+  rewrite eval_scalar.                   (* eval of Scalar (1/2) is (1/2) *)
+  rewrite eval_add.                      (* eval of Add becomes sum *)
+  rewrite eval_scalar.                   (* eval of Scalar 1 is 1 *)
+  (* eval of Basis i at corner s is ±1; under the unit metric hypothesis *)
+  rewrite (eval_basis_unit sq i s).      (* your lemma: uses (forall j, nth sq j == 1) *)
+  2: exact Hsq.
+
+  (* Step 2: case split on the i-th corner value *)
+  destruct (Vector.nth s i) as [|] eqn:Hs; simpl.
+  - (* Pos *)
+    (* goal: (1#2) * (1 + 1) == 1 *)
+    ring.
+  - (* Neg *)
+    (* goal: (1#2) * (1 + (-1)) == 0 *)
+    ring.
+Qed.
+
+
+Lemma eval_var_projector :
+  forall n (sq : Vector.t Q n) (i : Fin.t n) (s : Corner n),
+    (forall j, Vector.nth sq j == 1) ->
+    eval (eval_expr sq (Mul (Scalar (1#2)) (Add (Scalar 1) (Basis i)))) s
+    == bQ (match Vector.nth s i with Pos => true | Neg => false end).
+Proof.
+Admitted.
 
 Lemma translate_eval_correct :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
@@ -835,7 +880,7 @@ Proof.
   - (* BOr p q *)
     (* translate = Add (Add tp tq) (Mul (Scalar (-1)) (Conv tp tq)) *)
     rewrite eval_add, eval_add.
-    rewrite eval_scale, eval_conv.
+    rewrite eval_scale. eval_conv.
     rewrite IHphi1, IHphi2.
     symmetry. apply bQ_orb.
   - (* BNot p *)
