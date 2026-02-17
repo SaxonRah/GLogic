@@ -383,6 +383,9 @@ Proof.
   apply sumQ_map_ext; intros s _. apply chi_mul.
 Qed.
 
+From Coq Require Import Vectors.Vector.
+Import VectorNotations.
+
 (* Sum of chi(m, ·) over all corners = 2^n if m = empty, 0 otherwise *)
 Lemma chi_corner_sum_empty :
   forall n,
