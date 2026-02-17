@@ -707,33 +707,31 @@ Qed.
 Lemma eval_basis : forall n (M : Mask n) (s : Corner n),
   eval (basis M) s == chi' M s.
 Proof.
-Admitted.
-(*  intros n M s.
-  unfold eval, basis.
-  (* eval(basis M) s = sum_m (if m=M then 1 else 0) * chi' m s *)
+  intros n M s.
+  unfold eval.
   eapply Qeq_trans.
-  - apply sumQ_map_ext; intros m _.
-    destruct (mask_eq_dec m M); ring.
-  - (* pick lemma from Cln_Full *)
-    (* shape: sumQ (map (fun m => if m=M then (chi' m s) else 0) all_masks) == chi' M s *)
-    exact (@sumQ_all_masks_pick n (fun m => (chi' m s)%Q) M).
-Qed. *)
+  - refine (sumQ_map_ext
+              (A := Mask n)
+              (fun m => (basis M m * chi' m s)%Q)
+              (fun m => if mask_eq_dec m M then chi' m s else 0%Q)
+              (all_masks n)
+              _).
+    intros m _. unfold basis.
+    destruct (mask_eq_dec m M) as [Heq|Hneq].
+    + subst m. ring.
+    + ring.
+  - exact (@sumQ_all_masks_pick n (fun m => chi' m s) M).
+Qed.
 
 Lemma eval_mv_one : forall n (s : Corner n),
   eval (@mv_one n) s == 1%Q.
 Proof.
-Admitted.
-(*  intros n s.
+  intros n s.
   unfold mv_one.
-  (* mv_one = basis empty mask in your development *)
-  (* if mv_one is defined differently, adapt this line *)
-  unfold mv_one, basis.
-  (* use eval_basis with M = mask_empty *)
-  rewrite eval_basis.
-  (* chi' empty s == 1 *)
-  (* you already proved chi_mask_empty in Cln_BoolDist.v *)
-  apply chi_mask_empty.
-Qed. *)
+  eapply Qeq_trans.
+  - apply eval_basis.
+  - apply chi_mask_empty.
+Qed.
 
 Lemma translate_eval_correct :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
