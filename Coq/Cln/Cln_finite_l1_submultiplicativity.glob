@@ -1,4 +1,4 @@
-DIGEST 1f5c22820283d2974e99223151342326
+DIGEST eddf0bcfeaa6d5eff4f44a7cc83fd2da
 FCln.Cln_finite_l1_submultiplicativity
 R757:764 Cln.Cln_Full <> <> lib
 R782:790 Cln.Cln_Grade <> <> lib
@@ -296,1258 +296,1883 @@ R4651:4658 Coq.QArith.Qabs <> Qabs_pos thm
 R4651:4658 Coq.QArith.Qabs <> Qabs_pos thm
 R4712:4717 Coq.Vectors.Fin <> FS constr
 R4712:4717 Coq.Vectors.Fin <> FS constr
-sec 4738:4747 <> UnitMetric
-var  4760:4760 UnitMetric n
-R4764:4766 Coq.Init.Datatypes <> nat ind
-var  4779:4780 UnitMetric sq
-R4784:4791 Coq.Vectors.Vector <> t ind
-R4793:4793 Coq.QArith.QArith_base <> Q rec
-R4795:4795 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-var 4811:4817 UnitMetric sq_unit
-R4833:4837 Coq.Vectors.Fin <> t ind
-R4839:4839 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 4829:4829 <> i:52
-R4865:4868 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R4843:4846 Coq.QArith.Qabs <> Qabs def
-R4849:4858 Coq.Vectors.Vector <> nth def
-R4863:4863 Cln.Cln_finite_l1_submultiplicativity <> i:52 var
-R4860:4861 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-prf 4879:4896 <> metric_factor_abs1
-R4914:4917 Cln.Cln_Full <> Mask def
-R4919:4919 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 4908:4908 <> A:55
-binder 4910:4910 <> B:56
-R4952:4955 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R4925:4928 Coq.QArith.Qabs <> Qabs def
-R4931:4943 Cln.Cln_Full <> metric_factor def
-R4950:4950 Cln.Cln_finite_l1_submultiplicativity <> B:56 var
-R4948:4948 Cln.Cln_finite_l1_submultiplicativity <> A:55 var
-R4945:4946 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R4975:4996 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1_gen thm
-R5001:5007 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq_unit var
-R4998:4999 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R4975:4996 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1_gen thm
-R5001:5007 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq_unit var
-R4998:4999 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-prf 5023:5042 <> basis_mul_coeff_abs1
-R5060:5063 Cln.Cln_Full <> Mask def
-R5065:5065 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 5054:5054 <> A:57
-binder 5056:5056 <> B:58
-R5100:5103 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R5071:5074 Coq.QArith.Qabs <> Qabs def
-R5077:5091 Cln.Cln_Full <> basis_mul_coeff def
-R5098:5098 Cln.Cln_finite_l1_submultiplicativity <> B:58 var
-R5096:5096 Cln.Cln_finite_l1_submultiplicativity <> A:57 var
-R5093:5094 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R5135:5149 Cln.Cln_Full <> basis_mul_coeff def
-R5162:5171 Coq.QArith.Qabs <> Qabs_Qmult thm
-R5162:5171 Coq.QArith.Qabs <> Qabs_Qmult thm
-R5162:5171 Coq.QArith.Qabs <> Qabs_Qmult thm
-R5184:5201 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
-R5184:5201 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
-R5184:5201 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
-R5248:5251 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R5218:5221 Coq.QArith.Qabs <> Qabs def
-R5224:5227 Cln.Cln_Full <> sgnQ def
-R5230:5241 Cln.Cln_Full <> swaps_parity def
-R5248:5251 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R5218:5221 Coq.QArith.Qabs <> Qabs def
-R5224:5227 Cln.Cln_Full <> sgnQ def
-R5230:5241 Cln.Cln_Full <> swaps_parity def
-R5270:5281 Cln.Cln_Full <> swaps_parity def
-R5296:5299 Cln.Cln_Full <> sgnQ def
-R5302:5305 Coq.QArith.Qabs <> Qabs def
-R5270:5281 Cln.Cln_Full <> swaps_parity def
-prf 5361:5374 <> sumU_xor_delta
-R5394:5397 Cln.Cln_Full <> Mask def
-R5399:5399 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 5388:5388 <> A:59
-binder 5390:5390 <> B:60
-R5504:5511 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R5407:5410 Cln.Cln_Full <> sumQ def
-R5413:5415 Coq.Lists.List <> map def
-R5491:5499 Cln.Cln_Full <> all_masks def
-R5501:5501 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 5422:5422 <> U:61
-R5436:5446 Cln.Cln_Full <> mask_eq_dec def
-R5469:5469 Cln.Cln_finite_l1_submultiplicativity <> U:61 var
-R5449:5462 Cln.Cln_Full <> basis_mul_mask def
-R5466:5466 Cln.Cln_finite_l1_submultiplicativity <> B:60 var
-R5464:5464 Cln.Cln_finite_l1_submultiplicativity <> A:59 var
-R5547:5555 Coq.QArith.QArith_base <> Qeq_trans thm
-R5547:5555 Coq.QArith.QArith_base <> Qeq_trans thm
-R5572:5590 Cln.Cln_Full <> sumQ_all_masks_pick thm
-R5608:5621 Cln.Cln_Full <> basis_mul_mask def
-R5572:5590 Cln.Cln_Full <> sumQ_all_masks_pick thm
-R5608:5621 Cln.Cln_Full <> basis_mul_mask def
-R5640:5651 Cln.Cln_Full <> sumQ_map_ext thm
-R5640:5651 Cln.Cln_Full <> sumQ_map_ext thm
-R5679:5689 Cln.Cln_Full <> mask_eq_dec def
-R5692:5705 Cln.Cln_Full <> basis_mul_mask def
-R5679:5689 Cln.Cln_Full <> mask_eq_dec def
-R5692:5705 Cln.Cln_Full <> basis_mul_mask def
-R5772:5782 Cln.Cln_Full <> mask_eq_dec def
-R5806:5819 Cln.Cln_Full <> basis_mul_mask def
-R5785:5798 Cln.Cln_Full <> basis_mul_mask def
-R5772:5782 Cln.Cln_Full <> mask_eq_dec def
-R5806:5819 Cln.Cln_Full <> basis_mul_mask def
-R5785:5798 Cln.Cln_Full <> basis_mul_mask def
-R5933:5943 Cln.Cln_Full <> mask_eq_dec def
-R5948:5961 Cln.Cln_Full <> basis_mul_mask def
-R5933:5943 Cln.Cln_Full <> mask_eq_dec def
-R5948:5961 Cln.Cln_Full <> basis_mul_mask def
-prf 6258:6280 <> l1_gp_submultiplicative
-R6300:6301 Cln.Cln_Full <> MV def
-R6303:6303 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6294:6294 <> F:62
-binder 6296:6296 <> G:63
-R6333:6336 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R6311:6317 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R6320:6324 Cln.Cln_Full <> mv_gp def
-R6331:6331 Cln.Cln_finite_l1_submultiplicativity <> G:63 var
-R6329:6329 Cln.Cln_finite_l1_submultiplicativity <> F:62 var
-R6326:6327 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R6346:6348 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R6337:6343 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R6345:6345 Cln.Cln_finite_l1_submultiplicativity <> F:62 var
-R6349:6355 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R6357:6357 Cln.Cln_finite_l1_submultiplicativity <> G:63 var
-R6390:6396 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R6399:6403 Cln.Cln_Full <> mv_gp def
-R6419:6427 Cln.Cln_Full <> all_masks def
-R6429:6429 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R6419:6427 Cln.Cln_Full <> all_masks def
-R6429:6429 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R6462:6465 Cln.Cln_Full <> Mask def
-R6467:6467 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6454:6454 <> U:64
-binder 6456:6456 <> A:65
-binder 6458:6458 <> B:66
-R6486:6500 Cln.Cln_Full <> basis_mul_coeff def
-R6507:6507 Cln.Cln_finite_l1_submultiplicativity <> B:66 var
-R6505:6505 Cln.Cln_finite_l1_submultiplicativity <> A:65 var
-R6502:6503 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-binder 6481:6481 <> c:67
-R6519:6529 Cln.Cln_Full <> mask_eq_dec def
-R6552:6552 Cln.Cln_finite_l1_submultiplicativity <> U:64 var
-R6532:6545 Cln.Cln_Full <> basis_mul_mask def
-R6549:6549 Cln.Cln_finite_l1_submultiplicativity <> B:66 var
-R6547:6547 Cln.Cln_finite_l1_submultiplicativity <> A:65 var
-R6573:6575 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R6567:6569 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R6566:6566 Cln.Cln_finite_l1_submultiplicativity <> A:65 var
-R6572:6572 Cln.Cln_finite_l1_submultiplicativity <> B:66 var
-R6576:6576 Cln.Cln_finite_l1_submultiplicativity <> c:67 var
-R6462:6465 Cln.Cln_Full <> Mask def
-R6467:6467 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6454:6454 <> U:68
-binder 6456:6456 <> A:69
-binder 6458:6458 <> B:70
-R6486:6500 Cln.Cln_Full <> basis_mul_coeff def
-R6507:6507 Cln.Cln_finite_l1_submultiplicativity <> B:70 var
-R6505:6505 Cln.Cln_finite_l1_submultiplicativity <> A:69 var
-R6502:6503 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-binder 6481:6481 <> c:71
-R6519:6529 Cln.Cln_Full <> mask_eq_dec def
-R6552:6552 Cln.Cln_finite_l1_submultiplicativity <> U:68 var
-R6532:6545 Cln.Cln_Full <> basis_mul_mask def
-R6549:6549 Cln.Cln_finite_l1_submultiplicativity <> B:70 var
-R6547:6547 Cln.Cln_finite_l1_submultiplicativity <> A:69 var
-R6573:6575 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R6567:6569 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R6566:6566 Cln.Cln_finite_l1_submultiplicativity <> A:69 var
-R6572:6572 Cln.Cln_finite_l1_submultiplicativity <> B:70 var
-R6576:6576 Cln.Cln_finite_l1_submultiplicativity <> c:71 var
-R6618:6621 Cln.Cln_Full <> Mask def
-R6623:6623 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6614:6614 <> U:72
-R6633:6636 Cln.Cln_Full <> sumQ def
-R6639:6641 Coq.Lists.List <> map def
-R6652:6655 Cln.Cln_Full <> Mask def
-R6657:6657 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6648:6648 <> A:73
-R6668:6671 Cln.Cln_Full <> sumQ def
-R6674:6676 Coq.Lists.List <> map def
-R6687:6690 Cln.Cln_Full <> Mask def
-R6692:6692 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6683:6683 <> B:74
-R6702:6702 Cln.Cln_finite_l1_submultiplicativity <> U:72 var
-R6704:6704 Cln.Cln_finite_l1_submultiplicativity <> A:73 var
-R6706:6706 Cln.Cln_finite_l1_submultiplicativity <> B:74 var
-R6618:6621 Cln.Cln_Full <> Mask def
-R6623:6623 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6614:6614 <> U:75
-R6633:6636 Cln.Cln_Full <> sumQ def
-R6639:6641 Coq.Lists.List <> map def
-R6652:6655 Cln.Cln_Full <> Mask def
-R6657:6657 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6648:6648 <> A:76
-R6668:6671 Cln.Cln_Full <> sumQ def
-R6674:6676 Coq.Lists.List <> map def
-R6687:6690 Cln.Cln_Full <> Mask def
-R6692:6692 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 6683:6683 <> B:77
-R6702:6702 Cln.Cln_finite_l1_submultiplicativity <> U:75 var
-R6704:6704 Cln.Cln_finite_l1_submultiplicativity <> A:76 var
-R6706:6706 Cln.Cln_finite_l1_submultiplicativity <> B:77 var
-R6847:6854 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R6808:6811 Cln.Cln_Full <> sumQ def
-R6814:6816 Coq.Lists.List <> map def
-binder 6823:6823 <> U:78
-R6828:6831 Coq.QArith.Qabs <> Qabs def
-R6840:6840 Cln.Cln_finite_l1_submultiplicativity <> U:78 var
-R6855:6858 Cln.Cln_Full <> sumQ def
-R6861:6863 Coq.Lists.List <> map def
-binder 6870:6870 <> U:79
-R6879:6882 Cln.Cln_Full <> sumQ def
-R6885:6887 Coq.Lists.List <> map def
-binder 6894:6894 <> A:80
-R6905:6908 Cln.Cln_Full <> sumQ def
-R6911:6913 Coq.Lists.List <> map def
-binder 6920:6920 <> B:81
-R6925:6928 Coq.QArith.Qabs <> Qabs def
-R6936:6936 Cln.Cln_finite_l1_submultiplicativity <> U:79 var
-R6938:6938 Cln.Cln_finite_l1_submultiplicativity <> A:80 var
-R6940:6940 Cln.Cln_finite_l1_submultiplicativity <> B:81 var
-R6847:6854 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R6808:6811 Cln.Cln_Full <> sumQ def
-R6814:6816 Coq.Lists.List <> map def
-binder 6823:6823 <> U:82
-R6828:6831 Coq.QArith.Qabs <> Qabs def
-R6840:6840 Cln.Cln_finite_l1_submultiplicativity <> U:82 var
-R6855:6858 Cln.Cln_Full <> sumQ def
-R6861:6863 Coq.Lists.List <> map def
-binder 6870:6870 <> U:83
-R6879:6882 Cln.Cln_Full <> sumQ def
-R6885:6887 Coq.Lists.List <> map def
-binder 6894:6894 <> A:84
-R6905:6908 Cln.Cln_Full <> sumQ def
-R6911:6913 Coq.Lists.List <> map def
-binder 6920:6920 <> B:85
-R6925:6928 Coq.QArith.Qabs <> Qabs def
-R6936:6936 Cln.Cln_finite_l1_submultiplicativity <> U:83 var
-R6938:6938 Cln.Cln_finite_l1_submultiplicativity <> A:84 var
-R6940:6940 Cln.Cln_finite_l1_submultiplicativity <> B:85 var
-R6978:6988 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R6978:6988 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R7023:7031 Coq.QArith.QArith_base <> Qle_trans thm
-R7023:7031 Coq.QArith.QArith_base <> Qle_trans thm
-R7048:7063 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
-R7048:7063 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
-R7080:7090 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R7080:7090 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R7128:7143 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
-R7128:7143 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
-R7162:7170 Coq.QArith.QArith_base <> Qle_trans thm
-R7162:7170 Coq.QArith.QArith_base <> Qle_trans thm
-R7201:7210 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R7201:7210 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R7365:7368 Cln.Cln_Full <> sumQ def
-R7371:7373 Coq.Lists.List <> map def
-R7384:7387 Cln.Cln_Full <> Mask def
-R7389:7389 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7380:7380 <> U:86
-R7402:7405 Cln.Cln_Full <> sumQ def
-R7408:7410 Coq.Lists.List <> map def
-R7421:7424 Cln.Cln_Full <> Mask def
-R7426:7426 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7417:7417 <> A:87
-R7441:7444 Cln.Cln_Full <> sumQ def
-R7447:7449 Coq.Lists.List <> map def
-R7460:7463 Cln.Cln_Full <> Mask def
-R7465:7465 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7456:7456 <> B:88
-R7485:7495 Cln.Cln_Full <> mask_eq_dec def
-R7518:7518 Cln.Cln_finite_l1_submultiplicativity <> U:86 var
-R7498:7511 Cln.Cln_Full <> basis_mul_mask def
-R7515:7515 Cln.Cln_finite_l1_submultiplicativity <> B:88 var
-R7513:7513 Cln.Cln_finite_l1_submultiplicativity <> A:87 var
-R7561:7563 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7548:7550 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7538:7541 Coq.QArith.Qabs <> Qabs def
-R7546:7546 Cln.Cln_finite_l1_submultiplicativity <> A:87 var
-R7551:7554 Coq.QArith.Qabs <> Qabs def
-R7559:7559 Cln.Cln_finite_l1_submultiplicativity <> B:88 var
-R7564:7567 Coq.QArith.Qabs <> Qabs def
-R7570:7584 Cln.Cln_Full <> basis_mul_coeff def
-R7591:7591 Cln.Cln_finite_l1_submultiplicativity <> B:88 var
-R7589:7589 Cln.Cln_finite_l1_submultiplicativity <> A:87 var
-R7586:7587 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R7334:7342 Coq.QArith.QArith_base <> Qeq_trans thm
-R7365:7368 Cln.Cln_Full <> sumQ def
-R7371:7373 Coq.Lists.List <> map def
-R7384:7387 Cln.Cln_Full <> Mask def
-R7389:7389 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7380:7380 <> U:89
-R7402:7405 Cln.Cln_Full <> sumQ def
-R7408:7410 Coq.Lists.List <> map def
-R7421:7424 Cln.Cln_Full <> Mask def
-R7426:7426 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7417:7417 <> A:90
-R7441:7444 Cln.Cln_Full <> sumQ def
-R7447:7449 Coq.Lists.List <> map def
-R7460:7463 Cln.Cln_Full <> Mask def
-R7465:7465 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 7456:7456 <> B:91
-R7485:7495 Cln.Cln_Full <> mask_eq_dec def
-R7518:7518 Cln.Cln_finite_l1_submultiplicativity <> U:89 var
-R7498:7511 Cln.Cln_Full <> basis_mul_mask def
-R7515:7515 Cln.Cln_finite_l1_submultiplicativity <> B:91 var
-R7513:7513 Cln.Cln_finite_l1_submultiplicativity <> A:90 var
-R7561:7563 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7548:7550 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7538:7541 Coq.QArith.Qabs <> Qabs def
-R7546:7546 Cln.Cln_finite_l1_submultiplicativity <> A:90 var
-R7551:7554 Coq.QArith.Qabs <> Qabs def
-R7559:7559 Cln.Cln_finite_l1_submultiplicativity <> B:91 var
-R7564:7567 Coq.QArith.Qabs <> Qabs def
-R7570:7584 Cln.Cln_Full <> basis_mul_coeff def
-R7591:7591 Cln.Cln_finite_l1_submultiplicativity <> B:91 var
-R7589:7589 Cln.Cln_finite_l1_submultiplicativity <> A:90 var
-R7586:7587 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R7334:7342 Coq.QArith.QArith_base <> Qeq_trans thm
-R7671:7682 Cln.Cln_Full <> sumQ_map_ext thm
-binder 7826:7826 <> U:92
-R7843:7846 Cln.Cln_Full <> sumQ def
-R7849:7851 Coq.Lists.List <> map def
-binder 7858:7858 <> A:93
-R7877:7880 Cln.Cln_Full <> sumQ def
-R7883:7885 Coq.Lists.List <> map def
-binder 7892:7892 <> B:94
-R7916:7926 Cln.Cln_Full <> mask_eq_dec def
-R7949:7949 Cln.Cln_finite_l1_submultiplicativity <> U:92 var
-R7929:7942 Cln.Cln_Full <> basis_mul_mask def
-R7946:7946 Cln.Cln_finite_l1_submultiplicativity <> B:94 var
-R7944:7944 Cln.Cln_finite_l1_submultiplicativity <> A:93 var
-R7996:7998 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7983:7985 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7973:7976 Coq.QArith.Qabs <> Qabs def
-R7981:7981 Cln.Cln_finite_l1_submultiplicativity <> A:93 var
-R7986:7989 Coq.QArith.Qabs <> Qabs def
-R7994:7994 Cln.Cln_finite_l1_submultiplicativity <> B:94 var
-R7999:8002 Coq.QArith.Qabs <> Qabs def
-R8005:8019 Cln.Cln_Full <> basis_mul_coeff def
-R8026:8026 Cln.Cln_finite_l1_submultiplicativity <> B:94 var
-R8024:8024 Cln.Cln_finite_l1_submultiplicativity <> A:93 var
-R8021:8022 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-binder 7711:7711 <> U:95
-R7728:7731 Cln.Cln_Full <> sumQ def
-R7734:7736 Coq.Lists.List <> map def
-binder 7743:7743 <> A:96
-R7762:7765 Cln.Cln_Full <> sumQ def
-R7768:7770 Coq.Lists.List <> map def
-binder 7777:7777 <> B:97
-R7782:7785 Coq.QArith.Qabs <> Qabs def
-R7793:7793 Cln.Cln_finite_l1_submultiplicativity <> U:95 var
-R7795:7795 Cln.Cln_finite_l1_submultiplicativity <> A:96 var
-R7797:7797 Cln.Cln_finite_l1_submultiplicativity <> B:97 var
-R7688:7691 Cln.Cln_Full <> Mask def
-R7693:7693 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R7671:7682 Cln.Cln_Full <> sumQ_map_ext thm
-binder 7826:7826 <> U:98
-R7843:7846 Cln.Cln_Full <> sumQ def
-R7849:7851 Coq.Lists.List <> map def
-binder 7858:7858 <> A:99
-R7877:7880 Cln.Cln_Full <> sumQ def
-R7883:7885 Coq.Lists.List <> map def
-binder 7892:7892 <> B:100
-R7916:7926 Cln.Cln_Full <> mask_eq_dec def
-R7949:7949 Cln.Cln_finite_l1_submultiplicativity <> U:98 var
-R7929:7942 Cln.Cln_Full <> basis_mul_mask def
-R7946:7946 Cln.Cln_finite_l1_submultiplicativity <> B:100 var
-R7944:7944 Cln.Cln_finite_l1_submultiplicativity <> A:99 var
-R7996:7998 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7983:7985 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R7973:7976 Coq.QArith.Qabs <> Qabs def
-R7981:7981 Cln.Cln_finite_l1_submultiplicativity <> A:99 var
-R7986:7989 Coq.QArith.Qabs <> Qabs def
-R7994:7994 Cln.Cln_finite_l1_submultiplicativity <> B:100 var
-R7999:8002 Coq.QArith.Qabs <> Qabs def
-R8005:8019 Cln.Cln_Full <> basis_mul_coeff def
-R8026:8026 Cln.Cln_finite_l1_submultiplicativity <> B:100 var
-R8024:8024 Cln.Cln_finite_l1_submultiplicativity <> A:99 var
-R8021:8022 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-binder 7711:7711 <> U:101
-R7728:7731 Cln.Cln_Full <> sumQ def
-R7734:7736 Coq.Lists.List <> map def
-binder 7743:7743 <> A:102
-R7762:7765 Cln.Cln_Full <> sumQ def
-R7768:7770 Coq.Lists.List <> map def
-binder 7777:7777 <> B:103
-R7782:7785 Coq.QArith.Qabs <> Qabs def
-R7793:7793 Cln.Cln_finite_l1_submultiplicativity <> U:101 var
-R7795:7795 Cln.Cln_finite_l1_submultiplicativity <> A:102 var
-R7797:7797 Cln.Cln_finite_l1_submultiplicativity <> B:103 var
-R7688:7691 Cln.Cln_Full <> Mask def
-R7693:7693 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R8118:8129 Cln.Cln_Full <> sumQ_map_ext thm
-R8118:8129 Cln.Cln_Full <> sumQ_map_ext thm
-R8159:8170 Cln.Cln_Full <> sumQ_map_ext thm
-R8159:8170 Cln.Cln_Full <> sumQ_map_ext thm
-R8225:8235 Cln.Cln_Full <> mask_eq_dec def
-R8238:8251 Cln.Cln_Full <> basis_mul_mask def
-R8225:8235 Cln.Cln_Full <> mask_eq_dec def
-R8238:8251 Cln.Cln_Full <> basis_mul_mask def
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8423:8432 Coq.QArith.Qabs <> Qabs_Qmult thm
-R8510:8517 Coq.QArith.QArith_base <> Qeq_refl thm
-R8510:8517 Coq.QArith.QArith_base <> Qeq_refl thm
-R8676:8683 Coq.QArith.QArith_base <> Qeq_refl thm
-R8676:8683 Coq.QArith.QArith_base <> Qeq_refl thm
-R8746:8749 Cln.Cln_Full <> sumQ def
-R8764:8766 Coq.Lists.List <> map def
-R8792:8795 Cln.Cln_Full <> Mask def
-R8797:8797 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8788:8788 <> U:104
-R8818:8821 Cln.Cln_Full <> sumQ def
-R8842:8844 Coq.Lists.List <> map def
-R8876:8879 Cln.Cln_Full <> Mask def
-R8881:8881 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8872:8872 <> A:105
-R8908:8911 Cln.Cln_Full <> sumQ def
-R8938:8940 Coq.Lists.List <> map def
-R8978:8981 Cln.Cln_Full <> Mask def
-R8983:8983 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8974:8974 <> B:106
-R9019:9029 Cln.Cln_Full <> mask_eq_dec def
-R9052:9052 Cln.Cln_finite_l1_submultiplicativity <> U:104 var
-R9032:9045 Cln.Cln_Full <> basis_mul_mask def
-R9049:9049 Cln.Cln_finite_l1_submultiplicativity <> B:106 var
-R9047:9047 Cln.Cln_finite_l1_submultiplicativity <> A:105 var
-R9098:9100 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9088:9091 Coq.QArith.Qabs <> Qabs def
-R9096:9096 Cln.Cln_finite_l1_submultiplicativity <> A:105 var
-R9101:9104 Coq.QArith.Qabs <> Qabs def
-R9109:9109 Cln.Cln_finite_l1_submultiplicativity <> B:106 var
-R8707:8715 Coq.QArith.QArith_base <> Qeq_trans thm
-R8746:8749 Cln.Cln_Full <> sumQ def
-R8764:8766 Coq.Lists.List <> map def
-R8792:8795 Cln.Cln_Full <> Mask def
-R8797:8797 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8788:8788 <> U:107
-R8818:8821 Cln.Cln_Full <> sumQ def
-R8842:8844 Coq.Lists.List <> map def
-R8876:8879 Cln.Cln_Full <> Mask def
-R8881:8881 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8872:8872 <> A:108
-R8908:8911 Cln.Cln_Full <> sumQ def
-R8938:8940 Coq.Lists.List <> map def
-R8978:8981 Cln.Cln_Full <> Mask def
-R8983:8983 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 8974:8974 <> B:109
-R9019:9029 Cln.Cln_Full <> mask_eq_dec def
-R9052:9052 Cln.Cln_finite_l1_submultiplicativity <> U:107 var
-R9032:9045 Cln.Cln_Full <> basis_mul_mask def
-R9049:9049 Cln.Cln_finite_l1_submultiplicativity <> B:109 var
-R9047:9047 Cln.Cln_finite_l1_submultiplicativity <> A:108 var
-R9098:9100 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9088:9091 Coq.QArith.Qabs <> Qabs def
-R9096:9096 Cln.Cln_finite_l1_submultiplicativity <> A:108 var
-R9101:9104 Coq.QArith.Qabs <> Qabs def
-R9109:9109 Cln.Cln_finite_l1_submultiplicativity <> B:109 var
-R8707:8715 Coq.QArith.QArith_base <> Qeq_trans thm
-R9238:9249 Cln.Cln_Full <> sumQ_map_ext thm
-binder 9563:9563 <> U:110
-R9584:9587 Cln.Cln_Full <> sumQ def
-R9590:9592 Coq.Lists.List <> map def
-binder 9599:9599 <> A:111
-R9622:9625 Cln.Cln_Full <> sumQ def
-R9628:9630 Coq.Lists.List <> map def
-binder 9637:9637 <> B:112
-R9665:9675 Cln.Cln_Full <> mask_eq_dec def
-R9698:9698 Cln.Cln_finite_l1_submultiplicativity <> U:110 var
-R9678:9691 Cln.Cln_Full <> basis_mul_mask def
-R9695:9695 Cln.Cln_finite_l1_submultiplicativity <> B:112 var
-R9693:9693 Cln.Cln_finite_l1_submultiplicativity <> A:111 var
-R9736:9738 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9726:9729 Coq.QArith.Qabs <> Qabs def
-R9734:9734 Cln.Cln_finite_l1_submultiplicativity <> A:111 var
-R9739:9742 Coq.QArith.Qabs <> Qabs def
-R9747:9747 Cln.Cln_finite_l1_submultiplicativity <> B:112 var
-binder 9282:9282 <> U:113
-R9303:9306 Cln.Cln_Full <> sumQ def
-R9309:9311 Coq.Lists.List <> map def
-binder 9318:9318 <> A:114
-R9341:9344 Cln.Cln_Full <> sumQ def
-R9347:9349 Coq.Lists.List <> map def
-binder 9356:9356 <> B:115
-R9384:9394 Cln.Cln_Full <> mask_eq_dec def
-R9417:9417 Cln.Cln_finite_l1_submultiplicativity <> U:113 var
-R9397:9410 Cln.Cln_Full <> basis_mul_mask def
-R9414:9414 Cln.Cln_finite_l1_submultiplicativity <> B:115 var
-R9412:9412 Cln.Cln_finite_l1_submultiplicativity <> A:114 var
-R9468:9470 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9455:9457 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9445:9448 Coq.QArith.Qabs <> Qabs def
-R9453:9453 Cln.Cln_finite_l1_submultiplicativity <> A:114 var
-R9458:9461 Coq.QArith.Qabs <> Qabs def
-R9466:9466 Cln.Cln_finite_l1_submultiplicativity <> B:115 var
-R9471:9474 Coq.QArith.Qabs <> Qabs def
-R9477:9491 Cln.Cln_Full <> basis_mul_coeff def
-R9498:9498 Cln.Cln_finite_l1_submultiplicativity <> B:115 var
-R9496:9496 Cln.Cln_finite_l1_submultiplicativity <> A:114 var
-R9493:9494 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R9255:9258 Cln.Cln_Full <> Mask def
-R9260:9260 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R9238:9249 Cln.Cln_Full <> sumQ_map_ext thm
-binder 9563:9563 <> U:116
-R9584:9587 Cln.Cln_Full <> sumQ def
-R9590:9592 Coq.Lists.List <> map def
-binder 9599:9599 <> A:117
-R9622:9625 Cln.Cln_Full <> sumQ def
-R9628:9630 Coq.Lists.List <> map def
-binder 9637:9637 <> B:118
-R9665:9675 Cln.Cln_Full <> mask_eq_dec def
-R9698:9698 Cln.Cln_finite_l1_submultiplicativity <> U:116 var
-R9678:9691 Cln.Cln_Full <> basis_mul_mask def
-R9695:9695 Cln.Cln_finite_l1_submultiplicativity <> B:118 var
-R9693:9693 Cln.Cln_finite_l1_submultiplicativity <> A:117 var
-R9736:9738 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9726:9729 Coq.QArith.Qabs <> Qabs def
-R9734:9734 Cln.Cln_finite_l1_submultiplicativity <> A:117 var
-R9739:9742 Coq.QArith.Qabs <> Qabs def
-R9747:9747 Cln.Cln_finite_l1_submultiplicativity <> B:118 var
-binder 9282:9282 <> U:119
-R9303:9306 Cln.Cln_Full <> sumQ def
-R9309:9311 Coq.Lists.List <> map def
-binder 9318:9318 <> A:120
-R9341:9344 Cln.Cln_Full <> sumQ def
-R9347:9349 Coq.Lists.List <> map def
-binder 9356:9356 <> B:121
-R9384:9394 Cln.Cln_Full <> mask_eq_dec def
-R9417:9417 Cln.Cln_finite_l1_submultiplicativity <> U:119 var
-R9397:9410 Cln.Cln_Full <> basis_mul_mask def
-R9414:9414 Cln.Cln_finite_l1_submultiplicativity <> B:121 var
-R9412:9412 Cln.Cln_finite_l1_submultiplicativity <> A:120 var
-R9468:9470 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9455:9457 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R9445:9448 Coq.QArith.Qabs <> Qabs def
-R9453:9453 Cln.Cln_finite_l1_submultiplicativity <> A:120 var
-R9458:9461 Coq.QArith.Qabs <> Qabs def
-R9466:9466 Cln.Cln_finite_l1_submultiplicativity <> B:121 var
-R9471:9474 Coq.QArith.Qabs <> Qabs def
-R9477:9491 Cln.Cln_Full <> basis_mul_coeff def
-R9498:9498 Cln.Cln_finite_l1_submultiplicativity <> B:121 var
-R9496:9496 Cln.Cln_finite_l1_submultiplicativity <> A:120 var
-R9493:9494 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R9255:9258 Cln.Cln_Full <> Mask def
-R9260:9260 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R9855:9866 Cln.Cln_Full <> sumQ_map_ext thm
-R9855:9866 Cln.Cln_Full <> sumQ_map_ext thm
-R9900:9911 Cln.Cln_Full <> sumQ_map_ext thm
-R9900:9911 Cln.Cln_Full <> sumQ_map_ext thm
-R9949:9959 Cln.Cln_Full <> mask_eq_dec def
-R9962:9975 Cln.Cln_Full <> basis_mul_mask def
-R9949:9959 Cln.Cln_Full <> mask_eq_dec def
-R9962:9975 Cln.Cln_Full <> basis_mul_mask def
-R10065:10084 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
-R10065:10084 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
-R10065:10084 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
-R10245:10253 Coq.QArith.QArith_base <> Qmult_1_r thm
-R10245:10253 Coq.QArith.QArith_base <> Qmult_1_r thm
-R10245:10253 Coq.QArith.QArith_base <> Qmult_1_r thm
-R10276:10283 Coq.QArith.QArith_base <> Qeq_refl thm
-R10276:10283 Coq.QArith.QArith_base <> Qeq_refl thm
-R10350:10357 Coq.QArith.QArith_base <> Qeq_refl thm
-R10350:10357 Coq.QArith.QArith_base <> Qeq_refl thm
-R10393:10403 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
-binder 10468:10468 <> U:122
-binder 10470:10470 <> A:123
-R10492:10495 Cln.Cln_Full <> sumQ def
-R10498:10500 Coq.Lists.List <> map def
-binder 10507:10507 <> B:124
-R10534:10544 Cln.Cln_Full <> mask_eq_dec def
-R10567:10567 Cln.Cln_finite_l1_submultiplicativity <> U:122 var
-R10547:10560 Cln.Cln_Full <> basis_mul_mask def
-R10564:10564 Cln.Cln_finite_l1_submultiplicativity <> B:124 var
-R10562:10562 Cln.Cln_finite_l1_submultiplicativity <> A:123 var
-R10604:10606 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R10594:10597 Coq.QArith.Qabs <> Qabs def
-R10602:10602 Cln.Cln_finite_l1_submultiplicativity <> A:123 var
-R10607:10610 Coq.QArith.Qabs <> Qabs def
-R10615:10615 Cln.Cln_finite_l1_submultiplicativity <> B:124 var
-R10421:10424 Cln.Cln_Full <> Mask def
-R10426:10426 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10409:10412 Cln.Cln_Full <> Mask def
-R10414:10414 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10393:10403 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
-binder 10468:10468 <> U:125
-binder 10470:10470 <> A:126
-R10492:10495 Cln.Cln_Full <> sumQ def
-R10498:10500 Coq.Lists.List <> map def
-binder 10507:10507 <> B:127
-R10534:10544 Cln.Cln_Full <> mask_eq_dec def
-R10567:10567 Cln.Cln_finite_l1_submultiplicativity <> U:125 var
-R10547:10560 Cln.Cln_Full <> basis_mul_mask def
-R10564:10564 Cln.Cln_finite_l1_submultiplicativity <> B:127 var
-R10562:10562 Cln.Cln_finite_l1_submultiplicativity <> A:126 var
-R10604:10606 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R10594:10597 Coq.QArith.Qabs <> Qabs def
-R10602:10602 Cln.Cln_finite_l1_submultiplicativity <> A:126 var
-R10607:10610 Coq.QArith.Qabs <> Qabs def
-R10615:10615 Cln.Cln_finite_l1_submultiplicativity <> B:127 var
-R10421:10424 Cln.Cln_Full <> Mask def
-R10426:10426 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10409:10412 Cln.Cln_Full <> Mask def
-R10414:10414 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10393:10403 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
-binder 10468:10468 <> U:128
-binder 10470:10470 <> A:129
-R10492:10495 Cln.Cln_Full <> sumQ def
-R10498:10500 Coq.Lists.List <> map def
-binder 10507:10507 <> B:130
-R10534:10544 Cln.Cln_Full <> mask_eq_dec def
-R10567:10567 Cln.Cln_finite_l1_submultiplicativity <> U:128 var
-R10547:10560 Cln.Cln_Full <> basis_mul_mask def
-R10564:10564 Cln.Cln_finite_l1_submultiplicativity <> B:130 var
-R10562:10562 Cln.Cln_finite_l1_submultiplicativity <> A:129 var
-R10604:10606 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R10594:10597 Coq.QArith.Qabs <> Qabs def
-R10602:10602 Cln.Cln_finite_l1_submultiplicativity <> A:129 var
-R10607:10610 Coq.QArith.Qabs <> Qabs def
-R10615:10615 Cln.Cln_finite_l1_submultiplicativity <> B:130 var
-R10421:10424 Cln.Cln_Full <> Mask def
-R10426:10426 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10409:10412 Cln.Cln_Full <> Mask def
-R10414:10414 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R10775:10778 Cln.Cln_Full <> sumQ def
-R10781:10783 Coq.Lists.List <> map def
-R10794:10797 Cln.Cln_Full <> Mask def
-R10799:10799 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10790:10790 <> A:131
-R10822:10825 Cln.Cln_Full <> sumQ def
-R10828:10830 Coq.Lists.List <> map def
-R10841:10844 Cln.Cln_Full <> Mask def
-R10846:10846 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10837:10837 <> B:132
-R10871:10874 Cln.Cln_Full <> sumQ def
-R10877:10879 Coq.Lists.List <> map def
-R10890:10893 Cln.Cln_Full <> Mask def
-R10895:10895 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10886:10886 <> U:133
-R10925:10935 Cln.Cln_Full <> mask_eq_dec def
-R10958:10958 Cln.Cln_finite_l1_submultiplicativity <> U:133 var
-R10938:10951 Cln.Cln_Full <> basis_mul_mask def
-R10955:10955 Cln.Cln_finite_l1_submultiplicativity <> B:132 var
-R10953:10953 Cln.Cln_finite_l1_submultiplicativity <> A:131 var
-R10998:11000 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R10988:10991 Coq.QArith.Qabs <> Qabs def
-R10996:10996 Cln.Cln_finite_l1_submultiplicativity <> A:131 var
-R11001:11004 Coq.QArith.Qabs <> Qabs def
-R11009:11009 Cln.Cln_finite_l1_submultiplicativity <> B:132 var
-R10724:10732 Coq.QArith.QArith_base <> Qeq_trans thm
-R10775:10778 Cln.Cln_Full <> sumQ def
-R10781:10783 Coq.Lists.List <> map def
-R10794:10797 Cln.Cln_Full <> Mask def
-R10799:10799 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10790:10790 <> A:134
-R10822:10825 Cln.Cln_Full <> sumQ def
-R10828:10830 Coq.Lists.List <> map def
-R10841:10844 Cln.Cln_Full <> Mask def
-R10846:10846 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10837:10837 <> B:135
-R10871:10874 Cln.Cln_Full <> sumQ def
-R10877:10879 Coq.Lists.List <> map def
-R10890:10893 Cln.Cln_Full <> Mask def
-R10895:10895 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 10886:10886 <> U:136
-R10925:10935 Cln.Cln_Full <> mask_eq_dec def
-R10958:10958 Cln.Cln_finite_l1_submultiplicativity <> U:136 var
-R10938:10951 Cln.Cln_Full <> basis_mul_mask def
-R10955:10955 Cln.Cln_finite_l1_submultiplicativity <> B:135 var
-R10953:10953 Cln.Cln_finite_l1_submultiplicativity <> A:134 var
-R10998:11000 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R10988:10991 Coq.QArith.Qabs <> Qabs def
-R10996:10996 Cln.Cln_finite_l1_submultiplicativity <> A:134 var
-R11001:11004 Coq.QArith.Qabs <> Qabs def
-R11009:11009 Cln.Cln_finite_l1_submultiplicativity <> B:135 var
-R10724:10732 Coq.QArith.QArith_base <> Qeq_trans thm
-R11059:11070 Cln.Cln_Full <> sumQ_map_ext thm
-R11059:11070 Cln.Cln_Full <> sumQ_map_ext thm
-R11105:11115 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
-R11148:11151 Cln.Cln_Full <> Mask def
-R11153:11153 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11142:11142 <> a:137
-binder 11144:11144 <> B:138
-R11177:11187 Cln.Cln_Full <> mask_eq_dec def
-R11210:11210 Cln.Cln_finite_l1_submultiplicativity <> a:137 var
-R11190:11203 Cln.Cln_Full <> basis_mul_mask def
-R11207:11207 Cln.Cln_finite_l1_submultiplicativity <> B:138 var
-R11244:11246 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11234:11237 Coq.QArith.Qabs <> Qabs def
-R11247:11250 Coq.QArith.Qabs <> Qabs def
-R11255:11255 Cln.Cln_finite_l1_submultiplicativity <> B:138 var
-R11105:11115 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
-R11148:11151 Cln.Cln_Full <> Mask def
-R11153:11153 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11142:11142 <> a:139
-binder 11144:11144 <> B:140
-R11177:11187 Cln.Cln_Full <> mask_eq_dec def
-R11210:11210 Cln.Cln_finite_l1_submultiplicativity <> a:139 var
-R11190:11203 Cln.Cln_Full <> basis_mul_mask def
-R11207:11207 Cln.Cln_finite_l1_submultiplicativity <> B:140 var
-R11244:11246 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11234:11237 Coq.QArith.Qabs <> Qabs def
-R11247:11250 Coq.QArith.Qabs <> Qabs def
-R11255:11255 Cln.Cln_finite_l1_submultiplicativity <> B:140 var
-R11372:11375 Cln.Cln_Full <> sumQ def
-R11378:11380 Coq.Lists.List <> map def
-R11391:11394 Cln.Cln_Full <> Mask def
-R11396:11396 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11387:11387 <> A:141
-R11419:11422 Cln.Cln_Full <> sumQ def
-R11425:11427 Coq.Lists.List <> map def
-R11438:11441 Cln.Cln_Full <> Mask def
-R11443:11443 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11434:11434 <> B:142
-R11495:11517 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11479:11481 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11469:11472 Coq.QArith.Qabs <> Qabs def
-R11477:11477 Cln.Cln_finite_l1_submultiplicativity <> A:141 var
-R11482:11485 Coq.QArith.Qabs <> Qabs def
-R11490:11490 Cln.Cln_finite_l1_submultiplicativity <> B:142 var
-R11518:11521 Cln.Cln_Full <> sumQ def
-R11524:11526 Coq.Lists.List <> map def
-R11537:11540 Cln.Cln_Full <> Mask def
-R11542:11542 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11533:11533 <> U:143
-R11572:11582 Cln.Cln_Full <> mask_eq_dec def
-R11605:11605 Cln.Cln_finite_l1_submultiplicativity <> U:143 var
-R11585:11598 Cln.Cln_Full <> basis_mul_mask def
-R11602:11602 Cln.Cln_finite_l1_submultiplicativity <> B:142 var
-R11600:11600 Cln.Cln_finite_l1_submultiplicativity <> A:141 var
-R11321:11329 Coq.QArith.QArith_base <> Qeq_trans thm
-R11372:11375 Cln.Cln_Full <> sumQ def
-R11378:11380 Coq.Lists.List <> map def
-R11391:11394 Cln.Cln_Full <> Mask def
-R11396:11396 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11387:11387 <> A:144
-R11419:11422 Cln.Cln_Full <> sumQ def
-R11425:11427 Coq.Lists.List <> map def
-R11438:11441 Cln.Cln_Full <> Mask def
-R11443:11443 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11434:11434 <> B:145
-R11495:11517 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11479:11481 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11469:11472 Coq.QArith.Qabs <> Qabs def
-R11477:11477 Cln.Cln_finite_l1_submultiplicativity <> A:144 var
-R11482:11485 Coq.QArith.Qabs <> Qabs def
-R11490:11490 Cln.Cln_finite_l1_submultiplicativity <> B:145 var
-R11518:11521 Cln.Cln_Full <> sumQ def
-R11524:11526 Coq.Lists.List <> map def
-R11537:11540 Cln.Cln_Full <> Mask def
-R11542:11542 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11533:11533 <> U:146
-R11572:11582 Cln.Cln_Full <> mask_eq_dec def
-R11605:11605 Cln.Cln_finite_l1_submultiplicativity <> U:146 var
-R11585:11598 Cln.Cln_Full <> basis_mul_mask def
-R11602:11602 Cln.Cln_finite_l1_submultiplicativity <> B:145 var
-R11600:11600 Cln.Cln_finite_l1_submultiplicativity <> A:144 var
-R11321:11329 Coq.QArith.QArith_base <> Qeq_trans thm
-R11660:11671 Cln.Cln_Full <> sumQ_map_ext thm
-R11660:11671 Cln.Cln_Full <> sumQ_map_ext thm
-R11705:11716 Cln.Cln_Full <> sumQ_map_ext thm
-R11705:11716 Cln.Cln_Full <> sumQ_map_ext thm
-R11756:11771 Cln.Cln_Full <> sumQ_map_scale_l thm
-R11838:11841 Cln.Cln_Full <> Mask def
-R11843:11843 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11834:11834 <> U:147
-R11868:11878 Cln.Cln_Full <> mask_eq_dec def
-R11901:11901 Cln.Cln_finite_l1_submultiplicativity <> U:147 var
-R11881:11894 Cln.Cln_Full <> basis_mul_mask def
-R11798:11800 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11788:11791 Coq.QArith.Qabs <> Qabs def
-R11801:11804 Coq.QArith.Qabs <> Qabs def
-R11756:11771 Cln.Cln_Full <> sumQ_map_scale_l thm
-R11838:11841 Cln.Cln_Full <> Mask def
-R11843:11843 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11834:11834 <> U:148
-R11868:11878 Cln.Cln_Full <> mask_eq_dec def
-R11901:11901 Cln.Cln_finite_l1_submultiplicativity <> U:148 var
-R11881:11894 Cln.Cln_Full <> basis_mul_mask def
-R11798:11800 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11788:11791 Coq.QArith.Qabs <> Qabs def
-R11801:11804 Coq.QArith.Qabs <> Qabs def
-R11756:11771 Cln.Cln_Full <> sumQ_map_scale_l thm
-R11838:11841 Cln.Cln_Full <> Mask def
-R11843:11843 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 11834:11834 <> U:149
-R11868:11878 Cln.Cln_Full <> mask_eq_dec def
-R11901:11901 Cln.Cln_finite_l1_submultiplicativity <> U:149 var
-R11881:11894 Cln.Cln_Full <> basis_mul_mask def
-R11798:11800 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R11788:11791 Coq.QArith.Qabs <> Qabs def
-R11801:11804 Coq.QArith.Qabs <> Qabs def
-R11960:11971 Cln.Cln_Full <> sumQ_map_ext thm
-R11960:11971 Cln.Cln_Full <> sumQ_map_ext thm
-R12009:12019 Cln.Cln_Full <> mask_eq_dec def
-R12022:12035 Cln.Cln_Full <> basis_mul_mask def
-R12009:12019 Cln.Cln_Full <> mask_eq_dec def
-R12022:12035 Cln.Cln_Full <> basis_mul_mask def
-R12206:12209 Cln.Cln_Full <> sumQ def
-R12232:12234 Coq.Lists.List <> map def
-R12245:12248 Cln.Cln_Full <> Mask def
-R12250:12250 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12241:12241 <> A:150
-R12277:12280 Cln.Cln_Full <> sumQ def
-R12307:12309 Coq.Lists.List <> map def
-R12320:12323 Cln.Cln_Full <> Mask def
-R12325:12325 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12316:12316 <> B:151
-R12379:12381 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12366:12368 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12356:12359 Coq.QArith.Qabs <> Qabs def
-R12364:12364 Cln.Cln_finite_l1_submultiplicativity <> A:150 var
-R12369:12372 Coq.QArith.Qabs <> Qabs def
-R12377:12377 Cln.Cln_finite_l1_submultiplicativity <> B:151 var
-R12151:12159 Coq.QArith.QArith_base <> Qeq_trans thm
-R12206:12209 Cln.Cln_Full <> sumQ def
-R12232:12234 Coq.Lists.List <> map def
-R12245:12248 Cln.Cln_Full <> Mask def
-R12250:12250 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12241:12241 <> A:152
-R12277:12280 Cln.Cln_Full <> sumQ def
-R12307:12309 Coq.Lists.List <> map def
-R12320:12323 Cln.Cln_Full <> Mask def
-R12325:12325 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12316:12316 <> B:153
-R12379:12381 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12366:12368 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12356:12359 Coq.QArith.Qabs <> Qabs def
-R12364:12364 Cln.Cln_finite_l1_submultiplicativity <> A:152 var
-R12369:12372 Coq.QArith.Qabs <> Qabs def
-R12377:12377 Cln.Cln_finite_l1_submultiplicativity <> B:153 var
-R12151:12159 Coq.QArith.QArith_base <> Qeq_trans thm
-R12418:12429 Cln.Cln_Full <> sumQ_map_ext thm
-R12418:12429 Cln.Cln_Full <> sumQ_map_ext thm
-R12465:12476 Cln.Cln_Full <> sumQ_map_ext thm
-R12465:12476 Cln.Cln_Full <> sumQ_map_ext thm
-R12539:12552 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
-R12539:12552 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
-R12539:12552 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
-R12575:12582 Coq.QArith.QArith_base <> Qeq_refl thm
-R12575:12582 Coq.QArith.QArith_base <> Qeq_refl thm
-R12694:12697 Cln.Cln_Full <> sumQ def
-R12720:12722 Coq.Lists.List <> map def
-R12733:12736 Cln.Cln_Full <> Mask def
-R12738:12738 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12729:12729 <> A:154
-R12765:12768 Cln.Cln_Full <> sumQ def
-R12771:12773 Coq.Lists.List <> map def
-R12784:12787 Cln.Cln_Full <> Mask def
-R12789:12789 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12780:12780 <> B:155
-R12829:12831 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12819:12822 Coq.QArith.Qabs <> Qabs def
-R12827:12827 Cln.Cln_finite_l1_submultiplicativity <> A:154 var
-R12832:12835 Coq.QArith.Qabs <> Qabs def
-R12840:12840 Cln.Cln_finite_l1_submultiplicativity <> B:155 var
-R12639:12647 Coq.QArith.QArith_base <> Qeq_trans thm
-R12694:12697 Cln.Cln_Full <> sumQ def
-R12720:12722 Coq.Lists.List <> map def
-R12733:12736 Cln.Cln_Full <> Mask def
-R12738:12738 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12729:12729 <> A:156
-R12765:12768 Cln.Cln_Full <> sumQ def
-R12771:12773 Coq.Lists.List <> map def
-R12784:12787 Cln.Cln_Full <> Mask def
-R12789:12789 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 12780:12780 <> B:157
-R12829:12831 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R12819:12822 Coq.QArith.Qabs <> Qabs def
-R12827:12827 Cln.Cln_finite_l1_submultiplicativity <> A:156 var
-R12832:12835 Coq.QArith.Qabs <> Qabs def
-R12840:12840 Cln.Cln_finite_l1_submultiplicativity <> B:157 var
-R12639:12647 Coq.QArith.QArith_base <> Qeq_trans thm
-R12878:12889 Cln.Cln_Full <> sumQ_map_ext thm
-R12878:12889 Cln.Cln_Full <> sumQ_map_ext thm
-R12925:12936 Cln.Cln_Full <> sumQ_map_ext thm
-R12925:12936 Cln.Cln_Full <> sumQ_map_ext thm
-R12974:12982 Coq.QArith.QArith_base <> Qmult_1_r thm
-R12974:12982 Coq.QArith.QArith_base <> Qmult_1_r thm
-R12974:12982 Coq.QArith.QArith_base <> Qmult_1_r thm
-R13005:13012 Coq.QArith.QArith_base <> Qeq_refl thm
-R13005:13012 Coq.QArith.QArith_base <> Qeq_refl thm
-R13167:13170 Cln.Cln_Full <> sumQ def
-R13193:13195 Coq.Lists.List <> map def
-R13206:13209 Cln.Cln_Full <> Mask def
-R13211:13211 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13202:13202 <> A:158
-R13249:13251 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R13239:13242 Coq.QArith.Qabs <> Qabs def
-R13247:13247 Cln.Cln_finite_l1_submultiplicativity <> A:158 var
-R13252:13255 Cln.Cln_Full <> sumQ def
-R13258:13260 Coq.Lists.List <> map def
-R13271:13274 Cln.Cln_Full <> Mask def
-R13276:13276 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13267:13267 <> B:159
-R13281:13284 Coq.QArith.Qabs <> Qabs def
-R13289:13289 Cln.Cln_finite_l1_submultiplicativity <> B:159 var
-R13112:13120 Coq.QArith.QArith_base <> Qeq_trans thm
-R13167:13170 Cln.Cln_Full <> sumQ def
-R13193:13195 Coq.Lists.List <> map def
-R13206:13209 Cln.Cln_Full <> Mask def
-R13211:13211 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13202:13202 <> A:160
-R13249:13251 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R13239:13242 Coq.QArith.Qabs <> Qabs def
-R13247:13247 Cln.Cln_finite_l1_submultiplicativity <> A:160 var
-R13252:13255 Cln.Cln_Full <> sumQ def
-R13258:13260 Coq.Lists.List <> map def
-R13271:13274 Cln.Cln_Full <> Mask def
-R13276:13276 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13267:13267 <> B:161
-R13281:13284 Coq.QArith.Qabs <> Qabs def
-R13289:13289 Cln.Cln_finite_l1_submultiplicativity <> B:161 var
-R13112:13120 Coq.QArith.QArith_base <> Qeq_trans thm
-R13327:13338 Cln.Cln_Full <> sumQ_map_ext thm
-R13327:13338 Cln.Cln_Full <> sumQ_map_ext thm
-R13380:13395 Cln.Cln_Full <> sumQ_map_scale_l thm
-R13435:13438 Cln.Cln_Full <> Mask def
-R13440:13440 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13431:13431 <> B:162
-R13445:13448 Coq.QArith.Qabs <> Qabs def
-R13453:13453 Cln.Cln_finite_l1_submultiplicativity <> B:162 var
-R13398:13401 Coq.QArith.Qabs <> Qabs def
-R13380:13395 Cln.Cln_Full <> sumQ_map_scale_l thm
-R13435:13438 Cln.Cln_Full <> Mask def
-R13440:13440 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13431:13431 <> B:163
-R13445:13448 Coq.QArith.Qabs <> Qabs def
-R13453:13453 Cln.Cln_finite_l1_submultiplicativity <> B:163 var
-R13398:13401 Coq.QArith.Qabs <> Qabs def
-R13380:13395 Cln.Cln_Full <> sumQ_map_scale_l thm
-R13435:13438 Cln.Cln_Full <> Mask def
-R13440:13440 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13431:13431 <> B:164
-R13445:13448 Coq.QArith.Qabs <> Qabs def
-R13453:13453 Cln.Cln_finite_l1_submultiplicativity <> B:164 var
-R13398:13401 Coq.QArith.Qabs <> Qabs def
-R13482:13493 Cln.Cln_Full <> sumQ_map_ext thm
-R13482:13493 Cln.Cln_Full <> sumQ_map_ext thm
-R13625:13628 Cln.Cln_Full <> sumQ def
-R13631:13633 Coq.Lists.List <> map def
-R13644:13647 Cln.Cln_Full <> Mask def
-R13649:13649 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13640:13640 <> B:165
-R13654:13657 Coq.QArith.Qabs <> Qabs def
-R13662:13662 Cln.Cln_finite_l1_submultiplicativity <> B:165 var
-R13625:13628 Cln.Cln_Full <> sumQ def
-R13631:13633 Coq.Lists.List <> map def
-R13644:13647 Cln.Cln_Full <> Mask def
-R13649:13649 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13640:13640 <> B:166
-R13654:13657 Coq.QArith.Qabs <> Qabs def
-R13662:13662 Cln.Cln_finite_l1_submultiplicativity <> B:166 var
-R13803:13806 Cln.Cln_Full <> sumQ def
-R13809:13811 Coq.Lists.List <> map def
-R13822:13825 Cln.Cln_Full <> Mask def
-R13827:13827 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13818:13818 <> A:167
-R13834:13836 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R13837:13840 Coq.QArith.Qabs <> Qabs def
-R13845:13845 Cln.Cln_finite_l1_submultiplicativity <> A:167 var
-R13766:13774 Coq.QArith.QArith_base <> Qeq_trans thm
-R13803:13806 Cln.Cln_Full <> sumQ def
-R13809:13811 Coq.Lists.List <> map def
-R13822:13825 Cln.Cln_Full <> Mask def
-R13827:13827 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 13818:13818 <> A:168
-R13834:13836 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R13837:13840 Coq.QArith.Qabs <> Qabs def
-R13845:13845 Cln.Cln_finite_l1_submultiplicativity <> A:168 var
-R13766:13774 Coq.QArith.QArith_base <> Qeq_trans thm
-R13878:13889 Cln.Cln_Full <> sumQ_map_ext thm
-R13878:13889 Cln.Cln_Full <> sumQ_map_ext thm
-R14051:14066 Cln.Cln_Full <> sumQ_map_scale_l thm
-R14079:14082 Cln.Cln_Full <> Mask def
-R14084:14084 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 14075:14075 <> A:169
-R14089:14092 Coq.QArith.Qabs <> Qabs def
-R14097:14097 Cln.Cln_finite_l1_submultiplicativity <> A:169 var
-R14051:14066 Cln.Cln_Full <> sumQ_map_scale_l thm
-R14079:14082 Cln.Cln_Full <> Mask def
-R14084:14084 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 14075:14075 <> A:170
-R14089:14092 Coq.QArith.Qabs <> Qabs def
-R14097:14097 Cln.Cln_finite_l1_submultiplicativity <> A:170 var
-R14051:14066 Cln.Cln_Full <> sumQ_map_scale_l thm
-R14079:14082 Cln.Cln_Full <> Mask def
-R14084:14084 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 14075:14075 <> A:171
-R14089:14092 Coq.QArith.Qabs <> Qabs def
-R14097:14097 Cln.Cln_finite_l1_submultiplicativity <> A:171 var
-R14128:14137 Coq.QArith.QArith_base <> Qmult_comm thm
-R14128:14137 Coq.QArith.QArith_base <> Qmult_comm thm
-R14128:14137 Coq.QArith.QArith_base <> Qmult_comm thm
-R14160:14167 Coq.QArith.QArith_base <> Qeq_refl thm
-R14160:14167 Coq.QArith.QArith_base <> Qeq_refl thm
-prf 14182:14193 <> l1_add_bound
-binder 14204:14204 <> n:172
-R14213:14214 Cln.Cln_Full <> MV def
-R14216:14216 Cln.Cln_finite_l1_submultiplicativity <> n:172 var
-binder 14207:14207 <> F:173
-binder 14209:14209 <> G:174
-R14242:14245 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R14222:14228 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14231:14236 Cln.Cln_Full <> mv_add def
-R14240:14240 Cln.Cln_finite_l1_submultiplicativity <> G:174 var
-R14238:14238 Cln.Cln_finite_l1_submultiplicativity <> F:173 var
-R14255:14257 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
-R14246:14252 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14254:14254 Cln.Cln_finite_l1_submultiplicativity <> F:173 var
-R14258:14264 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14266:14266 Cln.Cln_finite_l1_submultiplicativity <> G:174 var
-R14301:14307 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14310:14315 Cln.Cln_Full <> mv_add def
-R14331:14342 Cln.Cln_Full <> sumQ_map_add thm
-R14331:14342 Cln.Cln_Full <> sumQ_map_add thm
-R14331:14342 Cln.Cln_Full <> sumQ_map_add thm
-R14353:14363 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R14353:14363 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
-R14388:14400 Coq.QArith.Qabs <> Qabs_triangle thm
-R14388:14400 Coq.QArith.Qabs <> Qabs_triangle thm
-prf 14415:14425 <> l1_gp_bound
-R14443:14444 Cln.Cln_Full <> MV def
-R14446:14446 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 14437:14437 <> F:175
-binder 14439:14439 <> G:176
-R14474:14477 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R14452:14458 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14461:14465 Cln.Cln_Full <> mv_gp def
-R14472:14472 Cln.Cln_finite_l1_submultiplicativity <> G:176 var
-R14470:14470 Cln.Cln_finite_l1_submultiplicativity <> F:175 var
-R14467:14468 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R14487:14489 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R14478:14484 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14486:14486 Cln.Cln_finite_l1_submultiplicativity <> F:175 var
-R14490:14496 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14498:14498 Cln.Cln_finite_l1_submultiplicativity <> G:176 var
-R14524:14546 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_submultiplicative thm
-R14524:14546 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_submultiplicative thm
-def 14616:14623 <> l1_bound
-binder 14626:14626 <> n:177
-R14634:14640 Cln.Cln_Grade <> GA_expr ind
-R14642:14642 Cln.Cln_finite_l1_submultiplicativity <> n:177 var
-binder 14630:14630 <> e:178
-R14647:14647 Coq.QArith.QArith_base <> Q rec
-R14660:14660 Cln.Cln_finite_l1_submultiplicativity <> e:178 var
-R14671:14675 Cln.Cln_Grade <> Basis constr
-R14690:14695 Cln.Cln_Grade <> Scalar constr
-R14703:14706 Coq.QArith.Qabs <> Qabs def
-R14714:14726 Cln.Cln_Grade <> Add constr
-R14748:14750 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
-R14737:14744 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:179 def
-R14751:14758 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:179 def
-R14767:14779 Cln.Cln_Grade <> Mul constr
-R14801:14803 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R14790:14797 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:179 def
-R14804:14811 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:179 def
-prf 14830:14843 <> l1_norm_nonneg
-R14859:14860 Cln.Cln_Full <> MV def
-R14862:14862 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 14855:14855 <> F:181
-R14869:14872 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R14873:14879 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14881:14881 Cln.Cln_finite_l1_submultiplicativity <> F:181 var
-R14909:14915 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R14931:14939 Cln.Cln_Full <> all_masks def
-R14941:14941 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R14931:14939 Cln.Cln_Full <> all_masks def
-R14941:14941 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R14976:14983 Coq.QArith.QArith_base <> Qle_refl thm
-R14976:14983 Coq.QArith.QArith_base <> Qle_refl thm
-R15019:15021 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
-R14996:15004 Coq.QArith.QArith_base <> Qle_trans thm
-R15019:15021 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
-R14996:15004 Coq.QArith.QArith_base <> Qle_trans thm
-R15056:15063 Coq.QArith.QArith_base <> Qle_refl thm
-R15056:15063 Coq.QArith.QArith_base <> Qle_refl thm
-R15078:15092 Coq.QArith.QArith_base <> Qplus_le_compat thm
-R15078:15092 Coq.QArith.QArith_base <> Qplus_le_compat thm
-R15109:15119 Coq.QArith.Qabs <> Qabs_nonneg thm
-R15109:15119 Coq.QArith.Qabs <> Qabs_nonneg thm
-prf 15152:15164 <> l1_norm_basis
-R15180:15184 Coq.Vectors.Fin <> t ind
-R15186:15186 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 15176:15176 <> i:182
-R15223:15226 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R15192:15198 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R15201:15205 Cln.Cln_Full <> basis def
-R15208:15218 Cln.Cln_Full <> mask_single def
-R15220:15220 Cln.Cln_finite_l1_submultiplicativity <> i:182 var
-R15255:15261 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R15264:15268 Cln.Cln_Full <> basis def
-R15280:15288 Coq.QArith.QArith_base <> Qeq_trans thm
-R15280:15288 Coq.QArith.QArith_base <> Qeq_trans thm
-R15302:15313 Cln.Cln_Full <> sumQ_map_ext thm
-binder 15328:15328 <> m:183
-R15336:15346 Cln.Cln_Full <> mask_eq_dec def
-R15351:15361 Cln.Cln_Full <> mask_single def
-R15348:15348 Cln.Cln_finite_l1_submultiplicativity <> m:183 var
-R15302:15313 Cln.Cln_Full <> sumQ_map_ext thm
-binder 15328:15328 <> m:184
-R15336:15346 Cln.Cln_Full <> mask_eq_dec def
-R15351:15361 Cln.Cln_Full <> mask_single def
-R15348:15348 Cln.Cln_finite_l1_submultiplicativity <> m:184 var
-R15414:15424 Cln.Cln_Full <> mask_eq_dec def
-R15429:15439 Cln.Cln_Full <> mask_single def
-R15414:15424 Cln.Cln_Full <> mask_eq_dec def
-R15429:15439 Cln.Cln_Full <> mask_single def
-R15474:15481 Coq.QArith.Qabs <> Qabs_pos thm
-R15474:15481 Coq.QArith.Qabs <> Qabs_pos thm
-R15474:15481 Coq.QArith.Qabs <> Qabs_pos thm
-R15474:15481 Coq.QArith.Qabs <> Qabs_pos thm
-R15528:15535 Coq.QArith.Qabs <> Qabs_pos thm
-R15559:15566 Coq.QArith.QArith_base <> Qle_refl thm
-R15528:15535 Coq.QArith.Qabs <> Qabs_pos thm
-R15528:15535 Coq.QArith.Qabs <> Qabs_pos thm
-R15528:15535 Coq.QArith.Qabs <> Qabs_pos thm
-R15559:15566 Coq.QArith.QArith_base <> Qle_refl thm
-R15580:15598 Cln.Cln_Full <> sumQ_all_masks_pick thm
-R15580:15598 Cln.Cln_Full <> sumQ_all_masks_pick thm
-prf 15613:15629 <> l1_norm_scale_one
-R15645:15645 Coq.QArith.QArith_base <> Q rec
-binder 15641:15641 <> c:185
-R15683:15686 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R15651:15657 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R15660:15667 Cln.Cln_Full <> mv_scale def
-R15673:15678 Cln.Cln_Full <> mv_one def
-R15680:15680 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R15669:15669 Cln.Cln_finite_l1_submultiplicativity <> c:185 var
-R15687:15690 Coq.QArith.Qabs <> Qabs def
-R15692:15692 Cln.Cln_finite_l1_submultiplicativity <> c:185 var
-R15720:15726 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R15729:15736 Cln.Cln_Full <> mv_scale def
-R15739:15744 Cln.Cln_Full <> mv_one def
-R15747:15751 Cln.Cln_Full <> basis def
-R15763:15771 Coq.QArith.QArith_base <> Qeq_trans thm
-R15763:15771 Coq.QArith.QArith_base <> Qeq_trans thm
-R15785:15796 Cln.Cln_Full <> sumQ_map_ext thm
-binder 15811:15811 <> m:186
-R15819:15829 Cln.Cln_Full <> mask_eq_dec def
-R15834:15843 Cln.Cln_Full <> mask_empty def
-R15849:15849 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R15831:15831 Cln.Cln_finite_l1_submultiplicativity <> m:186 var
-R15858:15861 Coq.QArith.Qabs <> Qabs def
-R15785:15796 Cln.Cln_Full <> sumQ_map_ext thm
-binder 15811:15811 <> m:187
-R15819:15829 Cln.Cln_Full <> mask_eq_dec def
-R15834:15843 Cln.Cln_Full <> mask_empty def
-R15849:15849 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R15831:15831 Cln.Cln_finite_l1_submultiplicativity <> m:187 var
-R15858:15861 Coq.QArith.Qabs <> Qabs def
-R15906:15916 Cln.Cln_Full <> mask_eq_dec def
-R15921:15930 Cln.Cln_Full <> mask_empty def
-R15936:15936 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R15906:15916 Cln.Cln_Full <> mask_eq_dec def
-R15921:15930 Cln.Cln_Full <> mask_empty def
-R15936:15936 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-R15970:15979 Coq.QArith.Qabs <> Qabs_Qmult thm
-R15970:15979 Coq.QArith.Qabs <> Qabs_Qmult thm
-R15970:15979 Coq.QArith.Qabs <> Qabs_Qmult thm
-R16007:16010 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R16001:16004 Coq.QArith.Qabs <> Qabs def
-R16026:16033 Coq.QArith.Qabs <> Qabs_pos thm
-R16007:16010 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
-R16001:16004 Coq.QArith.Qabs <> Qabs def
-R16026:16033 Coq.QArith.Qabs <> Qabs_pos thm
-R16026:16033 Coq.QArith.Qabs <> Qabs_pos thm
-R16026:16033 Coq.QArith.Qabs <> Qabs_pos thm
-R16112:16120 Coq.QArith.QArith_base <> Qmult_0_r thm
-R16112:16120 Coq.QArith.QArith_base <> Qmult_0_r thm
-R16112:16120 Coq.QArith.QArith_base <> Qmult_0_r thm
-R16131:16138 Coq.QArith.Qabs <> Qabs_pos thm
-R16162:16169 Coq.QArith.QArith_base <> Qle_refl thm
-R16131:16138 Coq.QArith.Qabs <> Qabs_pos thm
-R16131:16138 Coq.QArith.Qabs <> Qabs_pos thm
-R16131:16138 Coq.QArith.Qabs <> Qabs_pos thm
-R16162:16169 Coq.QArith.QArith_base <> Qle_refl thm
-R16183:16201 Cln.Cln_Full <> sumQ_all_masks_pick thm
-R16183:16201 Cln.Cln_Full <> sumQ_all_masks_pick thm
-prf 16216:16237 <> Qmult_le_compat_nonneg
-R16258:16258 Coq.QArith.QArith_base <> Q rec
-binder 16248:16248 <> a:188
-binder 16250:16250 <> b:189
-binder 16252:16252 <> c:190
-binder 16254:16254 <> d:191
-R16269:16272 Coq.Init.Logic <> ::type_scope:x_'->'_x not
-R16264:16267 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16268:16268 Cln.Cln_finite_l1_submultiplicativity <> a:188 var
-R16279:16282 Coq.Init.Logic <> ::type_scope:x_'->'_x not
-R16274:16277 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16278:16278 Cln.Cln_finite_l1_submultiplicativity <> c:190 var
-R16289:16292 Coq.Init.Logic <> ::type_scope:x_'->'_x not
-R16284:16287 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16283:16283 Cln.Cln_finite_l1_submultiplicativity <> a:188 var
-R16288:16288 Cln.Cln_finite_l1_submultiplicativity <> b:189 var
-R16299:16302 Coq.Init.Logic <> ::type_scope:x_'->'_x not
-R16294:16297 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16293:16293 Cln.Cln_finite_l1_submultiplicativity <> c:190 var
-R16298:16298 Cln.Cln_finite_l1_submultiplicativity <> d:191 var
-R16308:16311 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16304:16306 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R16303:16303 Cln.Cln_finite_l1_submultiplicativity <> a:188 var
-R16307:16307 Cln.Cln_finite_l1_submultiplicativity <> c:190 var
-R16313:16315 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R16312:16312 Cln.Cln_finite_l1_submultiplicativity <> b:189 var
-R16316:16316 Cln.Cln_finite_l1_submultiplicativity <> d:191 var
-R16389:16391 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R16366:16374 Coq.QArith.QArith_base <> Qle_trans thm
-R16389:16391 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
-R16366:16374 Coq.QArith.QArith_base <> Qle_trans thm
-R16413:16424 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
-R16413:16424 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
-R16460:16469 Coq.QArith.QArith_base <> Qmult_le_r thm
-R16460:16469 Coq.QArith.QArith_base <> Qmult_le_r thm
-R16534:16541 Coq.QArith.QArith_base <> Qle_refl thm
-R16534:16541 Coq.QArith.QArith_base <> Qle_refl thm
-R16558:16569 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
-R16576:16584 Coq.QArith.QArith_base <> Qle_trans thm
-R16558:16569 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
-R16576:16584 Coq.QArith.QArith_base <> Qle_trans thm
-R16627:16636 Coq.QArith.QArith_base <> Qmult_le_l thm
-R16627:16636 Coq.QArith.QArith_base <> Qmult_le_l thm
-R16701:16708 Coq.QArith.QArith_base <> Qle_refl thm
-R16701:16708 Coq.QArith.QArith_base <> Qle_refl thm
-prf 16725:16739 <> l1_norm_eval_le
-R16757:16763 Cln.Cln_Grade <> GA_expr ind
-R16765:16765 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
-binder 16753:16753 <> e:192
-R16797:16800 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
-R16773:16779 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
-R16782:16790 Cln.Cln_Grade <> eval_expr def
-R16795:16795 Cln.Cln_finite_l1_submultiplicativity <> e:192 var
-R16792:16793 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
-R16801:16808 Cln.Cln_finite_l1_submultiplicativity <> l1_bound def
-R16810:16810 Cln.Cln_finite_l1_submultiplicativity <> e:192 var
-R16923:16932 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R16923:16932 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R16941:16953 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_basis thm
-R16941:16953 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_basis thm
-R16983:16992 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R16983:16992 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
-R17001:17017 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_scale_one thm
-R17001:17017 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_scale_one thm
-R17045:17053 Coq.QArith.QArith_base <> Qle_trans thm
-R17045:17053 Coq.QArith.QArith_base <> Qle_trans thm
-R17068:17079 Cln.Cln_finite_l1_submultiplicativity <> l1_add_bound thm
-R17068:17079 Cln.Cln_finite_l1_submultiplicativity <> l1_add_bound thm
-R17094:17108 Coq.QArith.QArith_base <> Qplus_le_compat thm
-R17094:17108 Coq.QArith.QArith_base <> Qplus_le_compat thm
-R17148:17156 Coq.QArith.QArith_base <> Qle_trans thm
-R17148:17156 Coq.QArith.QArith_base <> Qle_trans thm
-R17171:17181 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_bound thm
-R17171:17181 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_bound thm
-R17196:17217 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
-R17196:17217 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
-R17234:17247 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
-R17234:17247 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
-R17264:17277 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
-R17264:17277 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
-R17328:17337 Cln.Cln_finite_l1_submultiplicativity UnitMetric <> sec
+prf 4792:4810 <> sumU_xor_delta_conv
+binder 4823:4823 <> n:50
+R4832:4835 Cln.Cln_Full <> Mask def
+R4837:4837 Cln.Cln_finite_l1_submultiplicativity <> n:50 var
+binder 4826:4826 <> A:51
+binder 4828:4828 <> B:52
+R4936:4943 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R4845:4848 Cln.Cln_Full <> sumQ def
+R4851:4853 Coq.Lists.List <> map def
+R4923:4931 Cln.Cln_Full <> all_masks def
+R4933:4933 Cln.Cln_finite_l1_submultiplicativity <> n:50 var
+binder 4860:4860 <> U:53
+R4874:4884 Cln.Cln_Full <> mask_eq_dec def
+R4901:4901 Cln.Cln_finite_l1_submultiplicativity <> U:53 var
+R4887:4894 Cln.Cln_Full <> mask_xor def
+R4898:4898 Cln.Cln_finite_l1_submultiplicativity <> B:52 var
+R4896:4896 Cln.Cln_finite_l1_submultiplicativity <> A:51 var
+R4981:4989 Coq.QArith.QArith_base <> Qeq_trans thm
+R4981:4989 Coq.QArith.QArith_base <> Qeq_trans thm
+R5006:5024 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R5042:5049 Cln.Cln_Full <> mask_xor def
+R5006:5024 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R5042:5049 Cln.Cln_Full <> mask_xor def
+R5068:5079 Cln.Cln_Full <> sumQ_map_ext thm
+R5068:5079 Cln.Cln_Full <> sumQ_map_ext thm
+R5107:5117 Cln.Cln_Full <> mask_eq_dec def
+R5120:5127 Cln.Cln_Full <> mask_xor def
+R5107:5117 Cln.Cln_Full <> mask_eq_dec def
+R5120:5127 Cln.Cln_Full <> mask_xor def
+R5178:5188 Cln.Cln_Full <> mask_eq_dec def
+R5206:5213 Cln.Cln_Full <> mask_xor def
+R5191:5198 Cln.Cln_Full <> mask_xor def
+R5178:5188 Cln.Cln_Full <> mask_eq_dec def
+R5206:5213 Cln.Cln_Full <> mask_xor def
+R5191:5198 Cln.Cln_Full <> mask_xor def
+R5307:5317 Cln.Cln_Full <> mask_eq_dec def
+R5322:5329 Cln.Cln_Full <> mask_xor def
+R5307:5317 Cln.Cln_Full <> mask_eq_dec def
+R5322:5329 Cln.Cln_Full <> mask_xor def
+prf 5420:5432 <> l1_conv_bound
+binder 5445:5445 <> n:54
+R5454:5455 Cln.Cln_Full <> MV def
+R5457:5457 Cln.Cln_finite_l1_submultiplicativity <> n:54 var
+binder 5448:5448 <> F:55
+binder 5450:5450 <> G:56
+R5486:5489 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R5465:5471 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R5474:5480 Cln.Cln_Full <> mv_conv def
+R5484:5484 Cln.Cln_finite_l1_submultiplicativity <> G:56 var
+R5482:5482 Cln.Cln_finite_l1_submultiplicativity <> F:55 var
+R5499:5501 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R5490:5496 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R5498:5498 Cln.Cln_finite_l1_submultiplicativity <> F:55 var
+R5502:5508 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R5510:5510 Cln.Cln_finite_l1_submultiplicativity <> G:56 var
+R5545:5551 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R5554:5560 Cln.Cln_Full <> mv_conv def
+R5576:5584 Cln.Cln_Full <> all_masks def
+R5576:5584 Cln.Cln_Full <> all_masks def
+R5619:5622 Cln.Cln_Full <> Mask def
+binder 5611:5611 <> U:57
+binder 5613:5613 <> A:58
+binder 5615:5615 <> B:59
+R5637:5647 Cln.Cln_Full <> mask_eq_dec def
+R5664:5664 Cln.Cln_finite_l1_submultiplicativity <> U:57 var
+R5650:5657 Cln.Cln_Full <> mask_xor def
+R5661:5661 Cln.Cln_finite_l1_submultiplicativity <> B:59 var
+R5659:5659 Cln.Cln_finite_l1_submultiplicativity <> A:58 var
+R5679:5681 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R5678:5678 Cln.Cln_finite_l1_submultiplicativity <> A:58 var
+R5684:5684 Cln.Cln_finite_l1_submultiplicativity <> B:59 var
+R5619:5622 Cln.Cln_Full <> Mask def
+binder 5611:5611 <> U:60
+binder 5613:5613 <> A:61
+binder 5615:5615 <> B:62
+R5637:5647 Cln.Cln_Full <> mask_eq_dec def
+R5664:5664 Cln.Cln_finite_l1_submultiplicativity <> U:60 var
+R5650:5657 Cln.Cln_Full <> mask_xor def
+R5661:5661 Cln.Cln_finite_l1_submultiplicativity <> B:62 var
+R5659:5659 Cln.Cln_finite_l1_submultiplicativity <> A:61 var
+R5679:5681 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R5678:5678 Cln.Cln_finite_l1_submultiplicativity <> A:61 var
+R5684:5684 Cln.Cln_finite_l1_submultiplicativity <> B:62 var
+R5726:5729 Cln.Cln_Full <> Mask def
+binder 5722:5722 <> U:63
+R5741:5744 Cln.Cln_Full <> sumQ def
+R5747:5749 Coq.Lists.List <> map def
+R5760:5763 Cln.Cln_Full <> Mask def
+binder 5756:5756 <> A:64
+R5776:5779 Cln.Cln_Full <> sumQ def
+R5782:5784 Coq.Lists.List <> map def
+R5795:5798 Cln.Cln_Full <> Mask def
+binder 5791:5791 <> B:65
+R5810:5810 Cln.Cln_finite_l1_submultiplicativity <> U:63 var
+R5812:5812 Cln.Cln_finite_l1_submultiplicativity <> A:64 var
+R5814:5814 Cln.Cln_finite_l1_submultiplicativity <> B:65 var
+R5726:5729 Cln.Cln_Full <> Mask def
+binder 5722:5722 <> U:66
+R5741:5744 Cln.Cln_Full <> sumQ def
+R5747:5749 Coq.Lists.List <> map def
+R5760:5763 Cln.Cln_Full <> Mask def
+binder 5756:5756 <> A:67
+R5776:5779 Cln.Cln_Full <> sumQ def
+R5782:5784 Coq.Lists.List <> map def
+R5795:5798 Cln.Cln_Full <> Mask def
+binder 5791:5791 <> B:68
+R5810:5810 Cln.Cln_finite_l1_submultiplicativity <> U:66 var
+R5812:5812 Cln.Cln_finite_l1_submultiplicativity <> A:67 var
+R5814:5814 Cln.Cln_finite_l1_submultiplicativity <> B:68 var
+R5941:5952 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R5902:5905 Cln.Cln_Full <> sumQ def
+R5908:5910 Coq.Lists.List <> map def
+binder 5917:5917 <> U:69
+R5922:5925 Coq.QArith.Qabs <> Qabs def
+R5934:5934 Cln.Cln_finite_l1_submultiplicativity <> U:69 var
+R5953:5956 Cln.Cln_Full <> sumQ def
+R5959:5961 Coq.Lists.List <> map def
+binder 5968:5968 <> U:70
+R5979:5982 Cln.Cln_Full <> sumQ def
+R5985:5987 Coq.Lists.List <> map def
+binder 5994:5994 <> A:71
+R6007:6010 Cln.Cln_Full <> sumQ def
+R6013:6015 Coq.Lists.List <> map def
+binder 6022:6022 <> B:72
+R6027:6030 Coq.QArith.Qabs <> Qabs def
+R6038:6038 Cln.Cln_finite_l1_submultiplicativity <> U:70 var
+R6040:6040 Cln.Cln_finite_l1_submultiplicativity <> A:71 var
+R6042:6042 Cln.Cln_finite_l1_submultiplicativity <> B:72 var
+R5941:5952 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R5902:5905 Cln.Cln_Full <> sumQ def
+R5908:5910 Coq.Lists.List <> map def
+binder 5917:5917 <> U:73
+R5922:5925 Coq.QArith.Qabs <> Qabs def
+R5934:5934 Cln.Cln_finite_l1_submultiplicativity <> U:73 var
+R5953:5956 Cln.Cln_Full <> sumQ def
+R5959:5961 Coq.Lists.List <> map def
+binder 5968:5968 <> U:74
+R5979:5982 Cln.Cln_Full <> sumQ def
+R5985:5987 Coq.Lists.List <> map def
+binder 5994:5994 <> A:75
+R6007:6010 Cln.Cln_Full <> sumQ def
+R6013:6015 Coq.Lists.List <> map def
+binder 6022:6022 <> B:76
+R6027:6030 Coq.QArith.Qabs <> Qabs def
+R6038:6038 Cln.Cln_finite_l1_submultiplicativity <> U:74 var
+R6040:6040 Cln.Cln_finite_l1_submultiplicativity <> A:75 var
+R6042:6042 Cln.Cln_finite_l1_submultiplicativity <> B:76 var
+R6076:6086 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R6076:6086 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R6117:6125 Coq.QArith.QArith_base <> Qle_trans thm
+R6117:6125 Coq.QArith.QArith_base <> Qle_trans thm
+R6140:6155 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R6140:6155 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R6170:6180 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R6170:6180 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R6214:6229 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R6214:6229 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R6246:6254 Coq.QArith.QArith_base <> Qle_trans thm
+R6246:6254 Coq.QArith.QArith_base <> Qle_trans thm
+R6285:6294 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R6285:6294 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R6410:6413 Cln.Cln_Full <> sumQ def
+R6416:6418 Coq.Lists.List <> map def
+R6429:6432 Cln.Cln_Full <> Mask def
+binder 6425:6425 <> U:77
+R6449:6452 Cln.Cln_Full <> sumQ def
+R6455:6457 Coq.Lists.List <> map def
+R6468:6471 Cln.Cln_Full <> Mask def
+binder 6464:6464 <> A:78
+R6490:6493 Cln.Cln_Full <> sumQ def
+R6496:6498 Coq.Lists.List <> map def
+R6509:6512 Cln.Cln_Full <> Mask def
+binder 6505:6505 <> B:79
+R6536:6546 Cln.Cln_Full <> mask_eq_dec def
+R6563:6563 Cln.Cln_finite_l1_submultiplicativity <> U:77 var
+R6549:6556 Cln.Cln_Full <> mask_xor def
+R6560:6560 Cln.Cln_finite_l1_submultiplicativity <> B:79 var
+R6558:6558 Cln.Cln_finite_l1_submultiplicativity <> A:78 var
+R6595:6597 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R6585:6588 Coq.QArith.Qabs <> Qabs def
+R6593:6593 Cln.Cln_finite_l1_submultiplicativity <> A:78 var
+R6598:6601 Coq.QArith.Qabs <> Qabs def
+R6606:6606 Cln.Cln_finite_l1_submultiplicativity <> B:79 var
+R6375:6383 Coq.QArith.QArith_base <> Qeq_trans thm
+R6410:6413 Cln.Cln_Full <> sumQ def
+R6416:6418 Coq.Lists.List <> map def
+R6429:6432 Cln.Cln_Full <> Mask def
+binder 6425:6425 <> U:80
+R6449:6452 Cln.Cln_Full <> sumQ def
+R6455:6457 Coq.Lists.List <> map def
+R6468:6471 Cln.Cln_Full <> Mask def
+binder 6464:6464 <> A:81
+R6490:6493 Cln.Cln_Full <> sumQ def
+R6496:6498 Coq.Lists.List <> map def
+R6509:6512 Cln.Cln_Full <> Mask def
+binder 6505:6505 <> B:82
+R6536:6546 Cln.Cln_Full <> mask_eq_dec def
+R6563:6563 Cln.Cln_finite_l1_submultiplicativity <> U:80 var
+R6549:6556 Cln.Cln_Full <> mask_xor def
+R6560:6560 Cln.Cln_finite_l1_submultiplicativity <> B:82 var
+R6558:6558 Cln.Cln_finite_l1_submultiplicativity <> A:81 var
+R6595:6597 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R6585:6588 Coq.QArith.Qabs <> Qabs def
+R6593:6593 Cln.Cln_finite_l1_submultiplicativity <> A:81 var
+R6598:6601 Coq.QArith.Qabs <> Qabs def
+R6606:6606 Cln.Cln_finite_l1_submultiplicativity <> B:82 var
+R6375:6383 Coq.QArith.QArith_base <> Qeq_trans thm
+R6664:6675 Cln.Cln_Full <> sumQ_map_ext thm
+R6664:6675 Cln.Cln_Full <> sumQ_map_ext thm
+R6703:6714 Cln.Cln_Full <> sumQ_map_ext thm
+R6703:6714 Cln.Cln_Full <> sumQ_map_ext thm
+R6742:6753 Cln.Cln_Full <> sumQ_map_ext thm
+R6742:6753 Cln.Cln_Full <> sumQ_map_ext thm
+R6804:6814 Cln.Cln_Full <> mask_eq_dec def
+R6817:6824 Cln.Cln_Full <> mask_xor def
+R6804:6814 Cln.Cln_Full <> mask_eq_dec def
+R6817:6824 Cln.Cln_Full <> mask_xor def
+R6865:6874 Coq.QArith.Qabs <> Qabs_Qmult thm
+R6865:6874 Coq.QArith.Qabs <> Qabs_Qmult thm
+R6865:6874 Coq.QArith.Qabs <> Qabs_Qmult thm
+R6883:6890 Coq.QArith.QArith_base <> Qeq_refl thm
+R6883:6890 Coq.QArith.QArith_base <> Qeq_refl thm
+R6914:6921 Coq.QArith.QArith_base <> Qeq_refl thm
+R6914:6921 Coq.QArith.QArith_base <> Qeq_refl thm
+R6988:6998 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 7051:7051 <> U:83
+binder 7053:7053 <> A:84
+R7069:7072 Cln.Cln_Full <> sumQ def
+R7075:7077 Coq.Lists.List <> map def
+binder 7084:7084 <> B:85
+R7105:7115 Cln.Cln_Full <> mask_eq_dec def
+R7132:7132 Cln.Cln_finite_l1_submultiplicativity <> U:83 var
+R7118:7125 Cln.Cln_Full <> mask_xor def
+R7129:7129 Cln.Cln_finite_l1_submultiplicativity <> B:85 var
+R7127:7127 Cln.Cln_finite_l1_submultiplicativity <> A:84 var
+R7163:7165 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7153:7156 Coq.QArith.Qabs <> Qabs def
+R7161:7161 Cln.Cln_finite_l1_submultiplicativity <> A:84 var
+R7166:7169 Coq.QArith.Qabs <> Qabs def
+R7174:7174 Cln.Cln_finite_l1_submultiplicativity <> B:85 var
+R7016:7019 Cln.Cln_Full <> Mask def
+R7004:7007 Cln.Cln_Full <> Mask def
+R6988:6998 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 7051:7051 <> U:86
+binder 7053:7053 <> A:87
+R7069:7072 Cln.Cln_Full <> sumQ def
+R7075:7077 Coq.Lists.List <> map def
+binder 7084:7084 <> B:88
+R7105:7115 Cln.Cln_Full <> mask_eq_dec def
+R7132:7132 Cln.Cln_finite_l1_submultiplicativity <> U:86 var
+R7118:7125 Cln.Cln_Full <> mask_xor def
+R7129:7129 Cln.Cln_finite_l1_submultiplicativity <> B:88 var
+R7127:7127 Cln.Cln_finite_l1_submultiplicativity <> A:87 var
+R7163:7165 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7153:7156 Coq.QArith.Qabs <> Qabs def
+R7161:7161 Cln.Cln_finite_l1_submultiplicativity <> A:87 var
+R7166:7169 Coq.QArith.Qabs <> Qabs def
+R7174:7174 Cln.Cln_finite_l1_submultiplicativity <> B:88 var
+R7016:7019 Cln.Cln_Full <> Mask def
+R7004:7007 Cln.Cln_Full <> Mask def
+R6988:6998 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 7051:7051 <> U:89
+binder 7053:7053 <> A:90
+R7069:7072 Cln.Cln_Full <> sumQ def
+R7075:7077 Coq.Lists.List <> map def
+binder 7084:7084 <> B:91
+R7105:7115 Cln.Cln_Full <> mask_eq_dec def
+R7132:7132 Cln.Cln_finite_l1_submultiplicativity <> U:89 var
+R7118:7125 Cln.Cln_Full <> mask_xor def
+R7129:7129 Cln.Cln_finite_l1_submultiplicativity <> B:91 var
+R7127:7127 Cln.Cln_finite_l1_submultiplicativity <> A:90 var
+R7163:7165 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7153:7156 Coq.QArith.Qabs <> Qabs def
+R7161:7161 Cln.Cln_finite_l1_submultiplicativity <> A:90 var
+R7166:7169 Coq.QArith.Qabs <> Qabs def
+R7174:7174 Cln.Cln_finite_l1_submultiplicativity <> B:91 var
+R7016:7019 Cln.Cln_Full <> Mask def
+R7004:7007 Cln.Cln_Full <> Mask def
+R7250:7253 Cln.Cln_Full <> sumQ def
+R7256:7258 Coq.Lists.List <> map def
+R7269:7272 Cln.Cln_Full <> Mask def
+binder 7265:7265 <> A:92
+R7291:7294 Cln.Cln_Full <> sumQ def
+R7297:7299 Coq.Lists.List <> map def
+R7310:7313 Cln.Cln_Full <> Mask def
+binder 7306:7306 <> B:93
+R7334:7337 Cln.Cln_Full <> sumQ def
+R7340:7342 Coq.Lists.List <> map def
+R7353:7356 Cln.Cln_Full <> Mask def
+binder 7349:7349 <> U:94
+R7382:7392 Cln.Cln_Full <> mask_eq_dec def
+R7409:7409 Cln.Cln_finite_l1_submultiplicativity <> U:94 var
+R7395:7402 Cln.Cln_Full <> mask_xor def
+R7406:7406 Cln.Cln_finite_l1_submultiplicativity <> B:93 var
+R7404:7404 Cln.Cln_finite_l1_submultiplicativity <> A:92 var
+R7443:7445 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7433:7436 Coq.QArith.Qabs <> Qabs def
+R7441:7441 Cln.Cln_finite_l1_submultiplicativity <> A:92 var
+R7446:7449 Coq.QArith.Qabs <> Qabs def
+R7454:7454 Cln.Cln_finite_l1_submultiplicativity <> B:93 var
+R7211:7219 Coq.QArith.QArith_base <> Qeq_trans thm
+R7250:7253 Cln.Cln_Full <> sumQ def
+R7256:7258 Coq.Lists.List <> map def
+R7269:7272 Cln.Cln_Full <> Mask def
+binder 7265:7265 <> A:95
+R7291:7294 Cln.Cln_Full <> sumQ def
+R7297:7299 Coq.Lists.List <> map def
+R7310:7313 Cln.Cln_Full <> Mask def
+binder 7306:7306 <> B:96
+R7334:7337 Cln.Cln_Full <> sumQ def
+R7340:7342 Coq.Lists.List <> map def
+R7353:7356 Cln.Cln_Full <> Mask def
+binder 7349:7349 <> U:97
+R7382:7392 Cln.Cln_Full <> mask_eq_dec def
+R7409:7409 Cln.Cln_finite_l1_submultiplicativity <> U:97 var
+R7395:7402 Cln.Cln_Full <> mask_xor def
+R7406:7406 Cln.Cln_finite_l1_submultiplicativity <> B:96 var
+R7404:7404 Cln.Cln_finite_l1_submultiplicativity <> A:95 var
+R7443:7445 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7433:7436 Coq.QArith.Qabs <> Qabs def
+R7441:7441 Cln.Cln_finite_l1_submultiplicativity <> A:95 var
+R7446:7449 Coq.QArith.Qabs <> Qabs def
+R7454:7454 Cln.Cln_finite_l1_submultiplicativity <> B:96 var
+R7211:7219 Coq.QArith.QArith_base <> Qeq_trans thm
+R7500:7511 Cln.Cln_Full <> sumQ_map_ext thm
+R7500:7511 Cln.Cln_Full <> sumQ_map_ext thm
+R7542:7552 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+R7581:7584 Cln.Cln_Full <> Mask def
+binder 7575:7575 <> U:98
+binder 7577:7577 <> B:99
+R7606:7616 Cln.Cln_Full <> mask_eq_dec def
+R7633:7633 Cln.Cln_finite_l1_submultiplicativity <> U:98 var
+R7619:7626 Cln.Cln_Full <> mask_xor def
+R7630:7630 Cln.Cln_finite_l1_submultiplicativity <> B:99 var
+R7663:7665 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7653:7656 Coq.QArith.Qabs <> Qabs def
+R7666:7669 Coq.QArith.Qabs <> Qabs def
+R7674:7674 Cln.Cln_finite_l1_submultiplicativity <> B:99 var
+R7542:7552 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+R7581:7584 Cln.Cln_Full <> Mask def
+binder 7575:7575 <> U:100
+binder 7577:7577 <> B:101
+R7606:7616 Cln.Cln_Full <> mask_eq_dec def
+R7633:7633 Cln.Cln_finite_l1_submultiplicativity <> U:100 var
+R7619:7626 Cln.Cln_Full <> mask_xor def
+R7630:7630 Cln.Cln_finite_l1_submultiplicativity <> B:101 var
+R7663:7665 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7653:7656 Coq.QArith.Qabs <> Qabs def
+R7666:7669 Coq.QArith.Qabs <> Qabs def
+R7674:7674 Cln.Cln_finite_l1_submultiplicativity <> B:101 var
+R7804:7807 Cln.Cln_Full <> sumQ def
+R7810:7812 Coq.Lists.List <> map def
+R7823:7826 Cln.Cln_Full <> Mask def
+binder 7819:7819 <> A:102
+R7845:7848 Cln.Cln_Full <> sumQ def
+R7851:7853 Coq.Lists.List <> map def
+R7864:7867 Cln.Cln_Full <> Mask def
+binder 7860:7860 <> B:103
+R7915:7931 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7899:7901 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7889:7892 Coq.QArith.Qabs <> Qabs def
+R7897:7897 Cln.Cln_finite_l1_submultiplicativity <> A:102 var
+R7902:7905 Coq.QArith.Qabs <> Qabs def
+R7910:7910 Cln.Cln_finite_l1_submultiplicativity <> B:103 var
+R7932:7935 Cln.Cln_Full <> sumQ def
+R7938:7940 Coq.Lists.List <> map def
+R7951:7954 Cln.Cln_Full <> Mask def
+binder 7947:7947 <> U:104
+R7980:7990 Cln.Cln_Full <> mask_eq_dec def
+R8007:8007 Cln.Cln_finite_l1_submultiplicativity <> U:104 var
+R7993:8000 Cln.Cln_Full <> mask_xor def
+R8004:8004 Cln.Cln_finite_l1_submultiplicativity <> B:103 var
+R8002:8002 Cln.Cln_finite_l1_submultiplicativity <> A:102 var
+R7765:7773 Coq.QArith.QArith_base <> Qeq_trans thm
+R7804:7807 Cln.Cln_Full <> sumQ def
+R7810:7812 Coq.Lists.List <> map def
+R7823:7826 Cln.Cln_Full <> Mask def
+binder 7819:7819 <> A:105
+R7845:7848 Cln.Cln_Full <> sumQ def
+R7851:7853 Coq.Lists.List <> map def
+R7864:7867 Cln.Cln_Full <> Mask def
+binder 7860:7860 <> B:106
+R7915:7931 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7899:7901 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R7889:7892 Coq.QArith.Qabs <> Qabs def
+R7897:7897 Cln.Cln_finite_l1_submultiplicativity <> A:105 var
+R7902:7905 Coq.QArith.Qabs <> Qabs def
+R7910:7910 Cln.Cln_finite_l1_submultiplicativity <> B:106 var
+R7932:7935 Cln.Cln_Full <> sumQ def
+R7938:7940 Coq.Lists.List <> map def
+R7951:7954 Cln.Cln_Full <> Mask def
+binder 7947:7947 <> U:107
+R7980:7990 Cln.Cln_Full <> mask_eq_dec def
+R8007:8007 Cln.Cln_finite_l1_submultiplicativity <> U:107 var
+R7993:8000 Cln.Cln_Full <> mask_xor def
+R8004:8004 Cln.Cln_finite_l1_submultiplicativity <> B:106 var
+R8002:8002 Cln.Cln_finite_l1_submultiplicativity <> A:105 var
+R7765:7773 Coq.QArith.QArith_base <> Qeq_trans thm
+R8058:8069 Cln.Cln_Full <> sumQ_map_ext thm
+R8058:8069 Cln.Cln_Full <> sumQ_map_ext thm
+R8099:8110 Cln.Cln_Full <> sumQ_map_ext thm
+R8099:8110 Cln.Cln_Full <> sumQ_map_ext thm
+R8146:8161 Cln.Cln_Full <> sumQ_map_scale_l thm
+R8220:8223 Cln.Cln_Full <> Mask def
+binder 8216:8216 <> U:108
+R8246:8256 Cln.Cln_Full <> mask_eq_dec def
+R8273:8273 Cln.Cln_finite_l1_submultiplicativity <> U:108 var
+R8259:8266 Cln.Cln_Full <> mask_xor def
+R8184:8186 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8174:8177 Coq.QArith.Qabs <> Qabs def
+R8187:8190 Coq.QArith.Qabs <> Qabs def
+R8146:8161 Cln.Cln_Full <> sumQ_map_scale_l thm
+R8220:8223 Cln.Cln_Full <> Mask def
+binder 8216:8216 <> U:109
+R8246:8256 Cln.Cln_Full <> mask_eq_dec def
+R8273:8273 Cln.Cln_finite_l1_submultiplicativity <> U:109 var
+R8259:8266 Cln.Cln_Full <> mask_xor def
+R8184:8186 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8174:8177 Coq.QArith.Qabs <> Qabs def
+R8187:8190 Coq.QArith.Qabs <> Qabs def
+R8146:8161 Cln.Cln_Full <> sumQ_map_scale_l thm
+R8220:8223 Cln.Cln_Full <> Mask def
+binder 8216:8216 <> U:110
+R8246:8256 Cln.Cln_Full <> mask_eq_dec def
+R8273:8273 Cln.Cln_finite_l1_submultiplicativity <> U:110 var
+R8259:8266 Cln.Cln_Full <> mask_xor def
+R8184:8186 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8174:8177 Coq.QArith.Qabs <> Qabs def
+R8187:8190 Coq.QArith.Qabs <> Qabs def
+R8323:8334 Cln.Cln_Full <> sumQ_map_ext thm
+R8323:8334 Cln.Cln_Full <> sumQ_map_ext thm
+R8368:8378 Cln.Cln_Full <> mask_eq_dec def
+R8381:8388 Cln.Cln_Full <> mask_xor def
+R8368:8378 Cln.Cln_Full <> mask_eq_dec def
+R8381:8388 Cln.Cln_Full <> mask_xor def
+R8460:8463 Cln.Cln_Full <> sumQ def
+R8466:8468 Coq.Lists.List <> map def
+R8479:8482 Cln.Cln_Full <> Mask def
+binder 8475:8475 <> A:111
+R8501:8504 Cln.Cln_Full <> sumQ def
+R8507:8509 Coq.Lists.List <> map def
+R8520:8523 Cln.Cln_Full <> Mask def
+binder 8516:8516 <> B:112
+R8567:8569 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8554:8556 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8544:8547 Coq.QArith.Qabs <> Qabs def
+R8552:8552 Cln.Cln_finite_l1_submultiplicativity <> A:111 var
+R8557:8560 Coq.QArith.Qabs <> Qabs def
+R8565:8565 Cln.Cln_finite_l1_submultiplicativity <> B:112 var
+R8421:8429 Coq.QArith.QArith_base <> Qeq_trans thm
+R8460:8463 Cln.Cln_Full <> sumQ def
+R8466:8468 Coq.Lists.List <> map def
+R8479:8482 Cln.Cln_Full <> Mask def
+binder 8475:8475 <> A:113
+R8501:8504 Cln.Cln_Full <> sumQ def
+R8507:8509 Coq.Lists.List <> map def
+R8520:8523 Cln.Cln_Full <> Mask def
+binder 8516:8516 <> B:114
+R8567:8569 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8554:8556 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8544:8547 Coq.QArith.Qabs <> Qabs def
+R8552:8552 Cln.Cln_finite_l1_submultiplicativity <> A:113 var
+R8557:8560 Coq.QArith.Qabs <> Qabs def
+R8565:8565 Cln.Cln_finite_l1_submultiplicativity <> B:114 var
+R8421:8429 Coq.QArith.QArith_base <> Qeq_trans thm
+R8600:8611 Cln.Cln_Full <> sumQ_map_ext thm
+R8600:8611 Cln.Cln_Full <> sumQ_map_ext thm
+R8641:8652 Cln.Cln_Full <> sumQ_map_ext thm
+R8641:8652 Cln.Cln_Full <> sumQ_map_ext thm
+R8703:8721 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta_conv thm
+R8703:8721 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta_conv thm
+R8703:8721 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta_conv thm
+R8738:8745 Coq.QArith.QArith_base <> Qeq_refl thm
+R8738:8745 Coq.QArith.QArith_base <> Qeq_refl thm
+R8835:8838 Cln.Cln_Full <> sumQ def
+R8841:8843 Coq.Lists.List <> map def
+R8854:8857 Cln.Cln_Full <> Mask def
+binder 8850:8850 <> A:115
+R8876:8879 Cln.Cln_Full <> sumQ def
+R8882:8884 Coq.Lists.List <> map def
+R8895:8898 Cln.Cln_Full <> Mask def
+binder 8891:8891 <> B:116
+R8930:8932 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8920:8923 Coq.QArith.Qabs <> Qabs def
+R8928:8928 Cln.Cln_finite_l1_submultiplicativity <> A:115 var
+R8933:8936 Coq.QArith.Qabs <> Qabs def
+R8941:8941 Cln.Cln_finite_l1_submultiplicativity <> B:116 var
+R8796:8804 Coq.QArith.QArith_base <> Qeq_trans thm
+R8835:8838 Cln.Cln_Full <> sumQ def
+R8841:8843 Coq.Lists.List <> map def
+R8854:8857 Cln.Cln_Full <> Mask def
+binder 8850:8850 <> A:117
+R8876:8879 Cln.Cln_Full <> sumQ def
+R8882:8884 Coq.Lists.List <> map def
+R8895:8898 Cln.Cln_Full <> Mask def
+binder 8891:8891 <> B:118
+R8930:8932 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R8920:8923 Coq.QArith.Qabs <> Qabs def
+R8928:8928 Cln.Cln_finite_l1_submultiplicativity <> A:117 var
+R8933:8936 Coq.QArith.Qabs <> Qabs def
+R8941:8941 Cln.Cln_finite_l1_submultiplicativity <> B:118 var
+R8796:8804 Coq.QArith.QArith_base <> Qeq_trans thm
+R8973:8984 Cln.Cln_Full <> sumQ_map_ext thm
+R8973:8984 Cln.Cln_Full <> sumQ_map_ext thm
+R9014:9025 Cln.Cln_Full <> sumQ_map_ext thm
+R9014:9025 Cln.Cln_Full <> sumQ_map_ext thm
+R9057:9065 Coq.QArith.QArith_base <> Qmult_1_r thm
+R9057:9065 Coq.QArith.QArith_base <> Qmult_1_r thm
+R9057:9065 Coq.QArith.QArith_base <> Qmult_1_r thm
+R9074:9081 Coq.QArith.QArith_base <> Qeq_refl thm
+R9074:9081 Coq.QArith.QArith_base <> Qeq_refl thm
+R9196:9199 Cln.Cln_Full <> sumQ def
+R9202:9204 Coq.Lists.List <> map def
+R9215:9218 Cln.Cln_Full <> Mask def
+binder 9211:9211 <> A:119
+R9248:9250 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R9238:9241 Coq.QArith.Qabs <> Qabs def
+R9246:9246 Cln.Cln_finite_l1_submultiplicativity <> A:119 var
+R9251:9254 Cln.Cln_Full <> sumQ def
+R9257:9259 Coq.Lists.List <> map def
+R9270:9273 Cln.Cln_Full <> Mask def
+binder 9266:9266 <> B:120
+R9280:9283 Coq.QArith.Qabs <> Qabs def
+R9288:9288 Cln.Cln_finite_l1_submultiplicativity <> B:120 var
+R9157:9165 Coq.QArith.QArith_base <> Qeq_trans thm
+R9196:9199 Cln.Cln_Full <> sumQ def
+R9202:9204 Coq.Lists.List <> map def
+R9215:9218 Cln.Cln_Full <> Mask def
+binder 9211:9211 <> A:121
+R9248:9250 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R9238:9241 Coq.QArith.Qabs <> Qabs def
+R9246:9246 Cln.Cln_finite_l1_submultiplicativity <> A:121 var
+R9251:9254 Cln.Cln_Full <> sumQ def
+R9257:9259 Coq.Lists.List <> map def
+R9270:9273 Cln.Cln_Full <> Mask def
+binder 9266:9266 <> B:122
+R9280:9283 Coq.QArith.Qabs <> Qabs def
+R9288:9288 Cln.Cln_finite_l1_submultiplicativity <> B:122 var
+R9157:9165 Coq.QArith.QArith_base <> Qeq_trans thm
+R9320:9331 Cln.Cln_Full <> sumQ_map_ext thm
+R9320:9331 Cln.Cln_Full <> sumQ_map_ext thm
+R9367:9382 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9416:9419 Cln.Cln_Full <> Mask def
+binder 9412:9412 <> B:123
+R9426:9429 Coq.QArith.Qabs <> Qabs def
+R9434:9434 Cln.Cln_finite_l1_submultiplicativity <> B:123 var
+R9385:9388 Coq.QArith.Qabs <> Qabs def
+R9367:9382 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9416:9419 Cln.Cln_Full <> Mask def
+binder 9412:9412 <> B:124
+R9426:9429 Coq.QArith.Qabs <> Qabs def
+R9434:9434 Cln.Cln_finite_l1_submultiplicativity <> B:124 var
+R9385:9388 Coq.QArith.Qabs <> Qabs def
+R9367:9382 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9416:9419 Cln.Cln_Full <> Mask def
+binder 9412:9412 <> B:125
+R9426:9429 Coq.QArith.Qabs <> Qabs def
+R9434:9434 Cln.Cln_finite_l1_submultiplicativity <> B:125 var
+R9385:9388 Coq.QArith.Qabs <> Qabs def
+R9457:9468 Cln.Cln_Full <> sumQ_map_ext thm
+R9457:9468 Cln.Cln_Full <> sumQ_map_ext thm
+R9509:9512 Cln.Cln_Full <> sumQ def
+R9515:9517 Coq.Lists.List <> map def
+R9528:9531 Cln.Cln_Full <> Mask def
+binder 9524:9524 <> B:126
+R9538:9541 Coq.QArith.Qabs <> Qabs def
+R9546:9546 Cln.Cln_finite_l1_submultiplicativity <> B:126 var
+R9509:9512 Cln.Cln_Full <> sumQ def
+R9515:9517 Coq.Lists.List <> map def
+R9528:9531 Cln.Cln_Full <> Mask def
+binder 9524:9524 <> B:127
+R9538:9541 Coq.QArith.Qabs <> Qabs def
+R9546:9546 Cln.Cln_finite_l1_submultiplicativity <> B:127 var
+R9599:9602 Cln.Cln_Full <> sumQ def
+R9605:9607 Coq.Lists.List <> map def
+R9618:9621 Cln.Cln_Full <> Mask def
+binder 9614:9614 <> A:128
+R9630:9632 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R9633:9636 Coq.QArith.Qabs <> Qabs def
+R9641:9641 Cln.Cln_finite_l1_submultiplicativity <> A:128 var
+R9570:9578 Coq.QArith.QArith_base <> Qeq_trans thm
+R9599:9602 Cln.Cln_Full <> sumQ def
+R9605:9607 Coq.Lists.List <> map def
+R9618:9621 Cln.Cln_Full <> Mask def
+binder 9614:9614 <> A:129
+R9630:9632 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R9633:9636 Coq.QArith.Qabs <> Qabs def
+R9641:9641 Cln.Cln_finite_l1_submultiplicativity <> A:129 var
+R9570:9578 Coq.QArith.QArith_base <> Qeq_trans thm
+R9668:9679 Cln.Cln_Full <> sumQ_map_ext thm
+R9668:9679 Cln.Cln_Full <> sumQ_map_ext thm
+R9729:9744 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9757:9760 Cln.Cln_Full <> Mask def
+binder 9753:9753 <> A:130
+R9767:9770 Coq.QArith.Qabs <> Qabs def
+R9775:9775 Cln.Cln_finite_l1_submultiplicativity <> A:130 var
+R9729:9744 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9757:9760 Cln.Cln_Full <> Mask def
+binder 9753:9753 <> A:131
+R9767:9770 Coq.QArith.Qabs <> Qabs def
+R9775:9775 Cln.Cln_finite_l1_submultiplicativity <> A:131 var
+R9729:9744 Cln.Cln_Full <> sumQ_map_scale_l thm
+R9757:9760 Cln.Cln_Full <> Mask def
+binder 9753:9753 <> A:132
+R9767:9770 Coq.QArith.Qabs <> Qabs def
+R9775:9775 Cln.Cln_finite_l1_submultiplicativity <> A:132 var
+R9798:9807 Coq.QArith.QArith_base <> Qmult_comm thm
+R9798:9807 Coq.QArith.QArith_base <> Qmult_comm thm
+R9798:9807 Coq.QArith.QArith_base <> Qmult_comm thm
+R9822:9829 Coq.QArith.QArith_base <> Qeq_refl thm
+R9822:9829 Coq.QArith.QArith_base <> Qeq_refl thm
+sec 9847:9856 <> UnitMetric
+var  9869:9869 UnitMetric n
+R9873:9875 Coq.Init.Datatypes <> nat ind
+var  9888:9889 UnitMetric sq
+R9893:9900 Coq.Vectors.Vector <> t ind
+R9902:9902 Coq.QArith.QArith_base <> Q rec
+R9904:9904 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+var 9920:9926 UnitMetric sq_unit
+R9942:9946 Coq.Vectors.Fin <> t ind
+R9948:9948 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 9938:9938 <> i:135
+R9974:9977 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R9952:9955 Coq.QArith.Qabs <> Qabs def
+R9958:9967 Coq.Vectors.Vector <> nth def
+R9972:9972 Cln.Cln_finite_l1_submultiplicativity <> i:135 var
+R9969:9970 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+prf 9988:10005 <> metric_factor_abs1
+R10023:10026 Cln.Cln_Full <> Mask def
+R10028:10028 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 10017:10017 <> A:138
+binder 10019:10019 <> B:139
+R10061:10064 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R10034:10037 Coq.QArith.Qabs <> Qabs def
+R10040:10052 Cln.Cln_Full <> metric_factor def
+R10059:10059 Cln.Cln_finite_l1_submultiplicativity <> B:139 var
+R10057:10057 Cln.Cln_finite_l1_submultiplicativity <> A:138 var
+R10054:10055 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R10084:10105 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1_gen thm
+R10110:10116 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq_unit var
+R10107:10108 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R10084:10105 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1_gen thm
+R10110:10116 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq_unit var
+R10107:10108 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+prf 10132:10151 <> basis_mul_coeff_abs1
+R10169:10172 Cln.Cln_Full <> Mask def
+R10174:10174 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 10163:10163 <> A:140
+binder 10165:10165 <> B:141
+R10209:10212 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R10180:10183 Coq.QArith.Qabs <> Qabs def
+R10186:10200 Cln.Cln_Full <> basis_mul_coeff def
+R10207:10207 Cln.Cln_finite_l1_submultiplicativity <> B:141 var
+R10205:10205 Cln.Cln_finite_l1_submultiplicativity <> A:140 var
+R10202:10203 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R10244:10258 Cln.Cln_Full <> basis_mul_coeff def
+R10271:10280 Coq.QArith.Qabs <> Qabs_Qmult thm
+R10271:10280 Coq.QArith.Qabs <> Qabs_Qmult thm
+R10271:10280 Coq.QArith.Qabs <> Qabs_Qmult thm
+R10293:10310 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
+R10293:10310 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
+R10293:10310 Cln.Cln_finite_l1_submultiplicativity <> metric_factor_abs1 thm
+R10357:10360 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R10327:10330 Coq.QArith.Qabs <> Qabs def
+R10333:10336 Cln.Cln_Full <> sgnQ def
+R10339:10350 Cln.Cln_Full <> swaps_parity def
+R10357:10360 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R10327:10330 Coq.QArith.Qabs <> Qabs def
+R10333:10336 Cln.Cln_Full <> sgnQ def
+R10339:10350 Cln.Cln_Full <> swaps_parity def
+R10379:10390 Cln.Cln_Full <> swaps_parity def
+R10405:10408 Cln.Cln_Full <> sgnQ def
+R10411:10414 Coq.QArith.Qabs <> Qabs def
+R10379:10390 Cln.Cln_Full <> swaps_parity def
+prf 10470:10483 <> sumU_xor_delta
+R10503:10506 Cln.Cln_Full <> Mask def
+R10508:10508 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 10497:10497 <> A:142
+binder 10499:10499 <> B:143
+R10613:10620 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R10516:10519 Cln.Cln_Full <> sumQ def
+R10522:10524 Coq.Lists.List <> map def
+R10600:10608 Cln.Cln_Full <> all_masks def
+R10610:10610 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 10531:10531 <> U:144
+R10545:10555 Cln.Cln_Full <> mask_eq_dec def
+R10578:10578 Cln.Cln_finite_l1_submultiplicativity <> U:144 var
+R10558:10571 Cln.Cln_Full <> basis_mul_mask def
+R10575:10575 Cln.Cln_finite_l1_submultiplicativity <> B:143 var
+R10573:10573 Cln.Cln_finite_l1_submultiplicativity <> A:142 var
+R10656:10664 Coq.QArith.QArith_base <> Qeq_trans thm
+R10656:10664 Coq.QArith.QArith_base <> Qeq_trans thm
+R10681:10699 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R10717:10730 Cln.Cln_Full <> basis_mul_mask def
+R10681:10699 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R10717:10730 Cln.Cln_Full <> basis_mul_mask def
+R10749:10760 Cln.Cln_Full <> sumQ_map_ext thm
+R10749:10760 Cln.Cln_Full <> sumQ_map_ext thm
+R10788:10798 Cln.Cln_Full <> mask_eq_dec def
+R10801:10814 Cln.Cln_Full <> basis_mul_mask def
+R10788:10798 Cln.Cln_Full <> mask_eq_dec def
+R10801:10814 Cln.Cln_Full <> basis_mul_mask def
+R10881:10891 Cln.Cln_Full <> mask_eq_dec def
+R10915:10928 Cln.Cln_Full <> basis_mul_mask def
+R10894:10907 Cln.Cln_Full <> basis_mul_mask def
+R10881:10891 Cln.Cln_Full <> mask_eq_dec def
+R10915:10928 Cln.Cln_Full <> basis_mul_mask def
+R10894:10907 Cln.Cln_Full <> basis_mul_mask def
+R11042:11052 Cln.Cln_Full <> mask_eq_dec def
+R11057:11070 Cln.Cln_Full <> basis_mul_mask def
+R11042:11052 Cln.Cln_Full <> mask_eq_dec def
+R11057:11070 Cln.Cln_Full <> basis_mul_mask def
+prf 11367:11389 <> l1_gp_submultiplicative
+R11409:11410 Cln.Cln_Full <> MV def
+R11412:11412 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11403:11403 <> F:145
+binder 11405:11405 <> G:146
+R11442:11445 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R11420:11426 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R11429:11433 Cln.Cln_Full <> mv_gp def
+R11440:11440 Cln.Cln_finite_l1_submultiplicativity <> G:146 var
+R11438:11438 Cln.Cln_finite_l1_submultiplicativity <> F:145 var
+R11435:11436 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R11455:11457 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R11446:11452 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R11454:11454 Cln.Cln_finite_l1_submultiplicativity <> F:145 var
+R11458:11464 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R11466:11466 Cln.Cln_finite_l1_submultiplicativity <> G:146 var
+R11499:11505 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R11508:11512 Cln.Cln_Full <> mv_gp def
+R11528:11536 Cln.Cln_Full <> all_masks def
+R11538:11538 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R11528:11536 Cln.Cln_Full <> all_masks def
+R11538:11538 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R11571:11574 Cln.Cln_Full <> Mask def
+R11576:11576 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11563:11563 <> U:147
+binder 11565:11565 <> A:148
+binder 11567:11567 <> B:149
+R11595:11609 Cln.Cln_Full <> basis_mul_coeff def
+R11616:11616 Cln.Cln_finite_l1_submultiplicativity <> B:149 var
+R11614:11614 Cln.Cln_finite_l1_submultiplicativity <> A:148 var
+R11611:11612 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+binder 11590:11590 <> c:150
+R11628:11638 Cln.Cln_Full <> mask_eq_dec def
+R11661:11661 Cln.Cln_finite_l1_submultiplicativity <> U:147 var
+R11641:11654 Cln.Cln_Full <> basis_mul_mask def
+R11658:11658 Cln.Cln_finite_l1_submultiplicativity <> B:149 var
+R11656:11656 Cln.Cln_finite_l1_submultiplicativity <> A:148 var
+R11682:11684 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R11676:11678 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R11675:11675 Cln.Cln_finite_l1_submultiplicativity <> A:148 var
+R11681:11681 Cln.Cln_finite_l1_submultiplicativity <> B:149 var
+R11685:11685 Cln.Cln_finite_l1_submultiplicativity <> c:150 var
+R11571:11574 Cln.Cln_Full <> Mask def
+R11576:11576 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11563:11563 <> U:151
+binder 11565:11565 <> A:152
+binder 11567:11567 <> B:153
+R11595:11609 Cln.Cln_Full <> basis_mul_coeff def
+R11616:11616 Cln.Cln_finite_l1_submultiplicativity <> B:153 var
+R11614:11614 Cln.Cln_finite_l1_submultiplicativity <> A:152 var
+R11611:11612 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+binder 11590:11590 <> c:154
+R11628:11638 Cln.Cln_Full <> mask_eq_dec def
+R11661:11661 Cln.Cln_finite_l1_submultiplicativity <> U:151 var
+R11641:11654 Cln.Cln_Full <> basis_mul_mask def
+R11658:11658 Cln.Cln_finite_l1_submultiplicativity <> B:153 var
+R11656:11656 Cln.Cln_finite_l1_submultiplicativity <> A:152 var
+R11682:11684 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R11676:11678 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R11675:11675 Cln.Cln_finite_l1_submultiplicativity <> A:152 var
+R11681:11681 Cln.Cln_finite_l1_submultiplicativity <> B:153 var
+R11685:11685 Cln.Cln_finite_l1_submultiplicativity <> c:154 var
+R11727:11730 Cln.Cln_Full <> Mask def
+R11732:11732 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11723:11723 <> U:155
+R11742:11745 Cln.Cln_Full <> sumQ def
+R11748:11750 Coq.Lists.List <> map def
+R11761:11764 Cln.Cln_Full <> Mask def
+R11766:11766 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11757:11757 <> A:156
+R11777:11780 Cln.Cln_Full <> sumQ def
+R11783:11785 Coq.Lists.List <> map def
+R11796:11799 Cln.Cln_Full <> Mask def
+R11801:11801 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11792:11792 <> B:157
+R11811:11811 Cln.Cln_finite_l1_submultiplicativity <> U:155 var
+R11813:11813 Cln.Cln_finite_l1_submultiplicativity <> A:156 var
+R11815:11815 Cln.Cln_finite_l1_submultiplicativity <> B:157 var
+R11727:11730 Cln.Cln_Full <> Mask def
+R11732:11732 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11723:11723 <> U:158
+R11742:11745 Cln.Cln_Full <> sumQ def
+R11748:11750 Coq.Lists.List <> map def
+R11761:11764 Cln.Cln_Full <> Mask def
+R11766:11766 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11757:11757 <> A:159
+R11777:11780 Cln.Cln_Full <> sumQ def
+R11783:11785 Coq.Lists.List <> map def
+R11796:11799 Cln.Cln_Full <> Mask def
+R11801:11801 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 11792:11792 <> B:160
+R11811:11811 Cln.Cln_finite_l1_submultiplicativity <> U:158 var
+R11813:11813 Cln.Cln_finite_l1_submultiplicativity <> A:159 var
+R11815:11815 Cln.Cln_finite_l1_submultiplicativity <> B:160 var
+R11956:11963 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R11917:11920 Cln.Cln_Full <> sumQ def
+R11923:11925 Coq.Lists.List <> map def
+binder 11932:11932 <> U:161
+R11937:11940 Coq.QArith.Qabs <> Qabs def
+R11949:11949 Cln.Cln_finite_l1_submultiplicativity <> U:161 var
+R11964:11967 Cln.Cln_Full <> sumQ def
+R11970:11972 Coq.Lists.List <> map def
+binder 11979:11979 <> U:162
+R11988:11991 Cln.Cln_Full <> sumQ def
+R11994:11996 Coq.Lists.List <> map def
+binder 12003:12003 <> A:163
+R12014:12017 Cln.Cln_Full <> sumQ def
+R12020:12022 Coq.Lists.List <> map def
+binder 12029:12029 <> B:164
+R12034:12037 Coq.QArith.Qabs <> Qabs def
+R12045:12045 Cln.Cln_finite_l1_submultiplicativity <> U:162 var
+R12047:12047 Cln.Cln_finite_l1_submultiplicativity <> A:163 var
+R12049:12049 Cln.Cln_finite_l1_submultiplicativity <> B:164 var
+R11956:11963 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R11917:11920 Cln.Cln_Full <> sumQ def
+R11923:11925 Coq.Lists.List <> map def
+binder 11932:11932 <> U:165
+R11937:11940 Coq.QArith.Qabs <> Qabs def
+R11949:11949 Cln.Cln_finite_l1_submultiplicativity <> U:165 var
+R11964:11967 Cln.Cln_Full <> sumQ def
+R11970:11972 Coq.Lists.List <> map def
+binder 11979:11979 <> U:166
+R11988:11991 Cln.Cln_Full <> sumQ def
+R11994:11996 Coq.Lists.List <> map def
+binder 12003:12003 <> A:167
+R12014:12017 Cln.Cln_Full <> sumQ def
+R12020:12022 Coq.Lists.List <> map def
+binder 12029:12029 <> B:168
+R12034:12037 Coq.QArith.Qabs <> Qabs def
+R12045:12045 Cln.Cln_finite_l1_submultiplicativity <> U:166 var
+R12047:12047 Cln.Cln_finite_l1_submultiplicativity <> A:167 var
+R12049:12049 Cln.Cln_finite_l1_submultiplicativity <> B:168 var
+R12087:12097 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R12087:12097 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R12132:12140 Coq.QArith.QArith_base <> Qle_trans thm
+R12132:12140 Coq.QArith.QArith_base <> Qle_trans thm
+R12157:12172 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R12157:12172 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R12189:12199 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R12189:12199 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R12237:12252 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R12237:12252 Cln.Cln_finite_l1_submultiplicativity <> Qabs_sumQ_map_le thm
+R12271:12279 Coq.QArith.QArith_base <> Qle_trans thm
+R12271:12279 Coq.QArith.QArith_base <> Qle_trans thm
+R12310:12319 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R12310:12319 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R12474:12477 Cln.Cln_Full <> sumQ def
+R12480:12482 Coq.Lists.List <> map def
+R12493:12496 Cln.Cln_Full <> Mask def
+R12498:12498 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12489:12489 <> U:169
+R12511:12514 Cln.Cln_Full <> sumQ def
+R12517:12519 Coq.Lists.List <> map def
+R12530:12533 Cln.Cln_Full <> Mask def
+R12535:12535 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12526:12526 <> A:170
+R12550:12553 Cln.Cln_Full <> sumQ def
+R12556:12558 Coq.Lists.List <> map def
+R12569:12572 Cln.Cln_Full <> Mask def
+R12574:12574 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12565:12565 <> B:171
+R12594:12604 Cln.Cln_Full <> mask_eq_dec def
+R12627:12627 Cln.Cln_finite_l1_submultiplicativity <> U:169 var
+R12607:12620 Cln.Cln_Full <> basis_mul_mask def
+R12624:12624 Cln.Cln_finite_l1_submultiplicativity <> B:171 var
+R12622:12622 Cln.Cln_finite_l1_submultiplicativity <> A:170 var
+R12670:12672 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R12657:12659 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R12647:12650 Coq.QArith.Qabs <> Qabs def
+R12655:12655 Cln.Cln_finite_l1_submultiplicativity <> A:170 var
+R12660:12663 Coq.QArith.Qabs <> Qabs def
+R12668:12668 Cln.Cln_finite_l1_submultiplicativity <> B:171 var
+R12673:12676 Coq.QArith.Qabs <> Qabs def
+R12679:12693 Cln.Cln_Full <> basis_mul_coeff def
+R12700:12700 Cln.Cln_finite_l1_submultiplicativity <> B:171 var
+R12698:12698 Cln.Cln_finite_l1_submultiplicativity <> A:170 var
+R12695:12696 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R12443:12451 Coq.QArith.QArith_base <> Qeq_trans thm
+R12474:12477 Cln.Cln_Full <> sumQ def
+R12480:12482 Coq.Lists.List <> map def
+R12493:12496 Cln.Cln_Full <> Mask def
+R12498:12498 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12489:12489 <> U:172
+R12511:12514 Cln.Cln_Full <> sumQ def
+R12517:12519 Coq.Lists.List <> map def
+R12530:12533 Cln.Cln_Full <> Mask def
+R12535:12535 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12526:12526 <> A:173
+R12550:12553 Cln.Cln_Full <> sumQ def
+R12556:12558 Coq.Lists.List <> map def
+R12569:12572 Cln.Cln_Full <> Mask def
+R12574:12574 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 12565:12565 <> B:174
+R12594:12604 Cln.Cln_Full <> mask_eq_dec def
+R12627:12627 Cln.Cln_finite_l1_submultiplicativity <> U:172 var
+R12607:12620 Cln.Cln_Full <> basis_mul_mask def
+R12624:12624 Cln.Cln_finite_l1_submultiplicativity <> B:174 var
+R12622:12622 Cln.Cln_finite_l1_submultiplicativity <> A:173 var
+R12670:12672 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R12657:12659 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R12647:12650 Coq.QArith.Qabs <> Qabs def
+R12655:12655 Cln.Cln_finite_l1_submultiplicativity <> A:173 var
+R12660:12663 Coq.QArith.Qabs <> Qabs def
+R12668:12668 Cln.Cln_finite_l1_submultiplicativity <> B:174 var
+R12673:12676 Coq.QArith.Qabs <> Qabs def
+R12679:12693 Cln.Cln_Full <> basis_mul_coeff def
+R12700:12700 Cln.Cln_finite_l1_submultiplicativity <> B:174 var
+R12698:12698 Cln.Cln_finite_l1_submultiplicativity <> A:173 var
+R12695:12696 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R12443:12451 Coq.QArith.QArith_base <> Qeq_trans thm
+R12780:12791 Cln.Cln_Full <> sumQ_map_ext thm
+binder 12935:12935 <> U:175
+R12952:12955 Cln.Cln_Full <> sumQ def
+R12958:12960 Coq.Lists.List <> map def
+binder 12967:12967 <> A:176
+R12986:12989 Cln.Cln_Full <> sumQ def
+R12992:12994 Coq.Lists.List <> map def
+binder 13001:13001 <> B:177
+R13025:13035 Cln.Cln_Full <> mask_eq_dec def
+R13058:13058 Cln.Cln_finite_l1_submultiplicativity <> U:175 var
+R13038:13051 Cln.Cln_Full <> basis_mul_mask def
+R13055:13055 Cln.Cln_finite_l1_submultiplicativity <> B:177 var
+R13053:13053 Cln.Cln_finite_l1_submultiplicativity <> A:176 var
+R13105:13107 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R13092:13094 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R13082:13085 Coq.QArith.Qabs <> Qabs def
+R13090:13090 Cln.Cln_finite_l1_submultiplicativity <> A:176 var
+R13095:13098 Coq.QArith.Qabs <> Qabs def
+R13103:13103 Cln.Cln_finite_l1_submultiplicativity <> B:177 var
+R13108:13111 Coq.QArith.Qabs <> Qabs def
+R13114:13128 Cln.Cln_Full <> basis_mul_coeff def
+R13135:13135 Cln.Cln_finite_l1_submultiplicativity <> B:177 var
+R13133:13133 Cln.Cln_finite_l1_submultiplicativity <> A:176 var
+R13130:13131 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+binder 12820:12820 <> U:178
+R12837:12840 Cln.Cln_Full <> sumQ def
+R12843:12845 Coq.Lists.List <> map def
+binder 12852:12852 <> A:179
+R12871:12874 Cln.Cln_Full <> sumQ def
+R12877:12879 Coq.Lists.List <> map def
+binder 12886:12886 <> B:180
+R12891:12894 Coq.QArith.Qabs <> Qabs def
+R12902:12902 Cln.Cln_finite_l1_submultiplicativity <> U:178 var
+R12904:12904 Cln.Cln_finite_l1_submultiplicativity <> A:179 var
+R12906:12906 Cln.Cln_finite_l1_submultiplicativity <> B:180 var
+R12797:12800 Cln.Cln_Full <> Mask def
+R12802:12802 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R12780:12791 Cln.Cln_Full <> sumQ_map_ext thm
+binder 12935:12935 <> U:181
+R12952:12955 Cln.Cln_Full <> sumQ def
+R12958:12960 Coq.Lists.List <> map def
+binder 12967:12967 <> A:182
+R12986:12989 Cln.Cln_Full <> sumQ def
+R12992:12994 Coq.Lists.List <> map def
+binder 13001:13001 <> B:183
+R13025:13035 Cln.Cln_Full <> mask_eq_dec def
+R13058:13058 Cln.Cln_finite_l1_submultiplicativity <> U:181 var
+R13038:13051 Cln.Cln_Full <> basis_mul_mask def
+R13055:13055 Cln.Cln_finite_l1_submultiplicativity <> B:183 var
+R13053:13053 Cln.Cln_finite_l1_submultiplicativity <> A:182 var
+R13105:13107 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R13092:13094 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R13082:13085 Coq.QArith.Qabs <> Qabs def
+R13090:13090 Cln.Cln_finite_l1_submultiplicativity <> A:182 var
+R13095:13098 Coq.QArith.Qabs <> Qabs def
+R13103:13103 Cln.Cln_finite_l1_submultiplicativity <> B:183 var
+R13108:13111 Coq.QArith.Qabs <> Qabs def
+R13114:13128 Cln.Cln_Full <> basis_mul_coeff def
+R13135:13135 Cln.Cln_finite_l1_submultiplicativity <> B:183 var
+R13133:13133 Cln.Cln_finite_l1_submultiplicativity <> A:182 var
+R13130:13131 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+binder 12820:12820 <> U:184
+R12837:12840 Cln.Cln_Full <> sumQ def
+R12843:12845 Coq.Lists.List <> map def
+binder 12852:12852 <> A:185
+R12871:12874 Cln.Cln_Full <> sumQ def
+R12877:12879 Coq.Lists.List <> map def
+binder 12886:12886 <> B:186
+R12891:12894 Coq.QArith.Qabs <> Qabs def
+R12902:12902 Cln.Cln_finite_l1_submultiplicativity <> U:184 var
+R12904:12904 Cln.Cln_finite_l1_submultiplicativity <> A:185 var
+R12906:12906 Cln.Cln_finite_l1_submultiplicativity <> B:186 var
+R12797:12800 Cln.Cln_Full <> Mask def
+R12802:12802 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R13227:13238 Cln.Cln_Full <> sumQ_map_ext thm
+R13227:13238 Cln.Cln_Full <> sumQ_map_ext thm
+R13268:13279 Cln.Cln_Full <> sumQ_map_ext thm
+R13268:13279 Cln.Cln_Full <> sumQ_map_ext thm
+R13334:13344 Cln.Cln_Full <> mask_eq_dec def
+R13347:13360 Cln.Cln_Full <> basis_mul_mask def
+R13334:13344 Cln.Cln_Full <> mask_eq_dec def
+R13347:13360 Cln.Cln_Full <> basis_mul_mask def
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13532:13541 Coq.QArith.Qabs <> Qabs_Qmult thm
+R13619:13626 Coq.QArith.QArith_base <> Qeq_refl thm
+R13619:13626 Coq.QArith.QArith_base <> Qeq_refl thm
+R13785:13792 Coq.QArith.QArith_base <> Qeq_refl thm
+R13785:13792 Coq.QArith.QArith_base <> Qeq_refl thm
+R13855:13858 Cln.Cln_Full <> sumQ def
+R13873:13875 Coq.Lists.List <> map def
+R13901:13904 Cln.Cln_Full <> Mask def
+R13906:13906 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 13897:13897 <> U:187
+R13927:13930 Cln.Cln_Full <> sumQ def
+R13951:13953 Coq.Lists.List <> map def
+R13985:13988 Cln.Cln_Full <> Mask def
+R13990:13990 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 13981:13981 <> A:188
+R14017:14020 Cln.Cln_Full <> sumQ def
+R14047:14049 Coq.Lists.List <> map def
+R14087:14090 Cln.Cln_Full <> Mask def
+R14092:14092 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 14083:14083 <> B:189
+R14128:14138 Cln.Cln_Full <> mask_eq_dec def
+R14161:14161 Cln.Cln_finite_l1_submultiplicativity <> U:187 var
+R14141:14154 Cln.Cln_Full <> basis_mul_mask def
+R14158:14158 Cln.Cln_finite_l1_submultiplicativity <> B:189 var
+R14156:14156 Cln.Cln_finite_l1_submultiplicativity <> A:188 var
+R14207:14209 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14197:14200 Coq.QArith.Qabs <> Qabs def
+R14205:14205 Cln.Cln_finite_l1_submultiplicativity <> A:188 var
+R14210:14213 Coq.QArith.Qabs <> Qabs def
+R14218:14218 Cln.Cln_finite_l1_submultiplicativity <> B:189 var
+R13816:13824 Coq.QArith.QArith_base <> Qeq_trans thm
+R13855:13858 Cln.Cln_Full <> sumQ def
+R13873:13875 Coq.Lists.List <> map def
+R13901:13904 Cln.Cln_Full <> Mask def
+R13906:13906 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 13897:13897 <> U:190
+R13927:13930 Cln.Cln_Full <> sumQ def
+R13951:13953 Coq.Lists.List <> map def
+R13985:13988 Cln.Cln_Full <> Mask def
+R13990:13990 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 13981:13981 <> A:191
+R14017:14020 Cln.Cln_Full <> sumQ def
+R14047:14049 Coq.Lists.List <> map def
+R14087:14090 Cln.Cln_Full <> Mask def
+R14092:14092 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 14083:14083 <> B:192
+R14128:14138 Cln.Cln_Full <> mask_eq_dec def
+R14161:14161 Cln.Cln_finite_l1_submultiplicativity <> U:190 var
+R14141:14154 Cln.Cln_Full <> basis_mul_mask def
+R14158:14158 Cln.Cln_finite_l1_submultiplicativity <> B:192 var
+R14156:14156 Cln.Cln_finite_l1_submultiplicativity <> A:191 var
+R14207:14209 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14197:14200 Coq.QArith.Qabs <> Qabs def
+R14205:14205 Cln.Cln_finite_l1_submultiplicativity <> A:191 var
+R14210:14213 Coq.QArith.Qabs <> Qabs def
+R14218:14218 Cln.Cln_finite_l1_submultiplicativity <> B:192 var
+R13816:13824 Coq.QArith.QArith_base <> Qeq_trans thm
+R14347:14358 Cln.Cln_Full <> sumQ_map_ext thm
+binder 14672:14672 <> U:193
+R14693:14696 Cln.Cln_Full <> sumQ def
+R14699:14701 Coq.Lists.List <> map def
+binder 14708:14708 <> A:194
+R14731:14734 Cln.Cln_Full <> sumQ def
+R14737:14739 Coq.Lists.List <> map def
+binder 14746:14746 <> B:195
+R14774:14784 Cln.Cln_Full <> mask_eq_dec def
+R14807:14807 Cln.Cln_finite_l1_submultiplicativity <> U:193 var
+R14787:14800 Cln.Cln_Full <> basis_mul_mask def
+R14804:14804 Cln.Cln_finite_l1_submultiplicativity <> B:195 var
+R14802:14802 Cln.Cln_finite_l1_submultiplicativity <> A:194 var
+R14845:14847 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14835:14838 Coq.QArith.Qabs <> Qabs def
+R14843:14843 Cln.Cln_finite_l1_submultiplicativity <> A:194 var
+R14848:14851 Coq.QArith.Qabs <> Qabs def
+R14856:14856 Cln.Cln_finite_l1_submultiplicativity <> B:195 var
+binder 14391:14391 <> U:196
+R14412:14415 Cln.Cln_Full <> sumQ def
+R14418:14420 Coq.Lists.List <> map def
+binder 14427:14427 <> A:197
+R14450:14453 Cln.Cln_Full <> sumQ def
+R14456:14458 Coq.Lists.List <> map def
+binder 14465:14465 <> B:198
+R14493:14503 Cln.Cln_Full <> mask_eq_dec def
+R14526:14526 Cln.Cln_finite_l1_submultiplicativity <> U:196 var
+R14506:14519 Cln.Cln_Full <> basis_mul_mask def
+R14523:14523 Cln.Cln_finite_l1_submultiplicativity <> B:198 var
+R14521:14521 Cln.Cln_finite_l1_submultiplicativity <> A:197 var
+R14577:14579 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14564:14566 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14554:14557 Coq.QArith.Qabs <> Qabs def
+R14562:14562 Cln.Cln_finite_l1_submultiplicativity <> A:197 var
+R14567:14570 Coq.QArith.Qabs <> Qabs def
+R14575:14575 Cln.Cln_finite_l1_submultiplicativity <> B:198 var
+R14580:14583 Coq.QArith.Qabs <> Qabs def
+R14586:14600 Cln.Cln_Full <> basis_mul_coeff def
+R14607:14607 Cln.Cln_finite_l1_submultiplicativity <> B:198 var
+R14605:14605 Cln.Cln_finite_l1_submultiplicativity <> A:197 var
+R14602:14603 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R14364:14367 Cln.Cln_Full <> Mask def
+R14369:14369 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R14347:14358 Cln.Cln_Full <> sumQ_map_ext thm
+binder 14672:14672 <> U:199
+R14693:14696 Cln.Cln_Full <> sumQ def
+R14699:14701 Coq.Lists.List <> map def
+binder 14708:14708 <> A:200
+R14731:14734 Cln.Cln_Full <> sumQ def
+R14737:14739 Coq.Lists.List <> map def
+binder 14746:14746 <> B:201
+R14774:14784 Cln.Cln_Full <> mask_eq_dec def
+R14807:14807 Cln.Cln_finite_l1_submultiplicativity <> U:199 var
+R14787:14800 Cln.Cln_Full <> basis_mul_mask def
+R14804:14804 Cln.Cln_finite_l1_submultiplicativity <> B:201 var
+R14802:14802 Cln.Cln_finite_l1_submultiplicativity <> A:200 var
+R14845:14847 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14835:14838 Coq.QArith.Qabs <> Qabs def
+R14843:14843 Cln.Cln_finite_l1_submultiplicativity <> A:200 var
+R14848:14851 Coq.QArith.Qabs <> Qabs def
+R14856:14856 Cln.Cln_finite_l1_submultiplicativity <> B:201 var
+binder 14391:14391 <> U:202
+R14412:14415 Cln.Cln_Full <> sumQ def
+R14418:14420 Coq.Lists.List <> map def
+binder 14427:14427 <> A:203
+R14450:14453 Cln.Cln_Full <> sumQ def
+R14456:14458 Coq.Lists.List <> map def
+binder 14465:14465 <> B:204
+R14493:14503 Cln.Cln_Full <> mask_eq_dec def
+R14526:14526 Cln.Cln_finite_l1_submultiplicativity <> U:202 var
+R14506:14519 Cln.Cln_Full <> basis_mul_mask def
+R14523:14523 Cln.Cln_finite_l1_submultiplicativity <> B:204 var
+R14521:14521 Cln.Cln_finite_l1_submultiplicativity <> A:203 var
+R14577:14579 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14564:14566 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R14554:14557 Coq.QArith.Qabs <> Qabs def
+R14562:14562 Cln.Cln_finite_l1_submultiplicativity <> A:203 var
+R14567:14570 Coq.QArith.Qabs <> Qabs def
+R14575:14575 Cln.Cln_finite_l1_submultiplicativity <> B:204 var
+R14580:14583 Coq.QArith.Qabs <> Qabs def
+R14586:14600 Cln.Cln_Full <> basis_mul_coeff def
+R14607:14607 Cln.Cln_finite_l1_submultiplicativity <> B:204 var
+R14605:14605 Cln.Cln_finite_l1_submultiplicativity <> A:203 var
+R14602:14603 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R14364:14367 Cln.Cln_Full <> Mask def
+R14369:14369 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R14964:14975 Cln.Cln_Full <> sumQ_map_ext thm
+R14964:14975 Cln.Cln_Full <> sumQ_map_ext thm
+R15009:15020 Cln.Cln_Full <> sumQ_map_ext thm
+R15009:15020 Cln.Cln_Full <> sumQ_map_ext thm
+R15058:15068 Cln.Cln_Full <> mask_eq_dec def
+R15071:15084 Cln.Cln_Full <> basis_mul_mask def
+R15058:15068 Cln.Cln_Full <> mask_eq_dec def
+R15071:15084 Cln.Cln_Full <> basis_mul_mask def
+R15174:15193 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
+R15174:15193 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
+R15174:15193 Cln.Cln_finite_l1_submultiplicativity <> basis_mul_coeff_abs1 thm
+R15354:15362 Coq.QArith.QArith_base <> Qmult_1_r thm
+R15354:15362 Coq.QArith.QArith_base <> Qmult_1_r thm
+R15354:15362 Coq.QArith.QArith_base <> Qmult_1_r thm
+R15385:15392 Coq.QArith.QArith_base <> Qeq_refl thm
+R15385:15392 Coq.QArith.QArith_base <> Qeq_refl thm
+R15459:15466 Coq.QArith.QArith_base <> Qeq_refl thm
+R15459:15466 Coq.QArith.QArith_base <> Qeq_refl thm
+R15502:15512 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 15577:15577 <> U:205
+binder 15579:15579 <> A:206
+R15601:15604 Cln.Cln_Full <> sumQ def
+R15607:15609 Coq.Lists.List <> map def
+binder 15616:15616 <> B:207
+R15643:15653 Cln.Cln_Full <> mask_eq_dec def
+R15676:15676 Cln.Cln_finite_l1_submultiplicativity <> U:205 var
+R15656:15669 Cln.Cln_Full <> basis_mul_mask def
+R15673:15673 Cln.Cln_finite_l1_submultiplicativity <> B:207 var
+R15671:15671 Cln.Cln_finite_l1_submultiplicativity <> A:206 var
+R15713:15715 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R15703:15706 Coq.QArith.Qabs <> Qabs def
+R15711:15711 Cln.Cln_finite_l1_submultiplicativity <> A:206 var
+R15716:15719 Coq.QArith.Qabs <> Qabs def
+R15724:15724 Cln.Cln_finite_l1_submultiplicativity <> B:207 var
+R15530:15533 Cln.Cln_Full <> Mask def
+R15535:15535 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15518:15521 Cln.Cln_Full <> Mask def
+R15523:15523 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15502:15512 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 15577:15577 <> U:208
+binder 15579:15579 <> A:209
+R15601:15604 Cln.Cln_Full <> sumQ def
+R15607:15609 Coq.Lists.List <> map def
+binder 15616:15616 <> B:210
+R15643:15653 Cln.Cln_Full <> mask_eq_dec def
+R15676:15676 Cln.Cln_finite_l1_submultiplicativity <> U:208 var
+R15656:15669 Cln.Cln_Full <> basis_mul_mask def
+R15673:15673 Cln.Cln_finite_l1_submultiplicativity <> B:210 var
+R15671:15671 Cln.Cln_finite_l1_submultiplicativity <> A:209 var
+R15713:15715 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R15703:15706 Coq.QArith.Qabs <> Qabs def
+R15711:15711 Cln.Cln_finite_l1_submultiplicativity <> A:209 var
+R15716:15719 Coq.QArith.Qabs <> Qabs def
+R15724:15724 Cln.Cln_finite_l1_submultiplicativity <> B:210 var
+R15530:15533 Cln.Cln_Full <> Mask def
+R15535:15535 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15518:15521 Cln.Cln_Full <> Mask def
+R15523:15523 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15502:15512 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+binder 15577:15577 <> U:211
+binder 15579:15579 <> A:212
+R15601:15604 Cln.Cln_Full <> sumQ def
+R15607:15609 Coq.Lists.List <> map def
+binder 15616:15616 <> B:213
+R15643:15653 Cln.Cln_Full <> mask_eq_dec def
+R15676:15676 Cln.Cln_finite_l1_submultiplicativity <> U:211 var
+R15656:15669 Cln.Cln_Full <> basis_mul_mask def
+R15673:15673 Cln.Cln_finite_l1_submultiplicativity <> B:213 var
+R15671:15671 Cln.Cln_finite_l1_submultiplicativity <> A:212 var
+R15713:15715 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R15703:15706 Coq.QArith.Qabs <> Qabs def
+R15711:15711 Cln.Cln_finite_l1_submultiplicativity <> A:212 var
+R15716:15719 Coq.QArith.Qabs <> Qabs def
+R15724:15724 Cln.Cln_finite_l1_submultiplicativity <> B:213 var
+R15530:15533 Cln.Cln_Full <> Mask def
+R15535:15535 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15518:15521 Cln.Cln_Full <> Mask def
+R15523:15523 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R15884:15887 Cln.Cln_Full <> sumQ def
+R15890:15892 Coq.Lists.List <> map def
+R15903:15906 Cln.Cln_Full <> Mask def
+R15908:15908 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15899:15899 <> A:214
+R15931:15934 Cln.Cln_Full <> sumQ def
+R15937:15939 Coq.Lists.List <> map def
+R15950:15953 Cln.Cln_Full <> Mask def
+R15955:15955 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15946:15946 <> B:215
+R15980:15983 Cln.Cln_Full <> sumQ def
+R15986:15988 Coq.Lists.List <> map def
+R15999:16002 Cln.Cln_Full <> Mask def
+R16004:16004 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15995:15995 <> U:216
+R16034:16044 Cln.Cln_Full <> mask_eq_dec def
+R16067:16067 Cln.Cln_finite_l1_submultiplicativity <> U:216 var
+R16047:16060 Cln.Cln_Full <> basis_mul_mask def
+R16064:16064 Cln.Cln_finite_l1_submultiplicativity <> B:215 var
+R16062:16062 Cln.Cln_finite_l1_submultiplicativity <> A:214 var
+R16107:16109 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16097:16100 Coq.QArith.Qabs <> Qabs def
+R16105:16105 Cln.Cln_finite_l1_submultiplicativity <> A:214 var
+R16110:16113 Coq.QArith.Qabs <> Qabs def
+R16118:16118 Cln.Cln_finite_l1_submultiplicativity <> B:215 var
+R15833:15841 Coq.QArith.QArith_base <> Qeq_trans thm
+R15884:15887 Cln.Cln_Full <> sumQ def
+R15890:15892 Coq.Lists.List <> map def
+R15903:15906 Cln.Cln_Full <> Mask def
+R15908:15908 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15899:15899 <> A:217
+R15931:15934 Cln.Cln_Full <> sumQ def
+R15937:15939 Coq.Lists.List <> map def
+R15950:15953 Cln.Cln_Full <> Mask def
+R15955:15955 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15946:15946 <> B:218
+R15980:15983 Cln.Cln_Full <> sumQ def
+R15986:15988 Coq.Lists.List <> map def
+R15999:16002 Cln.Cln_Full <> Mask def
+R16004:16004 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 15995:15995 <> U:219
+R16034:16044 Cln.Cln_Full <> mask_eq_dec def
+R16067:16067 Cln.Cln_finite_l1_submultiplicativity <> U:219 var
+R16047:16060 Cln.Cln_Full <> basis_mul_mask def
+R16064:16064 Cln.Cln_finite_l1_submultiplicativity <> B:218 var
+R16062:16062 Cln.Cln_finite_l1_submultiplicativity <> A:217 var
+R16107:16109 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16097:16100 Coq.QArith.Qabs <> Qabs def
+R16105:16105 Cln.Cln_finite_l1_submultiplicativity <> A:217 var
+R16110:16113 Coq.QArith.Qabs <> Qabs def
+R16118:16118 Cln.Cln_finite_l1_submultiplicativity <> B:218 var
+R15833:15841 Coq.QArith.QArith_base <> Qeq_trans thm
+R16168:16179 Cln.Cln_Full <> sumQ_map_ext thm
+R16168:16179 Cln.Cln_Full <> sumQ_map_ext thm
+R16214:16224 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+R16257:16260 Cln.Cln_Full <> Mask def
+R16262:16262 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16251:16251 <> a:220
+binder 16253:16253 <> B:221
+R16286:16296 Cln.Cln_Full <> mask_eq_dec def
+R16319:16319 Cln.Cln_finite_l1_submultiplicativity <> a:220 var
+R16299:16312 Cln.Cln_Full <> basis_mul_mask def
+R16316:16316 Cln.Cln_finite_l1_submultiplicativity <> B:221 var
+R16353:16355 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16343:16346 Coq.QArith.Qabs <> Qabs def
+R16356:16359 Coq.QArith.Qabs <> Qabs def
+R16364:16364 Cln.Cln_finite_l1_submultiplicativity <> B:221 var
+R16214:16224 Cln.Cln_finite_l1_submultiplicativity <> sumQ_fubini thm
+R16257:16260 Cln.Cln_Full <> Mask def
+R16262:16262 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16251:16251 <> a:222
+binder 16253:16253 <> B:223
+R16286:16296 Cln.Cln_Full <> mask_eq_dec def
+R16319:16319 Cln.Cln_finite_l1_submultiplicativity <> a:222 var
+R16299:16312 Cln.Cln_Full <> basis_mul_mask def
+R16316:16316 Cln.Cln_finite_l1_submultiplicativity <> B:223 var
+R16353:16355 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16343:16346 Coq.QArith.Qabs <> Qabs def
+R16356:16359 Coq.QArith.Qabs <> Qabs def
+R16364:16364 Cln.Cln_finite_l1_submultiplicativity <> B:223 var
+R16481:16484 Cln.Cln_Full <> sumQ def
+R16487:16489 Coq.Lists.List <> map def
+R16500:16503 Cln.Cln_Full <> Mask def
+R16505:16505 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16496:16496 <> A:224
+R16528:16531 Cln.Cln_Full <> sumQ def
+R16534:16536 Coq.Lists.List <> map def
+R16547:16550 Cln.Cln_Full <> Mask def
+R16552:16552 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16543:16543 <> B:225
+R16604:16626 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16588:16590 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16578:16581 Coq.QArith.Qabs <> Qabs def
+R16586:16586 Cln.Cln_finite_l1_submultiplicativity <> A:224 var
+R16591:16594 Coq.QArith.Qabs <> Qabs def
+R16599:16599 Cln.Cln_finite_l1_submultiplicativity <> B:225 var
+R16627:16630 Cln.Cln_Full <> sumQ def
+R16633:16635 Coq.Lists.List <> map def
+R16646:16649 Cln.Cln_Full <> Mask def
+R16651:16651 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16642:16642 <> U:226
+R16681:16691 Cln.Cln_Full <> mask_eq_dec def
+R16714:16714 Cln.Cln_finite_l1_submultiplicativity <> U:226 var
+R16694:16707 Cln.Cln_Full <> basis_mul_mask def
+R16711:16711 Cln.Cln_finite_l1_submultiplicativity <> B:225 var
+R16709:16709 Cln.Cln_finite_l1_submultiplicativity <> A:224 var
+R16430:16438 Coq.QArith.QArith_base <> Qeq_trans thm
+R16481:16484 Cln.Cln_Full <> sumQ def
+R16487:16489 Coq.Lists.List <> map def
+R16500:16503 Cln.Cln_Full <> Mask def
+R16505:16505 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16496:16496 <> A:227
+R16528:16531 Cln.Cln_Full <> sumQ def
+R16534:16536 Coq.Lists.List <> map def
+R16547:16550 Cln.Cln_Full <> Mask def
+R16552:16552 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16543:16543 <> B:228
+R16604:16626 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16588:16590 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16578:16581 Coq.QArith.Qabs <> Qabs def
+R16586:16586 Cln.Cln_finite_l1_submultiplicativity <> A:227 var
+R16591:16594 Coq.QArith.Qabs <> Qabs def
+R16599:16599 Cln.Cln_finite_l1_submultiplicativity <> B:228 var
+R16627:16630 Cln.Cln_Full <> sumQ def
+R16633:16635 Coq.Lists.List <> map def
+R16646:16649 Cln.Cln_Full <> Mask def
+R16651:16651 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16642:16642 <> U:229
+R16681:16691 Cln.Cln_Full <> mask_eq_dec def
+R16714:16714 Cln.Cln_finite_l1_submultiplicativity <> U:229 var
+R16694:16707 Cln.Cln_Full <> basis_mul_mask def
+R16711:16711 Cln.Cln_finite_l1_submultiplicativity <> B:228 var
+R16709:16709 Cln.Cln_finite_l1_submultiplicativity <> A:227 var
+R16430:16438 Coq.QArith.QArith_base <> Qeq_trans thm
+R16769:16780 Cln.Cln_Full <> sumQ_map_ext thm
+R16769:16780 Cln.Cln_Full <> sumQ_map_ext thm
+R16814:16825 Cln.Cln_Full <> sumQ_map_ext thm
+R16814:16825 Cln.Cln_Full <> sumQ_map_ext thm
+R16865:16880 Cln.Cln_Full <> sumQ_map_scale_l thm
+R16947:16950 Cln.Cln_Full <> Mask def
+R16952:16952 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16943:16943 <> U:230
+R16977:16987 Cln.Cln_Full <> mask_eq_dec def
+R17010:17010 Cln.Cln_finite_l1_submultiplicativity <> U:230 var
+R16990:17003 Cln.Cln_Full <> basis_mul_mask def
+R16907:16909 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16897:16900 Coq.QArith.Qabs <> Qabs def
+R16910:16913 Coq.QArith.Qabs <> Qabs def
+R16865:16880 Cln.Cln_Full <> sumQ_map_scale_l thm
+R16947:16950 Cln.Cln_Full <> Mask def
+R16952:16952 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16943:16943 <> U:231
+R16977:16987 Cln.Cln_Full <> mask_eq_dec def
+R17010:17010 Cln.Cln_finite_l1_submultiplicativity <> U:231 var
+R16990:17003 Cln.Cln_Full <> basis_mul_mask def
+R16907:16909 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16897:16900 Coq.QArith.Qabs <> Qabs def
+R16910:16913 Coq.QArith.Qabs <> Qabs def
+R16865:16880 Cln.Cln_Full <> sumQ_map_scale_l thm
+R16947:16950 Cln.Cln_Full <> Mask def
+R16952:16952 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 16943:16943 <> U:232
+R16977:16987 Cln.Cln_Full <> mask_eq_dec def
+R17010:17010 Cln.Cln_finite_l1_submultiplicativity <> U:232 var
+R16990:17003 Cln.Cln_Full <> basis_mul_mask def
+R16907:16909 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R16897:16900 Coq.QArith.Qabs <> Qabs def
+R16910:16913 Coq.QArith.Qabs <> Qabs def
+R17069:17080 Cln.Cln_Full <> sumQ_map_ext thm
+R17069:17080 Cln.Cln_Full <> sumQ_map_ext thm
+R17118:17128 Cln.Cln_Full <> mask_eq_dec def
+R17131:17144 Cln.Cln_Full <> basis_mul_mask def
+R17118:17128 Cln.Cln_Full <> mask_eq_dec def
+R17131:17144 Cln.Cln_Full <> basis_mul_mask def
+R17315:17318 Cln.Cln_Full <> sumQ def
+R17341:17343 Coq.Lists.List <> map def
+R17354:17357 Cln.Cln_Full <> Mask def
+R17359:17359 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17350:17350 <> A:233
+R17386:17389 Cln.Cln_Full <> sumQ def
+R17416:17418 Coq.Lists.List <> map def
+R17429:17432 Cln.Cln_Full <> Mask def
+R17434:17434 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17425:17425 <> B:234
+R17488:17490 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17475:17477 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17465:17468 Coq.QArith.Qabs <> Qabs def
+R17473:17473 Cln.Cln_finite_l1_submultiplicativity <> A:233 var
+R17478:17481 Coq.QArith.Qabs <> Qabs def
+R17486:17486 Cln.Cln_finite_l1_submultiplicativity <> B:234 var
+R17260:17268 Coq.QArith.QArith_base <> Qeq_trans thm
+R17315:17318 Cln.Cln_Full <> sumQ def
+R17341:17343 Coq.Lists.List <> map def
+R17354:17357 Cln.Cln_Full <> Mask def
+R17359:17359 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17350:17350 <> A:235
+R17386:17389 Cln.Cln_Full <> sumQ def
+R17416:17418 Coq.Lists.List <> map def
+R17429:17432 Cln.Cln_Full <> Mask def
+R17434:17434 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17425:17425 <> B:236
+R17488:17490 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17475:17477 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17465:17468 Coq.QArith.Qabs <> Qabs def
+R17473:17473 Cln.Cln_finite_l1_submultiplicativity <> A:235 var
+R17478:17481 Coq.QArith.Qabs <> Qabs def
+R17486:17486 Cln.Cln_finite_l1_submultiplicativity <> B:236 var
+R17260:17268 Coq.QArith.QArith_base <> Qeq_trans thm
+R17527:17538 Cln.Cln_Full <> sumQ_map_ext thm
+R17527:17538 Cln.Cln_Full <> sumQ_map_ext thm
+R17574:17585 Cln.Cln_Full <> sumQ_map_ext thm
+R17574:17585 Cln.Cln_Full <> sumQ_map_ext thm
+R17648:17661 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
+R17648:17661 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
+R17648:17661 Cln.Cln_finite_l1_submultiplicativity <> sumU_xor_delta thm
+R17684:17691 Coq.QArith.QArith_base <> Qeq_refl thm
+R17684:17691 Coq.QArith.QArith_base <> Qeq_refl thm
+R17803:17806 Cln.Cln_Full <> sumQ def
+R17829:17831 Coq.Lists.List <> map def
+R17842:17845 Cln.Cln_Full <> Mask def
+R17847:17847 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17838:17838 <> A:237
+R17874:17877 Cln.Cln_Full <> sumQ def
+R17880:17882 Coq.Lists.List <> map def
+R17893:17896 Cln.Cln_Full <> Mask def
+R17898:17898 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17889:17889 <> B:238
+R17938:17940 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17928:17931 Coq.QArith.Qabs <> Qabs def
+R17936:17936 Cln.Cln_finite_l1_submultiplicativity <> A:237 var
+R17941:17944 Coq.QArith.Qabs <> Qabs def
+R17949:17949 Cln.Cln_finite_l1_submultiplicativity <> B:238 var
+R17748:17756 Coq.QArith.QArith_base <> Qeq_trans thm
+R17803:17806 Cln.Cln_Full <> sumQ def
+R17829:17831 Coq.Lists.List <> map def
+R17842:17845 Cln.Cln_Full <> Mask def
+R17847:17847 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17838:17838 <> A:239
+R17874:17877 Cln.Cln_Full <> sumQ def
+R17880:17882 Coq.Lists.List <> map def
+R17893:17896 Cln.Cln_Full <> Mask def
+R17898:17898 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 17889:17889 <> B:240
+R17938:17940 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R17928:17931 Coq.QArith.Qabs <> Qabs def
+R17936:17936 Cln.Cln_finite_l1_submultiplicativity <> A:239 var
+R17941:17944 Coq.QArith.Qabs <> Qabs def
+R17949:17949 Cln.Cln_finite_l1_submultiplicativity <> B:240 var
+R17748:17756 Coq.QArith.QArith_base <> Qeq_trans thm
+R17987:17998 Cln.Cln_Full <> sumQ_map_ext thm
+R17987:17998 Cln.Cln_Full <> sumQ_map_ext thm
+R18034:18045 Cln.Cln_Full <> sumQ_map_ext thm
+R18034:18045 Cln.Cln_Full <> sumQ_map_ext thm
+R18083:18091 Coq.QArith.QArith_base <> Qmult_1_r thm
+R18083:18091 Coq.QArith.QArith_base <> Qmult_1_r thm
+R18083:18091 Coq.QArith.QArith_base <> Qmult_1_r thm
+R18114:18121 Coq.QArith.QArith_base <> Qeq_refl thm
+R18114:18121 Coq.QArith.QArith_base <> Qeq_refl thm
+R18276:18279 Cln.Cln_Full <> sumQ def
+R18302:18304 Coq.Lists.List <> map def
+R18315:18318 Cln.Cln_Full <> Mask def
+R18320:18320 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18311:18311 <> A:241
+R18358:18360 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R18348:18351 Coq.QArith.Qabs <> Qabs def
+R18356:18356 Cln.Cln_finite_l1_submultiplicativity <> A:241 var
+R18361:18364 Cln.Cln_Full <> sumQ def
+R18367:18369 Coq.Lists.List <> map def
+R18380:18383 Cln.Cln_Full <> Mask def
+R18385:18385 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18376:18376 <> B:242
+R18390:18393 Coq.QArith.Qabs <> Qabs def
+R18398:18398 Cln.Cln_finite_l1_submultiplicativity <> B:242 var
+R18221:18229 Coq.QArith.QArith_base <> Qeq_trans thm
+R18276:18279 Cln.Cln_Full <> sumQ def
+R18302:18304 Coq.Lists.List <> map def
+R18315:18318 Cln.Cln_Full <> Mask def
+R18320:18320 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18311:18311 <> A:243
+R18358:18360 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R18348:18351 Coq.QArith.Qabs <> Qabs def
+R18356:18356 Cln.Cln_finite_l1_submultiplicativity <> A:243 var
+R18361:18364 Cln.Cln_Full <> sumQ def
+R18367:18369 Coq.Lists.List <> map def
+R18380:18383 Cln.Cln_Full <> Mask def
+R18385:18385 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18376:18376 <> B:244
+R18390:18393 Coq.QArith.Qabs <> Qabs def
+R18398:18398 Cln.Cln_finite_l1_submultiplicativity <> B:244 var
+R18221:18229 Coq.QArith.QArith_base <> Qeq_trans thm
+R18436:18447 Cln.Cln_Full <> sumQ_map_ext thm
+R18436:18447 Cln.Cln_Full <> sumQ_map_ext thm
+R18489:18504 Cln.Cln_Full <> sumQ_map_scale_l thm
+R18544:18547 Cln.Cln_Full <> Mask def
+R18549:18549 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18540:18540 <> B:245
+R18554:18557 Coq.QArith.Qabs <> Qabs def
+R18562:18562 Cln.Cln_finite_l1_submultiplicativity <> B:245 var
+R18507:18510 Coq.QArith.Qabs <> Qabs def
+R18489:18504 Cln.Cln_Full <> sumQ_map_scale_l thm
+R18544:18547 Cln.Cln_Full <> Mask def
+R18549:18549 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18540:18540 <> B:246
+R18554:18557 Coq.QArith.Qabs <> Qabs def
+R18562:18562 Cln.Cln_finite_l1_submultiplicativity <> B:246 var
+R18507:18510 Coq.QArith.Qabs <> Qabs def
+R18489:18504 Cln.Cln_Full <> sumQ_map_scale_l thm
+R18544:18547 Cln.Cln_Full <> Mask def
+R18549:18549 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18540:18540 <> B:247
+R18554:18557 Coq.QArith.Qabs <> Qabs def
+R18562:18562 Cln.Cln_finite_l1_submultiplicativity <> B:247 var
+R18507:18510 Coq.QArith.Qabs <> Qabs def
+R18591:18602 Cln.Cln_Full <> sumQ_map_ext thm
+R18591:18602 Cln.Cln_Full <> sumQ_map_ext thm
+R18734:18737 Cln.Cln_Full <> sumQ def
+R18740:18742 Coq.Lists.List <> map def
+R18753:18756 Cln.Cln_Full <> Mask def
+R18758:18758 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18749:18749 <> B:248
+R18763:18766 Coq.QArith.Qabs <> Qabs def
+R18771:18771 Cln.Cln_finite_l1_submultiplicativity <> B:248 var
+R18734:18737 Cln.Cln_Full <> sumQ def
+R18740:18742 Coq.Lists.List <> map def
+R18753:18756 Cln.Cln_Full <> Mask def
+R18758:18758 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18749:18749 <> B:249
+R18763:18766 Coq.QArith.Qabs <> Qabs def
+R18771:18771 Cln.Cln_finite_l1_submultiplicativity <> B:249 var
+R18912:18915 Cln.Cln_Full <> sumQ def
+R18918:18920 Coq.Lists.List <> map def
+R18931:18934 Cln.Cln_Full <> Mask def
+R18936:18936 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18927:18927 <> A:250
+R18943:18945 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R18946:18949 Coq.QArith.Qabs <> Qabs def
+R18954:18954 Cln.Cln_finite_l1_submultiplicativity <> A:250 var
+R18875:18883 Coq.QArith.QArith_base <> Qeq_trans thm
+R18912:18915 Cln.Cln_Full <> sumQ def
+R18918:18920 Coq.Lists.List <> map def
+R18931:18934 Cln.Cln_Full <> Mask def
+R18936:18936 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 18927:18927 <> A:251
+R18943:18945 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R18946:18949 Coq.QArith.Qabs <> Qabs def
+R18954:18954 Cln.Cln_finite_l1_submultiplicativity <> A:251 var
+R18875:18883 Coq.QArith.QArith_base <> Qeq_trans thm
+R18987:18998 Cln.Cln_Full <> sumQ_map_ext thm
+R18987:18998 Cln.Cln_Full <> sumQ_map_ext thm
+R19160:19175 Cln.Cln_Full <> sumQ_map_scale_l thm
+R19188:19191 Cln.Cln_Full <> Mask def
+R19193:19193 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 19184:19184 <> A:252
+R19198:19201 Coq.QArith.Qabs <> Qabs def
+R19206:19206 Cln.Cln_finite_l1_submultiplicativity <> A:252 var
+R19160:19175 Cln.Cln_Full <> sumQ_map_scale_l thm
+R19188:19191 Cln.Cln_Full <> Mask def
+R19193:19193 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 19184:19184 <> A:253
+R19198:19201 Coq.QArith.Qabs <> Qabs def
+R19206:19206 Cln.Cln_finite_l1_submultiplicativity <> A:253 var
+R19160:19175 Cln.Cln_Full <> sumQ_map_scale_l thm
+R19188:19191 Cln.Cln_Full <> Mask def
+R19193:19193 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 19184:19184 <> A:254
+R19198:19201 Coq.QArith.Qabs <> Qabs def
+R19206:19206 Cln.Cln_finite_l1_submultiplicativity <> A:254 var
+R19237:19246 Coq.QArith.QArith_base <> Qmult_comm thm
+R19237:19246 Coq.QArith.QArith_base <> Qmult_comm thm
+R19237:19246 Coq.QArith.QArith_base <> Qmult_comm thm
+R19269:19276 Coq.QArith.QArith_base <> Qeq_refl thm
+R19269:19276 Coq.QArith.QArith_base <> Qeq_refl thm
+prf 19291:19302 <> l1_add_bound
+binder 19313:19313 <> n:255
+R19322:19323 Cln.Cln_Full <> MV def
+R19325:19325 Cln.Cln_finite_l1_submultiplicativity <> n:255 var
+binder 19316:19316 <> F:256
+binder 19318:19318 <> G:257
+R19351:19354 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R19331:19337 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19340:19345 Cln.Cln_Full <> mv_add def
+R19349:19349 Cln.Cln_finite_l1_submultiplicativity <> G:257 var
+R19347:19347 Cln.Cln_finite_l1_submultiplicativity <> F:256 var
+R19364:19366 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R19355:19361 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19363:19363 Cln.Cln_finite_l1_submultiplicativity <> F:256 var
+R19367:19373 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19375:19375 Cln.Cln_finite_l1_submultiplicativity <> G:257 var
+R19410:19416 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19419:19424 Cln.Cln_Full <> mv_add def
+R19440:19451 Cln.Cln_Full <> sumQ_map_add thm
+R19440:19451 Cln.Cln_Full <> sumQ_map_add thm
+R19440:19451 Cln.Cln_Full <> sumQ_map_add thm
+R19462:19472 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R19462:19472 Cln.Cln_finite_l1_submultiplicativity <> sumQ_map_le thm
+R19497:19509 Coq.QArith.Qabs <> Qabs_triangle thm
+R19497:19509 Coq.QArith.Qabs <> Qabs_triangle thm
+prf 19524:19534 <> l1_gp_bound
+R19552:19553 Cln.Cln_Full <> MV def
+R19555:19555 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 19546:19546 <> F:258
+binder 19548:19548 <> G:259
+R19583:19586 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R19561:19567 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19570:19574 Cln.Cln_Full <> mv_gp def
+R19581:19581 Cln.Cln_finite_l1_submultiplicativity <> G:259 var
+R19579:19579 Cln.Cln_finite_l1_submultiplicativity <> F:258 var
+R19576:19577 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R19596:19598 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R19587:19593 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19595:19595 Cln.Cln_finite_l1_submultiplicativity <> F:258 var
+R19599:19605 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R19607:19607 Cln.Cln_finite_l1_submultiplicativity <> G:259 var
+R19633:19655 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_submultiplicative thm
+R19633:19655 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_submultiplicative thm
+def 19726:19733 <> l1_bound
+binder 19736:19736 <> n:260
+R19744:19750 Cln.Cln_Grade <> GA_expr ind
+R19752:19752 Cln.Cln_finite_l1_submultiplicativity <> n:260 var
+binder 19740:19740 <> e:261
+R19757:19757 Coq.QArith.QArith_base <> Q rec
+R19770:19770 Cln.Cln_finite_l1_submultiplicativity <> e:261 var
+R19781:19785 Cln.Cln_Grade <> Basis constr
+R19800:19805 Cln.Cln_Grade <> Scalar constr
+R19813:19816 Coq.QArith.Qabs <> Qabs def
+R19824:19836 Cln.Cln_Grade <> Add constr
+R19858:19860 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R19847:19854 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+R19861:19868 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+R19877:19889 Cln.Cln_Grade <> Mul constr
+R19911:19913 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R19900:19907 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+R19914:19921 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+R19930:19943 Cln.Cln_Grade <> Conv constr
+R19965:19967 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R19954:19961 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+R19968:19975 Cln.Cln_finite_l1_submultiplicativity <> l1_bound:262 def
+prf 19994:20007 <> l1_norm_nonneg
+R20023:20024 Cln.Cln_Full <> MV def
+R20026:20026 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 20019:20019 <> F:264
+R20033:20036 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R20037:20043 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20045:20045 Cln.Cln_finite_l1_submultiplicativity <> F:264 var
+R20073:20079 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20095:20103 Cln.Cln_Full <> all_masks def
+R20105:20105 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R20095:20103 Cln.Cln_Full <> all_masks def
+R20105:20105 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R20140:20147 Coq.QArith.QArith_base <> Qle_refl thm
+R20140:20147 Coq.QArith.QArith_base <> Qle_refl thm
+R20183:20185 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R20160:20168 Coq.QArith.QArith_base <> Qle_trans thm
+R20183:20185 Coq.QArith.QArith_base <> ::Q_scope:x_'+'_x not
+R20160:20168 Coq.QArith.QArith_base <> Qle_trans thm
+R20220:20227 Coq.QArith.QArith_base <> Qle_refl thm
+R20220:20227 Coq.QArith.QArith_base <> Qle_refl thm
+R20242:20256 Coq.QArith.QArith_base <> Qplus_le_compat thm
+R20242:20256 Coq.QArith.QArith_base <> Qplus_le_compat thm
+R20273:20283 Coq.QArith.Qabs <> Qabs_nonneg thm
+R20273:20283 Coq.QArith.Qabs <> Qabs_nonneg thm
+prf 20316:20328 <> l1_norm_basis
+R20344:20348 Coq.Vectors.Fin <> t ind
+R20350:20350 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 20340:20340 <> i:265
+R20387:20390 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R20356:20362 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20365:20369 Cln.Cln_Full <> basis def
+R20372:20382 Cln.Cln_Full <> mask_single def
+R20384:20384 Cln.Cln_finite_l1_submultiplicativity <> i:265 var
+R20419:20425 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20428:20432 Cln.Cln_Full <> basis def
+R20444:20452 Coq.QArith.QArith_base <> Qeq_trans thm
+R20444:20452 Coq.QArith.QArith_base <> Qeq_trans thm
+R20466:20477 Cln.Cln_Full <> sumQ_map_ext thm
+binder 20492:20492 <> m:266
+R20500:20510 Cln.Cln_Full <> mask_eq_dec def
+R20515:20525 Cln.Cln_Full <> mask_single def
+R20512:20512 Cln.Cln_finite_l1_submultiplicativity <> m:266 var
+R20466:20477 Cln.Cln_Full <> sumQ_map_ext thm
+binder 20492:20492 <> m:267
+R20500:20510 Cln.Cln_Full <> mask_eq_dec def
+R20515:20525 Cln.Cln_Full <> mask_single def
+R20512:20512 Cln.Cln_finite_l1_submultiplicativity <> m:267 var
+R20578:20588 Cln.Cln_Full <> mask_eq_dec def
+R20593:20603 Cln.Cln_Full <> mask_single def
+R20578:20588 Cln.Cln_Full <> mask_eq_dec def
+R20593:20603 Cln.Cln_Full <> mask_single def
+R20638:20645 Coq.QArith.Qabs <> Qabs_pos thm
+R20638:20645 Coq.QArith.Qabs <> Qabs_pos thm
+R20638:20645 Coq.QArith.Qabs <> Qabs_pos thm
+R20638:20645 Coq.QArith.Qabs <> Qabs_pos thm
+R20692:20699 Coq.QArith.Qabs <> Qabs_pos thm
+R20723:20730 Coq.QArith.QArith_base <> Qle_refl thm
+R20692:20699 Coq.QArith.Qabs <> Qabs_pos thm
+R20692:20699 Coq.QArith.Qabs <> Qabs_pos thm
+R20692:20699 Coq.QArith.Qabs <> Qabs_pos thm
+R20723:20730 Coq.QArith.QArith_base <> Qle_refl thm
+R20744:20762 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R20744:20762 Cln.Cln_Full <> sumQ_all_masks_pick thm
+prf 20777:20793 <> l1_norm_scale_one
+R20809:20809 Coq.QArith.QArith_base <> Q rec
+binder 20805:20805 <> c:268
+R20847:20850 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R20815:20821 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20824:20831 Cln.Cln_Full <> mv_scale def
+R20837:20842 Cln.Cln_Full <> mv_one def
+R20844:20844 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R20833:20833 Cln.Cln_finite_l1_submultiplicativity <> c:268 var
+R20851:20854 Coq.QArith.Qabs <> Qabs def
+R20856:20856 Cln.Cln_finite_l1_submultiplicativity <> c:268 var
+R20884:20890 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R20893:20900 Cln.Cln_Full <> mv_scale def
+R20903:20908 Cln.Cln_Full <> mv_one def
+R20911:20915 Cln.Cln_Full <> basis def
+R20927:20935 Coq.QArith.QArith_base <> Qeq_trans thm
+R20927:20935 Coq.QArith.QArith_base <> Qeq_trans thm
+R20949:20960 Cln.Cln_Full <> sumQ_map_ext thm
+binder 20975:20975 <> m:269
+R20983:20993 Cln.Cln_Full <> mask_eq_dec def
+R20998:21007 Cln.Cln_Full <> mask_empty def
+R21013:21013 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R20995:20995 Cln.Cln_finite_l1_submultiplicativity <> m:269 var
+R21022:21025 Coq.QArith.Qabs <> Qabs def
+R20949:20960 Cln.Cln_Full <> sumQ_map_ext thm
+binder 20975:20975 <> m:270
+R20983:20993 Cln.Cln_Full <> mask_eq_dec def
+R20998:21007 Cln.Cln_Full <> mask_empty def
+R21013:21013 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R20995:20995 Cln.Cln_finite_l1_submultiplicativity <> m:270 var
+R21022:21025 Coq.QArith.Qabs <> Qabs def
+R21070:21080 Cln.Cln_Full <> mask_eq_dec def
+R21085:21094 Cln.Cln_Full <> mask_empty def
+R21100:21100 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R21070:21080 Cln.Cln_Full <> mask_eq_dec def
+R21085:21094 Cln.Cln_Full <> mask_empty def
+R21100:21100 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+R21134:21143 Coq.QArith.Qabs <> Qabs_Qmult thm
+R21134:21143 Coq.QArith.Qabs <> Qabs_Qmult thm
+R21134:21143 Coq.QArith.Qabs <> Qabs_Qmult thm
+R21171:21174 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R21165:21168 Coq.QArith.Qabs <> Qabs def
+R21190:21197 Coq.QArith.Qabs <> Qabs_pos thm
+R21171:21174 Coq.QArith.QArith_base <> ::Q_scope:x_'=='_x not
+R21165:21168 Coq.QArith.Qabs <> Qabs def
+R21190:21197 Coq.QArith.Qabs <> Qabs_pos thm
+R21190:21197 Coq.QArith.Qabs <> Qabs_pos thm
+R21190:21197 Coq.QArith.Qabs <> Qabs_pos thm
+R21276:21284 Coq.QArith.QArith_base <> Qmult_0_r thm
+R21276:21284 Coq.QArith.QArith_base <> Qmult_0_r thm
+R21276:21284 Coq.QArith.QArith_base <> Qmult_0_r thm
+R21295:21302 Coq.QArith.Qabs <> Qabs_pos thm
+R21326:21333 Coq.QArith.QArith_base <> Qle_refl thm
+R21295:21302 Coq.QArith.Qabs <> Qabs_pos thm
+R21295:21302 Coq.QArith.Qabs <> Qabs_pos thm
+R21295:21302 Coq.QArith.Qabs <> Qabs_pos thm
+R21326:21333 Coq.QArith.QArith_base <> Qle_refl thm
+R21347:21365 Cln.Cln_Full <> sumQ_all_masks_pick thm
+R21347:21365 Cln.Cln_Full <> sumQ_all_masks_pick thm
+prf 21380:21401 <> Qmult_le_compat_nonneg
+R21422:21422 Coq.QArith.QArith_base <> Q rec
+binder 21412:21412 <> a:271
+binder 21414:21414 <> b:272
+binder 21416:21416 <> c:273
+binder 21418:21418 <> d:274
+R21433:21436 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21428:21431 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21432:21432 Cln.Cln_finite_l1_submultiplicativity <> a:271 var
+R21443:21446 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21438:21441 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21442:21442 Cln.Cln_finite_l1_submultiplicativity <> c:273 var
+R21453:21456 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21448:21451 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21447:21447 Cln.Cln_finite_l1_submultiplicativity <> a:271 var
+R21452:21452 Cln.Cln_finite_l1_submultiplicativity <> b:272 var
+R21463:21466 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R21458:21461 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21457:21457 Cln.Cln_finite_l1_submultiplicativity <> c:273 var
+R21462:21462 Cln.Cln_finite_l1_submultiplicativity <> d:274 var
+R21472:21475 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21468:21470 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R21467:21467 Cln.Cln_finite_l1_submultiplicativity <> a:271 var
+R21471:21471 Cln.Cln_finite_l1_submultiplicativity <> c:273 var
+R21477:21479 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R21476:21476 Cln.Cln_finite_l1_submultiplicativity <> b:272 var
+R21480:21480 Cln.Cln_finite_l1_submultiplicativity <> d:274 var
+R21553:21555 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R21530:21538 Coq.QArith.QArith_base <> Qle_trans thm
+R21553:21555 Coq.QArith.QArith_base <> ::Q_scope:x_'*'_x not
+R21530:21538 Coq.QArith.QArith_base <> Qle_trans thm
+R21577:21588 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
+R21577:21588 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
+R21624:21633 Coq.QArith.QArith_base <> Qmult_le_r thm
+R21624:21633 Coq.QArith.QArith_base <> Qmult_le_r thm
+R21698:21705 Coq.QArith.QArith_base <> Qle_refl thm
+R21698:21705 Coq.QArith.QArith_base <> Qle_refl thm
+R21722:21733 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
+R21740:21748 Coq.QArith.QArith_base <> Qle_trans thm
+R21722:21733 Coq.QArith.QArith_base <> Qle_lt_or_eq thm
+R21740:21748 Coq.QArith.QArith_base <> Qle_trans thm
+R21791:21800 Coq.QArith.QArith_base <> Qmult_le_l thm
+R21791:21800 Coq.QArith.QArith_base <> Qmult_le_l thm
+R21865:21872 Coq.QArith.QArith_base <> Qle_refl thm
+R21865:21872 Coq.QArith.QArith_base <> Qle_refl thm
+prf 21889:21903 <> l1_norm_eval_le
+R21921:21927 Cln.Cln_Grade <> GA_expr ind
+R21929:21929 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.n var
+binder 21917:21917 <> e:275
+R21961:21964 Coq.QArith.QArith_base <> ::Q_scope:x_'<='_x not
+R21937:21943 Cln.Cln_finite_l1_submultiplicativity <> l1_norm def
+R21946:21954 Cln.Cln_Grade <> eval_expr def
+R21959:21959 Cln.Cln_finite_l1_submultiplicativity <> e:275 var
+R21956:21957 Cln.Cln_finite_l1_submultiplicativity <> UnitMetric.sq var
+R21965:21972 Cln.Cln_finite_l1_submultiplicativity <> l1_bound def
+R21974:21974 Cln.Cln_finite_l1_submultiplicativity <> e:275 var
+R22103:22112 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R22103:22112 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R22121:22133 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_basis thm
+R22121:22133 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_basis thm
+R22163:22172 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R22163:22172 Cln.Cln_finite_l1_submultiplicativity <> Qle_of_Qeq thm
+R22181:22197 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_scale_one thm
+R22181:22197 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_scale_one thm
+R22225:22233 Coq.QArith.QArith_base <> Qle_trans thm
+R22225:22233 Coq.QArith.QArith_base <> Qle_trans thm
+R22248:22259 Cln.Cln_finite_l1_submultiplicativity <> l1_add_bound thm
+R22248:22259 Cln.Cln_finite_l1_submultiplicativity <> l1_add_bound thm
+R22274:22288 Coq.QArith.QArith_base <> Qplus_le_compat thm
+R22274:22288 Coq.QArith.QArith_base <> Qplus_le_compat thm
+R22328:22336 Coq.QArith.QArith_base <> Qle_trans thm
+R22328:22336 Coq.QArith.QArith_base <> Qle_trans thm
+R22351:22361 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_bound thm
+R22351:22361 Cln.Cln_finite_l1_submultiplicativity <> l1_gp_bound thm
+R22376:22397 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
+R22376:22397 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
+R22414:22427 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22414:22427 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22444:22457 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22444:22457 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22524:22532 Coq.QArith.QArith_base <> Qle_trans thm
+R22524:22532 Coq.QArith.QArith_base <> Qle_trans thm
+R22547:22559 Cln.Cln_finite_l1_submultiplicativity <> l1_conv_bound thm
+R22547:22559 Cln.Cln_finite_l1_submultiplicativity <> l1_conv_bound thm
+R22574:22595 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
+R22574:22595 Cln.Cln_finite_l1_submultiplicativity <> Qmult_le_compat_nonneg thm
+R22612:22625 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22612:22625 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22642:22655 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22642:22655 Cln.Cln_finite_l1_submultiplicativity <> l1_norm_nonneg thm
+R22706:22715 Cln.Cln_finite_l1_submultiplicativity UnitMetric <> sec

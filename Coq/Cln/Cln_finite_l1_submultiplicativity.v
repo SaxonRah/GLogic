@@ -149,53 +149,6 @@ Proof.
     + intros i. exact (Hsq (Fin.FS i)).
 Qed.
 
-Section UnitMetric.
-
-Context {n : nat}.
-Context (sq : Vector.t Q n).
-
-Hypothesis sq_unit : forall (i : Fin.t n), Qabs (Vector.nth sq i) == 1.
-
-Lemma metric_factor_abs1 : forall (A B : Mask n),
-  Qabs (metric_factor sq A B) == 1.
-Proof.
-  exact (metric_factor_abs1_gen sq sq_unit).
-Qed.
-
-Lemma basis_mul_coeff_abs1 : forall (A B : Mask n),
-  Qabs (basis_mul_coeff sq A B) == 1.
-Proof.
-  intros A B. unfold basis_mul_coeff.
-  rewrite Qabs_Qmult.
-  rewrite metric_factor_abs1.
-  assert (H : Qabs (sgnQ (swaps_parity A B)) == 1).
-  { destruct (swaps_parity A B); unfold sgnQ, Qabs; simpl; reflexivity. }
-  rewrite H. ring.
-Qed.
-
-Lemma sumU_xor_delta :
-  forall (A B : Mask n),
-    sumQ (map (fun U =>
-      if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q) (all_masks n))
-    == 1%Q.
-Proof.
-  intros A B.
-  eapply Qeq_trans.
-  2: { apply (sumQ_all_masks_pick (fun _ => 1%Q) (basis_mul_mask A B)). }
-  apply sumQ_map_ext. intros m Hm.
-  destruct (mask_eq_dec (basis_mul_mask A B) m) as [Hab|Hab].
-  - (* equal *)
-    subst m.
-    destruct (mask_eq_dec (basis_mul_mask A B) (basis_mul_mask A B)) as [_|Hneq].
-    + reflexivity.
-    + exfalso; apply Hneq; reflexivity.
-  - (* not equal *)
-    destruct (mask_eq_dec m (basis_mul_mask A B)) as [Hba|_].
-    + exfalso. apply Hab. now symmetry.
-    + reflexivity.
-Qed.
-
-
 (* Delta collapse for convolution (no sq dependency) *)
 Lemma sumU_xor_delta_conv :
   forall n (A B : Mask n),
@@ -217,15 +170,11 @@ Proof.
     + reflexivity.
 Qed.
 
-(* ------------------------------------------------------------ *)
-(* Main theorem                                                   *)
-(* ------------------------------------------------------------ *)
-
 Lemma l1_conv_bound :
   forall n (F G : MV n),
     l1_norm (mv_conv F G) <= l1_norm F * l1_norm G.
 Proof.
-  intros m F G.
+  intros n F G.
   unfold l1_norm, mv_conv.
   set (MS := all_masks n).
 
@@ -356,6 +305,57 @@ Proof.
       rewrite Qmult_comm.
       apply Qeq_refl.
 Qed.
+
+
+Section UnitMetric.
+
+Context {n : nat}.
+Context (sq : Vector.t Q n).
+
+Hypothesis sq_unit : forall (i : Fin.t n), Qabs (Vector.nth sq i) == 1.
+
+Lemma metric_factor_abs1 : forall (A B : Mask n),
+  Qabs (metric_factor sq A B) == 1.
+Proof.
+  exact (metric_factor_abs1_gen sq sq_unit).
+Qed.
+
+Lemma basis_mul_coeff_abs1 : forall (A B : Mask n),
+  Qabs (basis_mul_coeff sq A B) == 1.
+Proof.
+  intros A B. unfold basis_mul_coeff.
+  rewrite Qabs_Qmult.
+  rewrite metric_factor_abs1.
+  assert (H : Qabs (sgnQ (swaps_parity A B)) == 1).
+  { destruct (swaps_parity A B); unfold sgnQ, Qabs; simpl; reflexivity. }
+  rewrite H. ring.
+Qed.
+
+Lemma sumU_xor_delta :
+  forall (A B : Mask n),
+    sumQ (map (fun U =>
+      if mask_eq_dec (basis_mul_mask A B) U then 1%Q else 0%Q) (all_masks n))
+    == 1%Q.
+Proof.
+  intros A B.
+  eapply Qeq_trans.
+  2: { apply (sumQ_all_masks_pick (fun _ => 1%Q) (basis_mul_mask A B)). }
+  apply sumQ_map_ext. intros m Hm.
+  destruct (mask_eq_dec (basis_mul_mask A B) m) as [Hab|Hab].
+  - (* equal *)
+    subst m.
+    destruct (mask_eq_dec (basis_mul_mask A B) (basis_mul_mask A B)) as [_|Hneq].
+    + reflexivity.
+    + exfalso; apply Hneq; reflexivity.
+  - (* not equal *)
+    destruct (mask_eq_dec m (basis_mul_mask A B)) as [Hba|_].
+    + exfalso. apply Hab. now symmetry.
+    + reflexivity.
+Qed.
+
+(* ------------------------------------------------------------ *)
+(* Main theorem                                                   *)
+(* ------------------------------------------------------------ *)
 
 Theorem l1_gp_submultiplicative :
   forall (F G : MV n),
@@ -588,11 +588,6 @@ Proof.
   intros; apply l1_gp_submultiplicative.
 Qed.
 
-Lemma l1_conv_bound :
-  forall n (F G : MV n),
-    l1_norm (mv_conv F G) <= l1_norm F * l1_norm G.
-Proof.
-Qed.
 
 (* Static ℓ₁ bound from expression structure *)
 Fixpoint l1_bound {n} (e : GA_expr n) : Q :=
@@ -686,30 +681,6 @@ Proof.
   - (* Conv *)
     eapply Qle_trans.
     + apply l1_conv_bound.
-    + apply Qmult_le_compat_nonneg.
-      * apply l1_norm_nonneg.
-      * apply l1_norm_nonneg.
-      * exact IH1.
-      * exact IH2.
-Qed.
-
-Theorem l1_norm_eval_le :
-  forall (e : GA_expr n),
-    l1_norm (eval_expr sq e) <= l1_bound e.
-Proof.
-  intros e.
-  induction e as [i | c | e1 IH1 e2 IH2 | e1 IH1 e2 IH2]; simpl.
-  - (* Basis *)
-    apply Qle_of_Qeq. apply l1_norm_basis.
-  - (* Scalar *)
-    apply Qle_of_Qeq. apply l1_norm_scale_one.
-  - (* Add *)
-    eapply Qle_trans.
-    + apply l1_add_bound.
-    + apply Qplus_le_compat; assumption.
-  - (* Mul *)
-    eapply Qle_trans.
-    + apply l1_gp_bound.
     + apply Qmult_le_compat_nonneg.
       * apply l1_norm_nonneg.
       * apply l1_norm_nonneg.
