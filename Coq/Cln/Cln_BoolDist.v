@@ -654,6 +654,56 @@ Qed.
 (* embed of constant true = scalar 1 (mv_one)                   *)
 (* ============================================================ *)
 
+Lemma chi_mask_empty :
+  forall n (s : Corner n),
+    chi' (mask_empty (n:=n)) s == 1%Q.
+Proof.
+  induction n as [|n IH].
+  - intro s. simpl. ring.
+  - intro s.
+    dependent destruction s.
+    unfold mask_empty.
+    change (Vector.const false (S n))
+      with (Vector.cons _ false _ (Vector.const false n)).
+    rewrite (chi_false_cons (Vector.const false n) s h).
+    exact (IH s).
+Qed.
+
+
+Lemma sumQ_all_masks_pick_chi :
+  forall n (s : Corner n),
+    sumQ (List.map (fun m0 : Mask n =>
+      ((if mask_eq_dec m0 mask_empty then 1%Q else 0%Q) * chi' m0 s)%Q)
+      (all_masks n))
+    == 1%Q.
+Proof.
+  intros n s.
+
+  (* First, rewrite the integrand into the "pick_Q" shape:
+       (if m0=empty then (chi' m0 s * 1) else 0)
+     rather than (if ... then 1 else 0) * chi' m0 s. *)
+  eapply Qeq_trans.
+  - refine (sumQ_map_ext
+              (A := Mask n)
+              (fun m0 =>
+                 ((if mask_eq_dec m0 mask_empty then 1%Q else 0%Q) * chi' m0 s)%Q)
+              (fun m0 =>
+                 (if mask_eq_dec m0 mask_empty then (chi' m0 s * 1%Q)%Q else 0%Q))
+              (all_masks n)
+              _).
+    intros m0 _Hin.
+    destruct (mask_eq_dec m0 mask_empty) as [H|H].
+    + subst. ring.
+    + (* (0 * chi) == 0 *)
+      ring.
+
+  - (* Now apply the general pick lemma with f := chi' _ s and k := 1 *)
+    eapply Qeq_trans.
+    + exact (@sumQ_all_masks_pick_Q n (fun x : Mask n => (chi' x s)%Q) mask_empty 1%Q).
+    + rewrite (chi_mask_empty n s).
+      ring.
+Qed.
+
 Lemma embed_const_true : forall n (m : Mask n),
   embed (fun _ : Corner n => true) m == mv_one m.
 Proof.
@@ -663,7 +713,7 @@ Proof.
   rewrite embed_correct.
   unfold eval, mv_one, basis.
   eapply Qeq_trans.
-  2: { symmetry. apply sumQ_all_masks_pick_chi. (* Σ_m [if m=empty then 1 else 0]*chi(m,s) = chi(empty,s) = 1 *) }
+  2: { symmetry. apply sumQ_all_masks_pick_chi. }
   simpl. reflexivity.
 Qed.
 
