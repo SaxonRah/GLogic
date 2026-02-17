@@ -386,7 +386,6 @@ Qed.
 From Coq Require Import Vectors.Vector.
 Import VectorNotations.
 
-(* Sum of chi(m, ·) over all corners = 2^n if m = empty, 0 otherwise *)
 Lemma chi_corner_sum_empty :
   forall n,
     sumQ (List.map (fun s => chi' (mask_empty (n:=n)) s) (all_corners n))
@@ -422,7 +421,7 @@ Proof.
   - dependent destruction m. exfalso. apply Hne. reflexivity.
   - dependent destruction m.
     destruct h.
-    + (* head bit is true: m = true :: m0 *)
+    + 
       simpl (all_corners (S n)).
       rewrite List.map_app, !List.map_map, sumQ_app.
       assert (HPos :
@@ -435,7 +434,7 @@ Proof.
       { rewrite <- sumQ_map_scale_l.
         apply sumQ_map_ext; intros s _. rewrite chi_true_cons. simpl. ring. }
       rewrite HPos, HNeg. ring.
-    + (* head bit is false: m = false :: m0, with m0 <> empty *)
+    + 
       assert (Hm : m <> mask_empty).
       { intro Heq. apply Hne.
         unfold mask_empty in *. rewrite Heq. reflexivity. }
@@ -482,7 +481,6 @@ Lemma sumQ_all_masks_pick_Q :
     == (f U * k)%Q.
 Proof.
   intros n f U k.
-  (* just instantiate the existing pick lemma with g m := f m * k *)
   exact (@sumQ_all_masks_pick n (fun m => (f m * k)%Q) U).
 Qed.
 
@@ -492,14 +490,12 @@ Lemma sumQ_all_masks_pick_const_Q :
     == a.
 Proof.
   intros n U a.
-  (* sumQ_all_masks_pick with f := fun _ => a *)
   exact (@sumQ_all_masks_pick n (fun _ => a) U).
 Qed.
 
 Lemma Qeq_plus_r : forall a b c : Q, a == b -> (a + c)%Q == (b + c)%Q.
 Proof.
   intros a b c Hab.
-  (* setoid rewriting works for your ==, so this is immediate *)
   setoid_rewrite Hab.
   reflexivity.
 Qed.
@@ -596,7 +592,7 @@ Proof.
         
       +
         eapply Qeq_trans.
-        * (* rewrite the integrand into the pick-shape *)
+        *
           refine (sumQ_map_ext
                     (A := Mask n)
                     (fun m' => ((F m' - G m') * (if mask_eq_dec m' m then pow2 n else 0))%Q)
@@ -615,31 +611,22 @@ Proof.
 
   apply Qmult_integral in Hprod.
   destruct Hprod as [Hdiff | Hpow].
-  - (* Hdiff : F m - G m == 0 *)
+  -
     change (F m - G m)%Q with (F m + (- G m))%Q in Hdiff.
-    
-    (* Hdiff : F m + - G m == 0 *)
-    (* Goal  : F m == G m *)
-
-    (* Add G m on the right, using transitivity and rewriting *)
     eapply Qeq_trans.
-    * (* F m == (F m + -G m) + G m *)
-      (* start: F m == F m + 0 == F m + (G + -G) == (F + -G) + G *)
+    *
       eapply Qeq_trans.
       + rewrite <- (Qplus_0_r (F m)). reflexivity.
-      + (* replace 0 with (G m + -G m) *)
-        rewrite <- (Qplus_opp_r (G m)).  (* or Qplus_opp_r; see note below *)
-        (* now goal is F m + (G + -G) == F m + 0, or similar; finish by comm/assoc *)
-        (* easiest: just use ring-like rewriting manually *)
+      +
+        rewrite <- (Qplus_opp_r (G m)).
         repeat rewrite Qplus_assoc.
-        rewrite <- Qplus_assoc.             (* (F+G)+-G -> F+(G+-G) *)
-        rewrite Qplus_opp_r.                (* G + -G -> 0 *)
-        rewrite Qplus_0_r.                  (* F + 0 -> F *)
+        rewrite <- Qplus_assoc.
+        rewrite Qplus_opp_r.
+        rewrite Qplus_0_r.
         reflexivity.
     *
       change (F m - G m)%Q with (F m + (- G m))%Q in Hdiff.
       pose proof (Qeq_plus_r _ _ (G m) Hdiff) as Hadd.
-      (* Hadd : (F m + -G m + G m) == (0 + G m) *)
       rewrite <- Qplus_assoc in Hadd.
       rewrite (Qplus_comm (- G m) (G m)) in Hadd.
       rewrite Qplus_opp_r in Hadd.
@@ -717,9 +704,107 @@ Proof.
   simpl. reflexivity.
 Qed.
 
-
-Theorem translate_correct : forall n (sq : Vector.t Q n) (phi : BoolFormula n),
-  (forall i, Vector.nth sq i == 1) ->
-  forall m, eval_expr sq (translate phi) m == embed (eval_bf phi) m.
+Lemma eval_basis : forall n (M : Mask n) (s : Corner n),
+  eval (basis M) s == chi' M s.
 Proof.
 Admitted.
+(*  intros n M s.
+  unfold eval, basis.
+  (* eval(basis M) s = sum_m (if m=M then 1 else 0) * chi' m s *)
+  eapply Qeq_trans.
+  - apply sumQ_map_ext; intros m _.
+    destruct (mask_eq_dec m M); ring.
+  - (* pick lemma from Cln_Full *)
+    (* shape: sumQ (map (fun m => if m=M then (chi' m s) else 0) all_masks) == chi' M s *)
+    exact (@sumQ_all_masks_pick n (fun m => (chi' m s)%Q) M).
+Qed. *)
+
+Lemma eval_mv_one : forall n (s : Corner n),
+  eval (@mv_one n) s == 1%Q.
+Proof.
+Admitted.
+(*  intros n s.
+  unfold mv_one.
+  (* mv_one = basis empty mask in your development *)
+  (* if mv_one is defined differently, adapt this line *)
+  unfold mv_one, basis.
+  (* use eval_basis with M = mask_empty *)
+  rewrite eval_basis.
+  (* chi' empty s == 1 *)
+  (* you already proved chi_mask_empty in Cln_BoolDist.v *)
+  apply chi_mask_empty.
+Qed. *)
+
+Lemma translate_eval_correct :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    forall s : Corner n,
+      eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
+Proof.
+  (* main induction; see below *)
+Admitted.
+
+Lemma eval_gp_embed :
+  forall n (sq : Vector.t Q n) (f g : Corner n -> bool) (s : Corner n),
+    (forall i, Vector.nth sq i == 1) ->
+    eval (mv_gp sq (embed f) (embed g)) s == (bQ (f s) * bQ (g s))%Q.
+Proof.
+Admitted.
+
+Lemma Pi_gp_delta :
+  forall n (sq : Vector.t Q n) (a b s : Corner n),
+    (forall i, Vector.nth sq i == 1) ->
+    eval (mv_gp sq (Pi a) (Pi b)) s
+    == (if corner_eqb a b then if corner_eqb a s then 1%Q else 0%Q else 0%Q).
+Proof.
+Admitted.
+
+
+Theorem translate_correct :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    forall m, eval_expr sq (translate phi) m == embed (eval_bf phi) m.
+Proof.
+  intros n sq phi Hsq m.
+  (* Use eval_extensionality with F = eval_expr..., G = embed... *)
+  refine (eval_extensionality n
+            (eval_expr sq (translate phi))
+            (embed (eval_bf phi))
+            _ m).
+  intro s.
+  rewrite (translate_eval_correct n sq phi Hsq s).
+  rewrite embed_correct.
+  reflexivity.
+Qed.
+
+Lemma translate_eval_correct_final :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    forall s : Corner n,
+      eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
+Proof.
+  intros n sq phi Hsq.
+  induction phi; intro s; cbn [translate eval_bf eval_expr].
+  - (* BVar *)
+    (* rewrite gp with left scalar into mv_scale, then eval *)
+    (* finish with (1/2)(1+sQ) computation *)
+  - (* BConst b *)
+    destruct b; cbn.
+    + (* true *) rewrite <- (eval_mv_one n s).
+      (* use embed_correct if you prefer, or direct eval of Scalar 1 *)
+      (* Scalar 1 evaluates to 1 *)
+    + (* false *) (* Scalar 0 evaluates to 0 *)
+  - (* BAnd *)
+    (* use IHphi1, IHphi2, and eval_gp_embed *)
+    rewrite (eval_gp_embed n sq (eval_bf phi1) (eval_bf phi2) s Hsq).
+    rewrite IHphi1 by assumption.
+    rewrite IHphi2 by assumption.
+    (* bQ(andb ..) = product *)
+    destruct (eval_bf phi1 s), (eval_bf phi2 s); cbn; ring.
+  - (* BOr *)
+    (* use identity bQ(or) = x + y - x*y, plus eval_gp_embed *)
+    (* and IHs; then case split on booleans; ring *)
+  - (* BNot *)
+    (* identity bQ(negb b) = 1 - bQ(b) *)
+Qed.
+
