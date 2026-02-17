@@ -469,80 +469,183 @@ Qed.
 (* Eval extensionality: eval determines MV coefficients          *)
 (* ============================================================ *)
 
+Lemma Qminus_diag' (x : Q) : (x - x)%Q == 0%Q.
+Proof.
+  unfold Qminus.
+  rewrite Qplus_opp_r.
+  reflexivity.
+Qed.
+
+Lemma sumQ_all_masks_pick_Q :
+  forall n (f : Mask n -> Q) (U : Mask n) (k : Q),
+    sumQ (List.map (fun m => if mask_eq_dec m U then (f m * k)%Q else 0%Q) (all_masks n))
+    == (f U * k)%Q.
+Proof.
+  intros n f U k.
+  (* just instantiate the existing pick lemma with g m := f m * k *)
+  exact (@sumQ_all_masks_pick n (fun m => (f m * k)%Q) U).
+Qed.
+
+Lemma sumQ_all_masks_pick_const_Q :
+  forall n (U : Mask n) (a : Q),
+    sumQ (List.map (fun m => if mask_eq_dec m U then a else 0%Q) (all_masks n))
+    == a.
+Proof.
+  intros n U a.
+  (* sumQ_all_masks_pick with f := fun _ => a *)
+  exact (@sumQ_all_masks_pick n (fun _ => a) U).
+Qed.
+
+Lemma Qeq_plus_r : forall a b c : Q, a == b -> (a + c)%Q == (b + c)%Q.
+Proof.
+  intros a b c Hab.
+  (* setoid rewriting works for your ==, so this is immediate *)
+  setoid_rewrite Hab.
+  reflexivity.
+Qed.
+
 Lemma eval_extensionality :
   forall n (F G : MV n),
     (forall s : Corner n, eval F s == eval G s) ->
     forall m : Mask n, F m == G m.
 Proof.
   intros n F G Heval m.
-  (* Strategy: multiply eval(F,s) - eval(G,s) by chi(m,s) and sum over s.
-     LHS sums to 0 (by Heval). RHS gives (F m - G m) * 2^n by orthogonality. *)
   assert (Hzero :
     sumQ (List.map (fun s => ((eval F s - eval G s) * chi' m s)%Q) (all_corners n)) == 0).
   { eapply Qeq_trans.
-    - apply sumQ_map_ext; intros s _.
-      assert (Hs : eval F s - eval G s == 0) by (rewrite (Heval s); ring).
-      rewrite Hs. ring.
-    - apply sumQ_map_const0. }
+    -
+      change 0%Q with (sumQ (List.map (fun _ : Corner n => 0%Q) (all_corners n))).
+      refine (sumQ_map_ext
+          (A := Corner n)
+          (fun s => ((eval F s - eval G s) * chi' m s)%Q)
+          (fun _ : Corner n => 0%Q)
+          (all_corners n)
+          _).
+      intros s _Hin.
+      setoid_rewrite (Heval s).
+      change (eval G s - eval G s)%Q with (eval G s + (- eval G s))%Q.
+      rewrite Qplus_opp_r.
+      rewrite Qmult_0_l.
+      reflexivity.
 
-  (* Expand eval and distribute *)
+    - apply sumQ_map_const0.
+  }
+  
   assert (Hexpand :
     sumQ (List.map (fun s => ((eval F s - eval G s) * chi' m s)%Q) (all_corners n))
-    == sumQ (List.map (fun s =>
-         (sumQ (List.map (fun m' => ((F m' - G m') * chi' m' s * chi' m s)%Q)
-                         (all_masks n)))
-       ) (all_corners n))).
+    ==
+    sumQ (List.map (fun s =>
+      sumQ (List.map (fun m' => ((F m' - G m') * chi' m' s * chi' m s)%Q)
+                     (all_masks n)))
+      (all_corners n))).
   { apply sumQ_map_ext; intros s _.
     unfold eval.
     rewrite <- sumQ_map_sub.
-    rewrite <- sumQ_map_scale_l.
-    apply Qeq_trans with
-      (sumQ (List.map (fun m' => ((F m' - G m') * (chi' m' s * chi' m s))%Q)
-                       (all_masks n))).
-    - apply sumQ_map_ext; intros m' _. ring.
-    - apply sumQ_map_ext; intros m' _. ring. }
+    rewrite <- sumQ_map_scale_r.
+    apply sumQ_map_ext; intros m' _.
+    ring.
+  }
 
-  (* Swap sums (Fubini) *)
-  (* After swapping, inner sum over s gives corner_walsh_sum,
-     which is 2^n * δ_{m',m}. Only m'=m survives. *)
   assert (Hswap :
     sumQ (List.map (fun s =>
       sumQ (List.map (fun m' => ((F m' - G m') * chi' m' s * chi' m s)%Q)
                      (all_masks n)))
       (all_corners n))
     == ((F m - G m) * pow2 n)%Q).
-  { (* This requires Fubini + orthogonality. The full proof is:
-       swap sums to get Σ_{m'} (F m' - G m') * Σ_s chi(m',s)*chi(m,s)
-       = Σ_{m'} (F m' - G m') * corner_walsh_sum m' m
-       = (F m - G m) * 2^n  *)
-    admit. (* See proof strategy below *) }
-    
-  (*
-  
-  rewrite sumQ_swap.
-  eapply Qeq_trans.
-  - apply sumQ_map_ext; intros m' _.
-    eapply Qeq_trans.
-    + apply sumQ_map_ext; intros s _. ring. (* factor out (F m' - G m') *)
-    + rewrite sumQ_map_scale_l. reflexivity.
-  - (* Now: Σ_{m'} (F m' - G m') * corner_walsh_sum m' m *)
-    eapply Qeq_trans.
-    + apply sumQ_map_ext; intros m' _.
-      unfold corner_walsh_sum.
-      rewrite corner_walsh_sum_closed.
-      destruct (mask_eq_dec m' m); ring.
-    + apply sumQ_all_masks_pick_Q. (* Σ_{m'} [if m'=m then x else 0] = x *)
-  
-  *)
+  {
+    rewrite sumQ_swap.
 
-  (* From Hzero and Hexpand and Hswap: (F m - G m) * 2^n == 0 *)
+    eapply Qeq_trans.
+    
+    apply sumQ_map_ext; intros m' _.
+    eapply Qeq_trans.
+    - refine (sumQ_map_ext
+              (A := Corner n)
+              (fun s => ((F m' - G m') * chi' m' s * chi' m s)%Q)
+              (fun s => ((F m' - G m') * (chi' m' s * chi' m s))%Q)
+              (all_corners n)
+              _).
+      intros s _Hin.
+      rewrite Qmult_assoc.
+      reflexivity.
+
+    - rewrite <- sumQ_map_scale_l.
+      reflexivity.
+    -
+      eapply Qeq_trans.
+      + refine (sumQ_map_ext
+                (A := Mask n)
+                (fun m' =>
+                   ((F m' - G m') *
+                     sumQ (List.map (fun s : Corner n => (chi' m' s * chi' m s)%Q)
+                                    (all_corners n)))%Q)
+                (fun m' =>
+                   ((F m' - G m') *
+                     (if mask_eq_dec m' m then pow2 n else 0))%Q)
+                (all_masks n)
+                _).
+        intros m' _Hin.
+        f_equal.
+        unfold corner_walsh_sum.
+        
+        change (sumQ (List.map (fun s : Corner n => (chi' m' s * chi' m s)%Q) (all_corners n)))
+          with (corner_walsh_sum m' m).
+
+        rewrite corner_walsh_sum_closed.
+        reflexivity.
+        
+      +
+        eapply Qeq_trans.
+        * (* rewrite the integrand into the pick-shape *)
+          refine (sumQ_map_ext
+                    (A := Mask n)
+                    (fun m' => ((F m' - G m') * (if mask_eq_dec m' m then pow2 n else 0))%Q)
+                    (fun m' => (if mask_eq_dec m' m then ((F m' - G m') * pow2 n)%Q else 0%Q))
+                    (all_masks n)
+                    _).
+          intros m' _Hin.
+          destruct (mask_eq_dec m' m) as [H|H].
+          -- subst. ring.
+          -- ring.
+        * exact (@sumQ_all_masks_pick_Q n (fun x => (F x - G x)%Q) m (pow2 n)).
+  }
+
   assert (Hprod : ((F m - G m) * pow2 n)%Q == 0).
   { rewrite <- Hswap, <- Hexpand. exact Hzero. }
 
-  (* Since 2^n ≠ 0, F m == G m *)
   apply Qmult_integral in Hprod.
   destruct Hprod as [Hdiff | Hpow].
-  - lra. (* or: apply Qeq... from Hdiff *)
+  - (* Hdiff : F m - G m == 0 *)
+    change (F m - G m)%Q with (F m + (- G m))%Q in Hdiff.
+    
+    (* Hdiff : F m + - G m == 0 *)
+    (* Goal  : F m == G m *)
+
+    (* Add G m on the right, using transitivity and rewriting *)
+    eapply Qeq_trans.
+    * (* F m == (F m + -G m) + G m *)
+      (* start: F m == F m + 0 == F m + (G + -G) == (F + -G) + G *)
+      eapply Qeq_trans.
+      + rewrite <- (Qplus_0_r (F m)). reflexivity.
+      + (* replace 0 with (G m + -G m) *)
+        rewrite <- (Qplus_opp_r (G m)).  (* or Qplus_opp_r; see note below *)
+        (* now goal is F m + (G + -G) == F m + 0, or similar; finish by comm/assoc *)
+        (* easiest: just use ring-like rewriting manually *)
+        repeat rewrite Qplus_assoc.
+        rewrite <- Qplus_assoc.             (* (F+G)+-G -> F+(G+-G) *)
+        rewrite Qplus_opp_r.                (* G + -G -> 0 *)
+        rewrite Qplus_0_r.                  (* F + 0 -> F *)
+        reflexivity.
+    *
+      change (F m - G m)%Q with (F m + (- G m))%Q in Hdiff.
+      pose proof (Qeq_plus_r _ _ (G m) Hdiff) as Hadd.
+      (* Hadd : (F m + -G m + G m) == (0 + G m) *)
+      rewrite <- Qplus_assoc in Hadd.
+      rewrite (Qplus_comm (- G m) (G m)) in Hadd.
+      rewrite Qplus_opp_r in Hadd.
+      rewrite Qplus_0_r in Hadd.
+      rewrite Qplus_0_l in Hadd.
+      exact Hadd.
   - exfalso. exact (pow2_nonzero n Hpow).
 Qed.
 
