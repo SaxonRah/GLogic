@@ -501,6 +501,66 @@ Proof.
   - apply Nat.le_max_r.
 Qed.
 
+Lemma max_grade_during_le_grade_bound :
+  forall n (sq : Vector.t Q n) (e : GA_expr n),
+    (max_grade_during sq e <= grade_bound e)%nat.
+Proof.
+  intros n sq e.
+  induction e as
+    [ i
+    | c
+    | e1 IH1 e2 IH2
+    | e1 IH1 e2 IH2
+    | e1 IH1 e2 IH2
+    ]; simpl.
+  - lia.
+  - lia.
+  - (* Add *)
+    (* max (during e1) (during e2) <= max (gb e1) (gb e2) *)
+    apply Nat.max_lub; [exact (Nat.le_trans _ _ _ IH1 (Nat.le_max_l _ _))
+                       |exact (Nat.le_trans _ _ _ IH2 (Nat.le_max_r _ _)) ].
+  - (* Mul *)
+    (* Need to bound:
+         max ( max (during e1) (during e2) )
+             (max_grade (gp (eval e1) (eval e2)))
+       by gb e1 + gb e2
+    *)
+    apply Nat.max_lub.
+    + (* inner max *)
+      apply Nat.max_lub.
+      * exact (Nat.le_trans _ _ _ IH1 (Nat.le_add_r _ _)).
+      * exact (Nat.le_trans _ _ _ IH2 (Nat.le_add_l _ _)).
+    + (* product term *)
+      eapply Nat.le_trans.
+      * apply max_grade_gp_le.
+      * (* max_grade(eval e1) + max_grade(eval e2) <= gb e1 + gb e2 *)
+        pose proof (@max_grade_eval_le n sq e1) as Hm1.
+        pose proof (@max_grade_eval_le n sq e2) as Hm2.
+        lia.
+  - (* Conv: identical shape to Mul, using max_grade_conv_le *)
+    apply Nat.max_lub.
+    + apply Nat.max_lub.
+      * exact (Nat.le_trans _ _ _ IH1 (Nat.le_add_r _ _)).
+      * exact (Nat.le_trans _ _ _ IH2 (Nat.le_add_l _ _)).
+    + eapply Nat.le_trans.
+      * apply max_grade_conv_le.
+      *
+        pose proof (@max_grade_eval_le n sq e1) as Hm1.
+        pose proof (@max_grade_eval_le n sq e2) as Hm2.
+        lia.
+Qed.
+
+Corollary max_grade_during_eval_le_grade_bound :
+  forall n (sq : Vector.t Q n) (e : GA_expr n),
+    (max_grade (eval_expr sq e) <= grade_bound e)%nat /\
+    (max_grade_during sq e <= grade_bound e)%nat.
+Proof.
+  intros. split.
+  - apply max_grade_eval_le.
+  - apply max_grade_during_le_grade_bound.
+Qed.
+
+
 (* ============================================================ *)
 (* Generic excursion lower bound                                 *)
 (* ============================================================ *)

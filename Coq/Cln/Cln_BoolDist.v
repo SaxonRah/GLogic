@@ -729,74 +729,23 @@ Proof.
   - apply chi_mask_empty.
 Qed.
 
-(*
-
-                                        This cannot be proven True (AND is Geometric Product)
-
-Lemma translate_eval_correct :
-  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    forall s : Corner n,
-      eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
-Proof.
-Admitted.
-
-Lemma eval_gp_embed :
-  forall n (sq : Vector.t Q n) (f g : Corner n -> bool) (s : Corner n),
-    (forall i, Vector.nth sq i == 1) ->
-    eval (mv_gp sq (embed f) (embed g)) s == (bQ (f s) * bQ (g s))%Q.
-Proof.
-Admitted.
-
-Lemma Pi_gp_delta :
-  forall n (sq : Vector.t Q n) (a b s : Corner n),
-    (forall i, Vector.nth sq i == 1) ->
-    eval (mv_gp sq (Pi a) (Pi b)) s
-    == (if corner_eqb a b then if corner_eqb a s then 1%Q else 0%Q else 0%Q).
-Proof.
-Admitted.
-
-Theorem translate_correct :
-  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    forall m, eval_expr sq (translate phi) m == embed (eval_bf phi) m.
-Proof.
-  intros n sq phi Hsq m.
-  (* Use eval_extensionality with F = eval_expr..., G = embed... *)
-  refine (eval_extensionality n
-            (eval_expr sq (translate phi))
-            (embed (eval_bf phi))
-            _ m).
-  intro s.
-  rewrite (translate_eval_correct n sq phi Hsq s). 
-  rewrite embed_correct.
-  reflexivity.
-Qed.
-
-Lemma translate_eval_correct_final :
-  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    forall s : Corner n,
-      eval (eval_expr sq (translate phi)) s == bQ (eval_bf phi s).
-Proof.
-Admitted.
-*)
-
 (* ------------------------------------------------------------------------- *)
 
-(* This is a fundimental problem, GeometricProduct cannot define AND 
+(* There is a fundimental problem, GeometricProduct cannot define AND 
+        This cannot be proven True (AND is Geometric Product)
 
    Thus we introduce a convolution operator 
 
-   Signless convolution: group algebra product of (Z_2)^n
-Definition mv_conv {n : nat} (F G : MV n) : MV n :=
-  fun U =>
-    sumQ (List.map (fun A =>
-      sumQ (List.map (fun B =>
-        if mask_eq_dec (mask_xor A B) U
-        then (F A * G B)%Q else 0%Q
-      ) (all_masks n))
-    ) (all_masks n)).
+Signless convolution: group algebra product of (Z_2)^n
+
+        Definition mv_conv {n : nat} (F G : MV n) : MV n :=
+          fun U =>
+            sumQ (List.map (fun A =>
+              sumQ (List.map (fun B =>
+                if mask_eq_dec (mask_xor A B) U
+                then (F A * G B)%Q else 0%Q
+              ) (all_masks n))
+            ) (all_masks n)).
 
 This convolution stuff now exists in Cln_Full.v, Cln_Grade.v, Cln_finite_l1_submultiplicativity.v
 *)
@@ -1045,3 +994,35 @@ Proof.
   apply translate_eval_correct.
   assumption.
 Qed.
+
+Fixpoint bf_varcount {n} (phi : BoolFormula n) : nat :=
+  match phi with
+  | BVar _      => 1%nat
+  | BConst _    => 0%nat
+  | BAnd p q    => (bf_varcount p + bf_varcount q)%nat
+  | BOr  p q    => (bf_varcount p + bf_varcount q)%nat
+  | BNot p      => bf_varcount p
+  end.
+  
+Require Import Lia.
+
+Lemma grade_bound_translate_eq_varcount :
+  forall n (phi : BoolFormula n),
+    grade_bound (translate phi) = bf_varcount phi.
+Proof.
+  intros n phi.
+  induction phi; simpl; try lia.
+  - destruct b; simpl; reflexivity.
+Qed.
+
+Theorem translate_excursion_upper :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (max_grade_during sq (translate phi) <= bf_varcount phi)%nat.
+Proof.
+  intros.
+  eapply Nat.le_trans.
+  - apply max_grade_during_le_grade_bound.
+  - rewrite grade_bound_translate_eq_varcount.
+    lia.
+Qed.
+
