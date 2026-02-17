@@ -811,7 +811,45 @@ Proof.
   exact (corner_walsh_sum_closed n A B).
 Qed.
 
-(* BVar case: eval of (1/2)(1 + e_i) at corner s = bQ(s_i = Pos) *)
+Lemma chi_mask_single :
+  forall n (i : Fin.t n) (s : Corner n),
+    chi' (mask_single i) s == sQ (Vector.nth s i).
+Proof.
+  intros n i.
+  induction i as [| n i IHi]; intro s.
+  - (* i = F1 *)
+    dependent destruction s.
+    cbn [mask_single Vector.nth].
+    (* goal: chi' (true :: const false n) (h :: s) == sQ h *)
+
+    match goal with
+    | |- chi' (n := S ?k)
+              (Vector.cons bool true ?k ?m)
+              (Vector.cons Sign ?h ?k ?t)
+         == sQ ?h =>
+        (* chi_true_cons : forall n m s h, chi'(true::m)(h::s) == sQ h * chi' m s *)
+        rewrite (@chi_true_cons k m t h);
+        (* turn const-false into mask_empty so we can use chi_mask_empty *)
+        change m with (mask_empty (n := k));
+        rewrite (chi_mask_empty k t);
+        ring
+    end.
+
+  - (* i = FS i *)
+    dependent destruction s.
+    cbn [mask_single Vector.nth].
+
+    match goal with
+    | |- chi' (n := S ?k)
+              (Vector.cons bool false ?k (mask_single ?ii))
+              (Vector.cons Sign ?h ?k ?t)
+         == sQ (Vector.nth ?t ?ii) =>
+        (* chi_false_cons : forall n m s h, chi'(false::m)(h::s) == chi' m s *)
+        rewrite (@chi_false_cons k (mask_single ii) t h);
+        exact (IHi t)
+    end.
+Qed.
+
 Lemma eval_var_projector :
   forall n (sq : Vector.t Q n) (i : Fin.t n) (s : Corner n),
     (forall j, Vector.nth sq j == 1) ->
@@ -819,42 +857,74 @@ Lemma eval_var_projector :
     == bQ (match Vector.nth s i with Pos => true | Neg => false end).
 Proof.
   intros n sq i s Hsq.
+  cbn [eval_expr].  (* turns expression into mv_gp / mv_scale / mv_add / basis *)
 
-  (* Push eval through the expression using the existing evaluation lemmas. *)
-  (* In your infrastructure:
-       eval_expr sq (Scalar q)   = mv_scalar q
-       eval_expr sq (Add e1 e2)  = mv_add ...
-       eval_expr sq (Mul e1 e2)  = mv_gp ...
-     and eval satisfies:
-       eval_add, eval_mul, eval_scalar, and eval_basis (corner sign). *)
+  (* Name the (1 + e_i) multivector. *)
+  set (Y := mv_add (mv_scale 1 mv_one) (basis (mask_single i))).
 
-  (* Step 1: turn the big term into (1/2) * (1 + eval(Basis i) s) *)
-  rewrite eval_mul.                      (* eval of Mul becomes product *)
-  rewrite eval_scalar.                   (* eval of Scalar (1/2) is (1/2) *)
-  rewrite eval_add.                      (* eval of Add becomes sum *)
-  rewrite eval_scalar.                   (* eval of Scalar 1 is 1 *)
-  (* eval of Basis i at corner s is ±1; under the unit metric hypothesis *)
-  rewrite (eval_basis_unit sq i s).      (* your lemma: uses (forall j, nth sq j == 1) *)
-  2: exact Hsq.
-
-  (* Step 2: case split on the i-th corner value *)
-  destruct (Vector.nth s i) as [|] eqn:Hs; simpl.
-  - (* Pos *)
-    (* goal: (1#2) * (1 + 1) == 1 *)
+  (* Pointwise simplification of the mv_gp coefficient function. *)
+  assert (Hgp :
+    forall U : Mask n,
+      @mv_gp n sq (mv_scale (1#2) mv_one) Y U == mv_scale (1#2) Y U).
+  {
+    intro U.
+    rewrite (@mv_gp_scale_l n sq (1#2) mv_one Y U).
+    unfold mv_scale.
+    rewrite (@mv_gp_one_l n sq Y U).
     ring.
-  - (* Neg *)
-    (* goal: (1#2) * (1 + (-1)) == 0 *)
+  }
+
+  (* Turn the pointwise simplification into an eval simplification. *)
+  assert (Heval_gp :
+    eval (@mv_gp n sq (mv_scale (1#2) mv_one) Y) s == eval (mv_scale (1#2) Y) s).
+  {
+    unfold eval.
+    refine (sumQ_map_ext
+              (A := Mask n)
+              (fun m => (@mv_gp n sq (mv_scale (1#2) mv_one) Y m * chi' m s)%Q)
+              (fun m => (mv_scale (1#2) Y m * chi' m s)%Q)
+              (all_masks n)
+              _).
+    intros m _Hin.
+    (* use Hgp pointwise, then congruence under multiplication by chi' *)
+    setoid_rewrite (Hgp m).
+    reflexivity.
+  }
+
+  (* Now rewrite using Heval_gp and proceed with eval lemmas. *)
+  eapply Qeq_trans.
+  - exact Heval_gp.
+  - (* compute eval (mv_scale (1/2) Y) s *)
+    rewrite eval_scale.
+    unfold Y.
+    rewrite eval_add.
+
+    (* eval (mv_scale 1 mv_one) s = 1 *)
+    rewrite eval_scale.
+    rewrite eval_mv_one.
+    ring_simplify.  (* or just: ring. if you don’t have ring_simplify *)
+
+    (* eval (basis (mask_single i)) s = chi'(mask_single i) s *)
+    rewrite eval_basis.
+    rewrite chi_mask_single.
+
+    (* Now it’s pure arithmetic by cases on s[@i]. *)
+    destruct (Vector.nth s i); simpl; ring.
+Qed.
+
+Lemma bQ_negb_rhs :
+  forall b, (-1) * bQ b + 1 == bQ (negb b).
+Proof.
+  intro b; destruct b; cbn [bQ]; simpl.
+  - (* b = true *)
+    (* goal: -1 * 1 + 1 == 0 *)
+    (* both sides are Q literals now *)
+    ring.
+  - (* b = false *)
+    (* goal: -1 * 0 + 1 == 1 *)
     ring.
 Qed.
 
-
-Lemma eval_var_projector :
-  forall n (sq : Vector.t Q n) (i : Fin.t n) (s : Corner n),
-    (forall j, Vector.nth sq j == 1) ->
-    eval (eval_expr sq (Mul (Scalar (1#2)) (Add (Scalar 1) (Basis i)))) s
-    == bQ (match Vector.nth s i with Pos => true | Neg => false end).
-Proof.
-Admitted.
 
 Lemma translate_eval_correct :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
@@ -877,18 +947,91 @@ Proof.
     rewrite eval_conv.
     rewrite IHphi1, IHphi2.
     symmetry. apply bQ_andb.
+    
   - (* BOr p q *)
     (* translate = Add (Add tp tq) (Mul (Scalar (-1)) (Conv tp tq)) *)
     rewrite eval_add, eval_add.
-    rewrite eval_scale. eval_conv.
+
+    set (tp := eval_expr sq (translate phi1)).
+    set (tq := eval_expr sq (translate phi2)).
+
+    (* Replace the bad ⋆ by an explicit mv_gp n sq ... so there are no holes. *)
+    change (mv_scale (-1) mv_one ⋆ mv_conv tp tq)
+      with (@mv_gp n sq (mv_scale (-1) mv_one) (mv_conv tp tq)).
+
+    (* Now prove: eval (mv_gp n sq (mv_scale -1 mv_one) X) s
+                  = eval (mv_scale -1 X) s *)
+    assert (Heval_negconv :
+      eval (@mv_gp n sq (mv_scale (-1) mv_one) (mv_conv tp tq)) s
+      ==
+      eval (mv_scale (-1) (mv_conv tp tq)) s).
+    {
+      unfold eval.
+      refine (sumQ_map_ext
+                (A := Mask n)
+                (fun m => ((@mv_gp n sq (mv_scale (-1) mv_one) (mv_conv tp tq) m) * chi' m s)%Q)
+                (fun m => ((mv_scale (-1) (mv_conv tp tq) m) * chi' m s)%Q)
+                (all_masks n)
+                _).
+      intros m _Hin.
+      rewrite (@mv_gp_scale_l n sq (-1) mv_one (mv_conv tp tq) m).
+      unfold mv_scale.
+      rewrite (@mv_gp_one_l n sq (mv_conv tp tq) m).
+      ring.
+    }
+
+    rewrite Heval_negconv; clear Heval_negconv.
+
+    rewrite eval_scale.
+    rewrite eval_conv.
+    unfold tp, tq.
     rewrite IHphi1, IHphi2.
     symmetry. apply bQ_orb.
+
   - (* BNot p *)
     (* translate = Add (Scalar 1) (Mul (Scalar (-1)) (translate p)) *)
     rewrite eval_add, eval_scale.
-    rewrite eval_scale, eval_mv_one.
+    (* goal now: 1 * eval mv_one s + eval (mv_scale (-1) mv_one ⋆ tp) s == ... *)
+
+    set (tp := eval_expr sq (translate phi)).
+
+    (* get rid of the broken ⋆ inference by making mv_gp explicit *)
+    change (mv_scale (-1) mv_one ⋆ tp)
+      with (@mv_gp n sq (mv_scale (-1) mv_one) tp).
+
+    assert (Heval_neg :
+      eval (@mv_gp n sq (mv_scale (-1) mv_one) tp) s
+      ==
+      eval (mv_scale (-1) tp) s).
+    {
+      unfold eval.
+      refine (sumQ_map_ext
+                (A := Mask n)
+                (fun m => ((@mv_gp n sq (mv_scale (-1) mv_one) tp m) * chi' m s)%Q)
+                (fun m => ((mv_scale (-1) tp m) * chi' m s)%Q)
+                (all_masks n)
+                _).
+      intros m _Hin.
+      rewrite (@mv_gp_scale_l n sq (-1) mv_one tp m).
+      unfold mv_scale.
+      rewrite (@mv_gp_one_l n sq tp m).
+      ring.
+    }
+
+    rewrite Heval_neg; clear Heval_neg.
+
+    (* now eval_scale applies to the negated tp *)
+    rewrite eval_scale.
+
+    (* and eval mv_one is 1 *)
+    rewrite eval_mv_one.
+    ring_simplify.  (* or: ring. *)
+
+    (* apply IH *)
+    unfold tp.
     rewrite IHphi.
-    symmetry. apply bQ_negb.
+    apply bQ_negb_rhs.
+
 Qed.
 
 Theorem translate_correct : forall n (sq : Vector.t Q n) (phi : BoolFormula n),
