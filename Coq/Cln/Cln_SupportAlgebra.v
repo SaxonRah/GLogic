@@ -601,148 +601,35 @@ Proof.
   ring.
 Qed.
 
-Theorem eval_support_size_le :
-  forall n (sq : Vector.t Q n) (e : GA_expr n),
-    (support_size (eval_expr sq e) <= support_size_bound e)%nat.
+Lemma support_size_scalar_mul_l :
+  forall n (sq : Vector.t Q n) (q : Q) (e : GA_expr n),
+    (support_size (eval_expr sq (Mul (Scalar q) e))
+     <= support_size (eval_expr sq e))%nat.
 Proof.
-  intros n sq e.
-  induction e as [i|c|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2]; simpl.
-  - (* Basis *)
-    rewrite support_size_basis. lia.
-
-  - (* Scalar *)
-    destruct (Qeq_dec c 0) as [Hc0|Hc0].
-    + (* c = 0 *)
-      assert (He : forall m, mv_scale c (@mv_one n) m == (@mv_zero n) m).
-      { intro m. unfold mv_scale, mv_zero. rewrite Hc0. ring. }
-      rewrite (support_size_ext n (mv_scale c (@mv_one n)) (@mv_zero n) He).
-      rewrite support_size_zero. lia.
-    + (* c <> 0 *)
-      rewrite (support_size_scale n c (@mv_one n) Hc0).
-      rewrite support_size_mv_one. lia.
-
-  - (* Add *)
-    eapply Nat.le_trans.
-    + apply support_size_add.
-    + lia.
-
-  - (* Mul *)
-    (* Do NOT simpl here; we want eval_expr (Mul ...) to remain visible for rewrites. *)
-    destruct e1 as [i1|q1|a1 b1|a1 b1|a1 b1];
-    destruct e2 as [i2|q2|a2 b2|a2 b2|a2 b2].
-
-    + (* Basis * Basis *)
-      simpl. eapply Nat.le_trans; [apply support_size_le_2n | lia].
-
-    + (* Basis * Scalar *)
-      change (eval_expr sq (Basis i1) ⋆ eval_expr sq (Scalar q2))
-        with (eval_expr sq (Mul (Basis i1) (Scalar q2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Basis i1) (Scalar q2)))
-                (mv_scale q2 (eval_expr sq (Basis i1)))
-                (eval_mul_scalar_r n sq q2 (Basis i1))).
-      destruct (Qeq_dec q2 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q2 (eval_expr sq (Basis i1)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q2 (eval_expr sq (Basis i1))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q2 (eval_expr sq (Basis i1)) Hq0).
-        simpl. exact IH1.
-
-    + (* Basis * Add *)
-      simpl. eapply Nat.le_trans; [apply support_size_le_2n | lia].
-
-    + (* Basis * Mul *)
-      simpl. eapply Nat.le_trans; [apply support_size_le_2n | lia].
-
-    + (* Basis * Conv *)
-      simpl. eapply Nat.le_trans; [apply support_size_le_2n | lia].
-
-    + (* Scalar * Basis *)
-      change (eval_expr sq (Scalar q1) ⋆ eval_expr sq (Basis i2))
-        with (eval_expr sq (Mul (Scalar q1) (Basis i2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Scalar q1) (Basis i2)))
-                (mv_scale q1 (eval_expr sq (Basis i2)))
-                (eval_mul_scalar_l n sq q1 (Basis i2))).
-      destruct (Qeq_dec q1 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q1 (eval_expr sq (Basis i2)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q1 (eval_expr sq (Basis i2))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q1 (eval_expr sq (Basis i2)) Hq0).
-        simpl. exact IH2.
-    
-    + (* Scalar * Scalar *)
-      change (eval_expr sq (Scalar q1) ⋆ eval_expr sq (Scalar q2))
-        with (eval_expr sq (Mul (Scalar q1) (Scalar q2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Scalar q1) (Scalar q2)))
-                (mv_scale q1 (eval_expr sq (Scalar q2)))
-                (eval_mul_scalar_l n sq q1 (Scalar q2))).
-      destruct (Qeq_dec q1 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q1 (eval_expr sq (Scalar q2)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q1 (eval_expr sq (Scalar q2))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q1 (eval_expr sq (Scalar q2)) Hq0).
-        simpl. exact IH2.
-
-    + (* Scalar * Add *)
-      change (eval_expr sq (Scalar q1) ⋆ eval_expr sq (Cln_Grade.Add a2 b2))
-        with (eval_expr sq (Mul (Scalar q1) (Cln_Grade.Add a2 b2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Scalar q1) (Cln_Grade.Add a2 b2)))
-                (mv_scale q1 (eval_expr sq (Cln_Grade.Add a2 b2)))
-                (eval_mul_scalar_l n sq q1 (Cln_Grade.Add a2 b2))).
-      destruct (Qeq_dec q1 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q1 (eval_expr sq (Cln_Grade.Add a2 b2)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q1 (eval_expr sq (Cln_Grade.Add a2 b2))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q1 (eval_expr sq (Cln_Grade.Add a2 b2)) Hq0).
-        simpl. exact IH2.
-
-    + (* Scalar * Mul *)
-      change (eval_expr sq (Scalar q1) ⋆ eval_expr sq (Mul a2 b2))
-        with (eval_expr sq (Mul (Scalar q1) (Mul a2 b2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Scalar q1) (Mul a2 b2)))
-                (mv_scale q1 (eval_expr sq (Mul a2 b2)))
-                (eval_mul_scalar_l n sq q1 (Mul a2 b2))).
-      destruct (Qeq_dec q1 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q1 (eval_expr sq (Mul a2 b2)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q1 (eval_expr sq (Mul a2 b2))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q1 (eval_expr sq (Mul a2 b2)) Hq0).
-        simpl. exact IH2.
-
-    + (* Scalar * Conv *)
-      change (eval_expr sq (Scalar q1) ⋆ eval_expr sq (Conv a2 b2))
-        with (eval_expr sq (Mul (Scalar q1) (Conv a2 b2))).
-      rewrite (support_size_ext n
-                (eval_expr sq (Mul (Scalar q1) (Conv a2 b2)))
-                (mv_scale q1 (eval_expr sq (Conv a2 b2)))
-                (eval_mul_scalar_l n sq q1 (Conv a2 b2))).
-      destruct (Qeq_dec q1 0) as [Hq0|Hq0].
-      * assert (Hz : forall m, mv_scale q1 (eval_expr sq (Conv a2 b2)) m == (@mv_zero n) m).
-        { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
-        rewrite (support_size_ext n (mv_scale q1 (eval_expr sq (Conv a2 b2))) (@mv_zero n) Hz).
-        rewrite support_size_zero. simpl. lia.
-      * rewrite (support_size_scale n q1 (eval_expr sq (Conv a2 b2)) Hq0).
-        simpl. exact IH2.
-
-    (* remaining cases: neither side is Scalar => crude 2^n bound *)
-    all: (simpl; eapply Nat.le_trans; [apply support_size_le_2n | lia]).
-
-  + (* Conv *)
-    eapply Nat.le_trans.
-    * apply support_size_conv.
-    * nia.
+  intros n sq q e.
+  rewrite (support_size_ext _ _ _ (eval_mul_scalar_l n sq q e)).
+  destruct (Qeq_dec q 0) as [Hq0|Hq0].
+  - assert (Hz : forall m, mv_scale q (eval_expr sq e) m == mv_zero m).
+    { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
+    rewrite (support_size_ext _ _ _ Hz).
+    rewrite support_size_zero. lia.
+  - rewrite (support_size_scale n q _ Hq0). lia.
 Qed.
 
-
+Lemma support_size_scalar_mul_r :
+  forall n (sq : Vector.t Q n) (q : Q) (e : GA_expr n),
+    (support_size (eval_expr sq (Mul e (Scalar q)))
+     <= support_size (eval_expr sq e))%nat.
+Proof.
+  intros n sq q e.
+  rewrite (support_size_ext _ _ _ (eval_mul_scalar_r n sq q e)).
+  destruct (Qeq_dec q 0) as [Hq0|Hq0].
+  - assert (Hz : forall m, mv_scale q (eval_expr sq e) m == mv_zero m).
+    { intro m. unfold mv_scale, mv_zero. rewrite Hq0. ring. }
+    rewrite (support_size_ext _ _ _ Hz).
+    rewrite support_size_zero. lia.
+  - rewrite (support_size_scale n q _ Hq0). lia.
+Qed.
 
 Theorem eval_support_size_le :
   forall n (sq : Vector.t Q n) (e : GA_expr n),
@@ -750,30 +637,34 @@ Theorem eval_support_size_le :
 Proof.
   intros n sq e.
   induction e as [i|c|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 e2 IH2]; simpl.
-  - (* Basis *)
-    rewrite support_size_basis. lia.
+  - (* Basis *) rewrite support_size_basis. lia.
   - (* Scalar *)
     destruct (Qeq_dec c 0) as [Hc0|Hc0].
-    + (* zero scalar *)
-      assert (He : forall m, mv_scale c (@mv_one n) m == (@mv_zero n) m).
+    + assert (He : forall m, mv_scale c (@mv_one n) m == mv_zero m).
       { intro m. unfold mv_scale, mv_zero. rewrite Hc0. ring. }
-      rewrite (support_size_ext n (mv_scale c mv_one) mv_zero He).
-      rewrite support_size_zero. lia.
-    + (* nonzero scalar *)
-      rewrite (support_size_scale n c mv_one Hc0).
+      rewrite (support_size_ext _ _ _ He). rewrite support_size_zero. lia.
+    + rewrite (support_size_scale n c mv_one Hc0).
       rewrite support_size_mv_one. lia.
   - (* Add *)
-    eapply Nat.le_trans.
-    + apply support_size_add.
-    + lia.
-  - (* Mul: crude bound by 2^n *)
-    eapply Nat.le_trans.
-    + apply support_size_le_2n.
-    + lia.
+    eapply Nat.le_trans; [apply support_size_add | lia].
+  - (* Mul *)
+    destruct e1 as [?|q1|? ?|? ?|? ?].
+    2: { (* Scalar q1 * e2 — handle separately *)
+      simpl support_size_bound.
+      eapply Nat.le_trans;
+        [apply support_size_scalar_mul_l | exact IH2].
+    }
+    (* Non-Scalar * e2: destruct e2 *)
+    all: destruct e2 as [?|q2|? ?|? ?|? ?];
+         simpl support_size_bound.
+    (* Non-Scalar * Non-Scalar: crude 2^n bound *)
+    all: try (eapply Nat.le_trans;
+              [apply support_size_le_2n | lia]).
+    (* Non-Scalar * Scalar q2: right helper *)
+    all: eapply Nat.le_trans;
+         [apply support_size_scalar_mul_r | exact IH1].
   - (* Conv *)
-    eapply Nat.le_trans.
-    + apply support_size_conv.
-    + nia.
+    eapply Nat.le_trans; [apply support_size_conv | nia].
 Qed.
 
         (* Lemma Block 4 *)
