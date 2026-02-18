@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "display": {
+    "autoRotate": false,
+    "showAxes": false,
+    "showSurface": true,
+    "showWireframe": false,
+    "dirIntensity": 1,
+    "ambientIntensity": 0.6,
+    "shininess": 100,
+    "globalSaturation": 1.5,
+    "camera": {
+      "position": {
+        "x": 6.9110584642119095,
+        "y": -1.7384497080871473,
+        "z": 5.547828782797947
+      },
+      "target": {
+        "x": 0.9286849131823194,
+        "y": 0.262471210569613,
+        "z": 2.232363528352518
+      }
+    }
+  },
+  "parameters": {
+    "uMin": 0,
+    "uMax": 2,
+    "vMin": 0,
+    "vMax": 2,
+    "uSegs": 150,
+    "vSegs": 150
+  },
+  "extraParameters": [
+    {
+      "name": "g",
+      "value": 0.026,
+      "min": 0,
+      "max": 1,
+      "step": 0.001,
+      "runtime": 30
+    },
+    {
+      "name": "t",
+      "value": 1.04,
+      "min": 0,
+      "max": 2,
+      "step": 0.001,
+      "runtime": 60
+    }
+  ],
+  "surface": {
+    "code": "function surface(input) {\n  const u = input.u;\n  const v = input.v;\n\n  const g = input.g;                 // product law\n  //const n = Math.max(1, Math.min(5, Math.floor(input.n)));\n  const n = Math.max(1, Math.min(5, Math.floor(3)));\n\n  const N = 1 << n;\n  const sq = Array.from({ length: n }, () => 1);\n\n  // ---- helpers ----\n  function popcount(x) {\n    let c = 0;\n    while (x) { x &= (x - 1); c++; }\n    return c;\n  }\n\n  function swapsParity(A, B) {\n    let parity = 0;\n    for (let i = 0; i < n; i++) {\n      if ((A >>> i) & 1) {\n        const belowMask = (1 << i) - 1;\n        parity ^= (popcount(B & belowMask) & 1);\n      }\n    }\n    return parity;\n  }\n\n  function omega(A, B) {\n    const sgn = swapsParity(A, B) ? -1 : 1;\n    return sgn; // metric all +1\n  }\n\n  function multiply(F, G) {\n    const H = new Float64Array(N);\n    for (let U = 0; U < N; U++) {\n      let sum = 0;\n      for (let A = 0; A < N; A++) {\n        const B = A ^ U;\n        const coeff = (1 - g) + g * omega(A, B);\n        sum += F[A] * G[B] * coeff;\n      }\n      H[U] = sum;\n    }\n    return H;\n  }\n\n  function l2norm(F) {\n    let s = 0;\n    for (let i = 0; i < N; i++) s += F[i] * F[i];\n    return Math.sqrt(s);\n  }\n\n  function support(F) {\n    let c = 0;\n    for (let i = 0; i < N; i++) if (Math.abs(F[i]) > 1e-6) c++;\n    return c;\n  }\n\n  // ---- seed multivector F0 ----\n  const A0 = Math.floor(u * N);\n  const B0 = Math.floor(v * N);\n\n  const F0 = new Float64Array(N);\n  F0[A0] = Math.sin(2 * Math.PI * u);\n  F0[B0] += Math.cos(2 * Math.PI * v);\n\n  // ---- true computation depth from t ----\n  const maxSteps = 12;\n  const depth = input.t * maxSteps;\n\n  const k = Math.floor(depth);\n  const frac = depth - k;\n\n  let F = new Float64Array(N);\n  F[0] = 1; // identity start\n\n  for (let i = 0; i < k; i++) {\n    F = multiply(F, F0);\n  }\n\n  const Fnext = multiply(F, F0);\n\n  // interpolate between step k and k+1\n  const Finterp = new Float64Array(N);\n  for (let i = 0; i < N; i++) {\n    Finterp[i] = (1 - frac) * F[i] + frac * Fnext[i];\n  }\n\n  const normF = l2norm(Finterp);\n  const supp = support(Finterp);\n\n  // ---- geometry ----\n  const angleA = 2 * Math.PI * u;\n  const angleB = 2 * Math.PI * v;\n\n  const baseR = 1.1;\n  const R = baseR + 0.9 * (supp / N);\n\n  const tubeR = 0.3 + 0.1 * Math.tanh(depth);\n\n  const x = (R + tubeR * Math.cos(angleB)) * Math.cos(angleA);\n  const y = (R + tubeR * Math.cos(angleB)) * Math.sin(angleA);\n  const z = Math.log(1 + normF);\n\n  // color: red = geometric growth, blue = convolution\n  const r = Math.min(1, 0.2 + 0.8 * g);\n  const b = Math.min(1, 0.2 + 0.8 * (1 - g));\n  const gg = Math.min(1, 0.1 + 0.9 * (supp / N));\n\n  return { x, y, z, r, g: gg, b, a: 1.0 };\n}\n"
+  },
+  "outputs": {
+    "coordConversion": "none",
+    "rgbToHsv": false
+  }
+}
