@@ -1264,6 +1264,62 @@ Proof.
   ring.
 Qed.
 
+Lemma all_corners_2 :
+  all_corners 2 = [Vector.cons _ Pos _ (Vector.cons _ Pos _ (Vector.nil _));
+                   Vector.cons _ Pos _ (Vector.cons _ Neg _ (Vector.nil _));
+                   Vector.cons _ Neg _ (Vector.cons _ Pos _ (Vector.nil _));
+                   Vector.cons _ Neg _ (Vector.cons _ Neg _ (Vector.nil _))].
+Proof. reflexivity. Qed.
+
+Lemma signed_walsh_AND_2var : forall (b1 b2 : bool),
+  signed_walsh_2 AND_2 b1 b2 ==
+    if b1 then (if b2 then (-2)%Q else (-2)%Q)
+    else (if b2 then (-2)%Q else 2%Q).
+Proof.
+  intros b1 b2.
+  unfold signed_walsh_2, signed_walsh, AND_2, signed, chi', chi, sQ,
+         sign_to_bool.
+  destruct b1, b2; rewrite all_corners_2; simpl; ring.
+Qed.
+
+(* Step 8: Therefore signed_walsh(IP)(M) = ±2^m for every M *)
+Require Import Coq.Lists.List.
+Import ListNotations.
+
+(* 1-step split is definitional for your Fixpoint *)
+
+Lemma all_corners_S : forall n,
+  all_corners (S n)
+  =
+    map (fun c => Vector.cons Sign Pos n c) (all_corners n)
+ ++ map (fun c => Vector.cons Sign Neg n c) (all_corners n).
+Proof.
+  intro n. simpl. reflexivity.
+Qed.
+
+(* 2-step split into 4 quadrants *)
+Lemma all_corners_SS : forall n,
+  all_corners (S (S n))
+  =
+     map (fun c => Vector.cons Sign Pos (S n)
+                   (Vector.cons Sign Pos n c)) (all_corners n)
+  ++ map (fun c => Vector.cons Sign Pos (S n)
+                   (Vector.cons Sign Neg n c)) (all_corners n)
+  ++ map (fun c => Vector.cons Sign Neg (S n)
+                   (Vector.cons Sign Pos n c)) (all_corners n)
+  ++ map (fun c => Vector.cons Sign Neg (S n)
+                   (Vector.cons Sign Neg n c)) (all_corners n).
+Proof.
+  intro n.
+  simpl.
+  rewrite map_app.
+  rewrite map_app.
+  repeat rewrite map_map.
+  repeat rewrite app_assoc.
+  reflexivity.
+Qed.
+
+
 (* Step 6: Tensor factorization — THE KEY LEMMA *)
 (* IP factors as XOR of AND pairs, signed is multiplicative over XOR,
    so signed_walsh factors over independent variable pairs *)
@@ -1305,26 +1361,6 @@ Proof.
 Admitted. (* fill in with the tensor splitting argument *)
 
 (* Step 7: Each 2-variable factor is ±2 (unnormalized) *)
-
-Lemma all_corners_2 :
-  all_corners 2 = [Vector.cons _ Pos _ (Vector.cons _ Pos _ (Vector.nil _));
-                   Vector.cons _ Pos _ (Vector.cons _ Neg _ (Vector.nil _));
-                   Vector.cons _ Neg _ (Vector.cons _ Pos _ (Vector.nil _));
-                   Vector.cons _ Neg _ (Vector.cons _ Neg _ (Vector.nil _))].
-Proof. reflexivity. Qed.
-
-Lemma signed_walsh_AND_2var : forall (b1 b2 : bool),
-  signed_walsh_2 AND_2 b1 b2 ==
-    if b1 then (if b2 then (-2)%Q else (-2)%Q)
-    else (if b2 then (-2)%Q else 2%Q).
-Proof.
-  intros b1 b2.
-  unfold signed_walsh_2, signed_walsh, AND_2, signed, chi', chi, sQ,
-         sign_to_bool.
-  destruct b1, b2; rewrite all_corners_2; simpl; ring.
-Qed.
-
-(* Step 8: Therefore signed_walsh(IP)(M) = ±2^m for every M *)
 Lemma signed_walsh_IP_magnitude : forall m (M : Mask (m + m)),
   (m > 0)%nat ->
   exists s : bool, signed_walsh (@IP_n_func (m + m)) M 
