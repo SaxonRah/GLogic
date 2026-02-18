@@ -1210,6 +1210,11 @@ Proof.
   intros a b c H; now setoid_rewrite H.
 Qed.
 
+Lemma Qminus_eq_compat_l' : forall a b c : Q, a == b -> a - c == b - c.
+Proof. intros a b c H; unfold Qminus; now setoid_rewrite H. Qed.
+Lemma Qminus_eq_compat_r' : forall a b c : Q, a == b -> c - a == c - b.
+Proof. intros a b c H; unfold Qminus; now setoid_rewrite H. Qed.
+
 Lemma embed_via_signed_walsh : forall n (f : Corner n -> bool) (M : Mask n),
   embed f M == ((1 / pow2 n) * ((1#2) * (if mask_eq_dec M mask_empty then pow2 n else 0)
                 - (1#2) * signed_walsh f M))%Q.
@@ -1217,32 +1222,39 @@ Proof.
   intros n f M.
   unfold embed, Pi, signed_walsh.
 
-  (* Step 1: factor out 1/pow2 n — provide BOTH functions explicitly *)
+  (* Step 1: pull out 1/pow2 n *)
   eapply Qeq_trans.
-  { apply (sumQ_map_ext
-      (A := Corner n)
-      (fun a => bQ (f a) * (1 / pow2 n * chi M a))%Q
-      (fun a => (1 / pow2 n) * (bQ (f a) * chi' M a))%Q
+  { apply (sumQ_map_ext (A := Corner n)
+      (fun a => (bQ (f a) * (1 / pow2 n * chi M a))%Q)
+      (fun a => ((1 / pow2 n) * (bQ (f a) * chi' M a))%Q)
       (all_corners n)).
     intros a _. unfold chi'. ring. }
-  rewrite <- sumQ_map_scale_l.
+  rewrite (sumQ_map_scale_l (A := Corner n) (1 / pow2 n)%Q
+    (fun a => (bQ (f a) * chi' M a)%Q) (all_corners n)).
+
   apply Qmult_eq_compat_l'.
 
-  (* Step 2: rewrite bQ via signed — again both functions explicit *)
+  (* Step 2: rewrite bQ via signed, split into difference *)
   eapply Qeq_trans.
-  { apply (sumQ_map_ext
-      (A := Corner n)
-      (fun a => bQ (f a) * chi' M a)%Q
+  { apply (sumQ_map_ext (A := Corner n)
+      (fun a => (bQ (f a) * chi' M a)%Q)
       (fun a => ((1#2) * chi' M a - (1#2) * (signed (f a) * chi' M a))%Q)
       (all_corners n)).
-    intros a _.
-    rewrite bQ_via_signed. ring. }
+    intros a _. rewrite bQ_via_signed. ring. }
 
-  (* Step 3: split into difference of sums *)
-  rewrite sumQ_map_sub.
-  rewrite <- !sumQ_map_scale_l.
+  (* Step 3: split sum of differences into difference of sums *)
+  rewrite (sumQ_map_sub
+    (fun a : Corner n => ((1#2) * chi' M a)%Q)
+    (fun a : Corner n => ((1#2) * (signed (f a) * chi' M a))%Q)
+    (all_corners n)).
 
-  (* Step 4: character orthogonality *)
+  (* Step 4: factor (1#2) out of each sum — FORWARD direction *)
+  rewrite (sumQ_map_scale_l (A := Corner n) (1#2)%Q
+    (fun a => chi' M a) (all_corners n)).
+  rewrite (sumQ_map_scale_l (A := Corner n) (1#2)%Q
+    (fun a => (signed (f a) * chi' M a)%Q) (all_corners n)).
+
+  (* Step 5: character orthogonality + ring *)
   assert (Hchi_sum : sumQ (List.map (fun a => chi' M a) (all_corners n))
                      == if mask_eq_dec M mask_empty then pow2 n else 0).
   { destruct (mask_eq_dec M mask_empty) as [Heq|Hneq].
@@ -1259,6 +1271,8 @@ Qed.
 Lemma signed_walsh_IP_factored : forall m (M : Mask (m + m)),
   signed_walsh (@IP_n_func (m + m)) M == prod_pairs m M.
 Proof.
+(*
+
   induction m as [|m' IH]; intro M.
   - (* m = 0: dimension 0 *)
     dependent destruction M.
@@ -1286,6 +1300,8 @@ Proof.
        using IP_n_func_cons2, signed_xorb, chi_true_cons/chi_false_cons *)
     (* The detailed proof is mechanical but long—approximately 60-80 lines
        of sum manipulation similar to your existing proofs *)
+
+*)
 Admitted. (* fill in with the tensor splitting argument *)
 
 (* Step 7: Each 2-variable factor is ±2 (unnormalized) *)
@@ -1298,13 +1314,14 @@ Lemma all_corners_2 :
 Proof. reflexivity. Qed.
 
 Lemma signed_walsh_AND_2var : forall (b1 b2 : bool),
-  signed_walsh_2 AND_2 b1 b2 = if b1 then (if b2 then (-2)%Q else (-2)%Q)
-                                 else (if b2 then (-2)%Q else 2%Q).
+  signed_walsh_2 AND_2 b1 b2 ==
+    if b1 then (if b2 then (-2)%Q else (-2)%Q)
+    else (if b2 then (-2)%Q else 2%Q).
 Proof.
   intros b1 b2.
   unfold signed_walsh_2, signed_walsh, AND_2, signed, chi', chi, sQ,
-         sign_to_bool, all_corners.
-  destruct b1, b2. rewrite <- all_corners_2. simpl; ring.
+         sign_to_bool.
+  destruct b1, b2; rewrite all_corners_2; simpl; ring.
 Qed.
 
 (* Step 8: Therefore signed_walsh(IP)(M) = ±2^m for every M *)
