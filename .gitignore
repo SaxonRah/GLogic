@@ -5,3 +5,9 @@ __pycache__/
 GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model_or_fix.pt
 GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model.pt
 /Coq/Cln/media
+*.vo
+*.glob
+*.aux
+*.aux
+*.glob
+*.vo
