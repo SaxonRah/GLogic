@@ -8,3 +8,13 @@ GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model.pt
 *.vo
 *.glob
 *.aux
+Coq/Cln/.Cln_BoolDist.aux
+Coq/Cln/.Cln_finite_l1_submultiplicativity.aux
+Coq/Cln/.Cln_Full.aux
+Coq/Cln/.Cln_Grade.aux
+Coq/Cln/Cln_BoolDist.glob
+Coq/Cln/Cln_BoolDist.vo
+Coq/Cln/Cln_finite_l1_submultiplicativity.vo
+Coq/Cln/Cln_Full.glob
+Coq/Cln/Cln_Full.vo
+Coq/Cln/Cln_Grade.vo
