@@ -757,12 +757,298 @@ Qed.
 
         (* Lemma Block 5 *)
 
-(* Parity: exactly 1 nonzero coefficient (the pseudoscalar) *)
+(* ============================================================ *)
+(* (-1)^n in Q                                                   *)
+(* ============================================================ *)
+
+Definition neg1_pow (k : nat) : Q :=
+  if Nat.even k then 1%Q else (-(1))%Q.
+
+Lemma neg1_pow_S : forall k, neg1_pow (S k) == (- neg1_pow k)%Q.
+Proof.
+  intro k; unfold neg1_pow.
+  rewrite Nat.even_succ.
+  unfold Nat.odd.
+
+  destruct (Nat.even k) eqn:Hev; simpl; ring.
+Qed.
+
+Lemma neg1_pow_neq_0 : forall k, ~(neg1_pow k == 0).
+Proof.
+  intro k; unfold neg1_pow; destruct (Nat.even k);
+    unfold Qeq; simpl; discriminate.
+Qed.
+
+(* ============================================================ *)
+(* Core Fourier identity:                                        *)
+(*   2 * bQ(XOR(s)) + (-1)^n * chi(full_mask, s) == 1          *)
+(*                                                               *)
+(* This says the {0,1}-valued XOR function decomposes into       *)
+(* exactly two Walsh characters: the trivial one and the full.   *)
+(* ============================================================ *)
+
+Lemma bQ_XOR_plus_chi : forall n (s : Corner n),
+  (2 * bQ (XOR_n_func s) + neg1_pow n * chi' (Vector.const true n) s == 1)%Q.
+Proof.
+  induction n as [|n IHn]; intro s.
+  - (* n = 0: XOR(empty) = false, chi(empty,empty) = 1, neg1_pow 0 = 1 *)
+    dependent destruction s.
+    unfold XOR_n_func, bQ, neg1_pow, chi'; simpl; ring.
+  - dependent destruction s; rename h into hd; rename s into tl.
+    rewrite XOR_n_func_cons.
+    change (Vector.const true (S n))
+      with (Vector.cons _ true _ (Vector.const true n)).
+    rewrite chi_true_cons, neg1_pow_S.
+    specialize (IHn tl).
+    destruct hd; simpl sign_to_bool; simpl sQ.
+    + (* Pos: xorb true (XOR tl) = negb (XOR tl), sQ Pos = 1 *)
+      rewrite xorb_true_l, bQ_negb.
+      (* Goal: 2*(1 - bQ(XOR tl)) + (-neg1_pow n)*(1*chi(full,tl)) == 1 *)
+      (* = 2 - [2*bQ(XOR tl) + neg1_pow n * chi(full,tl)] == 1 *)
+      setoid_replace
+        (2 * (1 - bQ (XOR_n_func tl))
+         + - neg1_pow n * (1 * chi' (Vector.const true n) tl))%Q
+        with
+        (2 - (2 * bQ (XOR_n_func tl)
+              + neg1_pow n * chi' (Vector.const true n) tl))%Q
+        by ring.
+      rewrite IHn; ring.
+    + (* Neg: xorb false (XOR tl) = XOR tl, sQ Neg = -1 *)
+      rewrite xorb_false_l.
+      (* Goal: 2*bQ(XOR tl) + (-neg1_pow n)*(-1*chi(full,tl)) == 1 *)
+      (* = 2*bQ(XOR tl) + neg1_pow n * chi(full,tl) == 1 = IH *)
+      setoid_replace
+        (2 * bQ (XOR_n_func tl)
+         + - neg1_pow n * (-1 * chi' (Vector.const true n) tl))%Q
+        with
+        (2 * bQ (XOR_n_func tl)
+         + neg1_pow n * chi' (Vector.const true n) tl)%Q
+        by ring.
+      exact IHn.
+Qed.
+
+(* ============================================================ *)
+(* Explicit 2-term multivector equal to embed(XOR)               *)
+(* ============================================================ *)
+
+Definition XOR_explicit {n} : MV n :=
+  mv_add (mv_scale (1#2) (basis mask_empty))
+         (mv_scale (- neg1_pow n * (1#2)) (basis (Vector.const true n))).
+
+Lemma eval_XOR_explicit : forall n (s : Corner n),
+  eval (@XOR_explicit n) s == bQ (XOR_n_func s).
+Proof.
+  intros n s.
+  unfold XOR_explicit.
+  rewrite eval_add, !eval_scale, !eval_basis, chi_mask_empty.
+  (* Goal: (1#2)*1 + (-neg1_pow n*(1#2)) * chi'(full,s) == bQ(XOR s) *)
+  (* From bQ_XOR_plus_chi: 2*bQ(XOR s) + neg1_pow n * chi'(full,s) == 1 *)
+  pose proof (bQ_XOR_plus_chi n s) as H.
+  (* Strategy: rewrite both sides to (1 - neg1_pow n * chi'(full,s)) * (1#2) *)
+  setoid_replace
+    ((1 # 2) * 1 + - neg1_pow n * (1 # 2) * chi' (Vector.const true n) s)%Q
+    with
+    ((1 - neg1_pow n * chi' (Vector.const true n) s) * (1 # 2))%Q
+    by ring.
+  setoid_replace (bQ (XOR_n_func s))
+    with (2 * bQ (XOR_n_func s) * (1 # 2))%Q
+    by ring.
+  apply Qmult_comp; [|reflexivity].
+  (* Goal: 1 - neg1_pow n * chi'(full,s) == 2 * bQ(XOR s) *)
+  (* From H: rewrite 1 → 2*bQ + neg1_pow*chi, then ring *)
+  rewrite <- H; ring.
+Qed.
+
+(* ============================================================ *)
+(* Transfer: embed(XOR) == XOR_explicit coefficient-wise         *)
+(* ============================================================ *)
+
+Lemma embed_XOR_eq_explicit : forall n (m : Mask n),
+  embed (@XOR_n_func n) m == (@XOR_explicit n) m.
+Proof.
+  intros n.
+  apply eval_extensionality.
+  intro s.
+  rewrite embed_correct.
+  symmetry.
+  apply eval_XOR_explicit.
+Qed.
+
+(* ============================================================ *)
+(* mask_empty ≠ full_mask for n ≥ 1                              *)
+(* ============================================================ *)
+
+Lemma mask_empty_neq_full : forall n,
+  (n > 0)%nat -> @mask_empty n <> Vector.const true n.
+Proof.
+  intros [|n'] Hn; [lia|].
+  intro H.
+  pose proof (f_equal (fun v => Vector.hd v) H) as Hhd.
+  simpl in Hhd. discriminate.
+Qed.
+
+(* ============================================================ *)
+(* XOR_explicit has nonzero coefficients at empty and full       *)
+(* ============================================================ *)
+
+Lemma XOR_explicit_empty_nonzero : forall n,
+  (n > 0)%nat -> ~(@XOR_explicit n mask_empty == 0).
+Proof.
+  intros n Hn.
+  unfold XOR_explicit, mv_add, mv_scale, basis.
+  destruct (mask_eq_dec mask_empty mask_empty) as [_|Habs];
+    [|exfalso; apply Habs; reflexivity].
+  destruct (mask_eq_dec mask_empty (Vector.const true n)) as [Heq|Hne].
+  - exfalso. exact (mask_empty_neq_full n Hn Heq).
+  - (* value = (1#2)*1 + (-neg1_pow n * (1#2))*0 = 1#2 *)
+    intro H.
+    assert (Hval : ((1 # 2) * 1 + - neg1_pow n * (1 # 2) * 0)%Q == (1#2)%Q) by ring.
+    rewrite Hval in H.
+    unfold Qeq in H; simpl in H; discriminate.
+Qed.
+
+Lemma XOR_explicit_full_nonzero : forall n,
+  (n > 0)%nat -> ~(@XOR_explicit n (Vector.const true n) == 0).
+Proof.
+  intros n Hn.
+  unfold XOR_explicit, mv_add, mv_scale, basis.
+  destruct (mask_eq_dec (Vector.const true n) mask_empty) as [Heq|Hne].
+  - exfalso. exact (mask_empty_neq_full n Hn (eq_sym Heq)).
+  - destruct (mask_eq_dec (Vector.const true n) (Vector.const true n))
+      as [_|Habs]; [|exfalso; apply Habs; reflexivity].
+    (* value = (1#2)*0 + (-neg1_pow n * (1#2))*1 = -neg1_pow n * (1#2) *)
+    intro H.
+    assert (Hval : ((1 # 2) * 0 + - neg1_pow n * (1 # 2) * 1)%Q
+                   == (- neg1_pow n * (1 # 2))%Q) by ring.
+    rewrite Hval in H.
+    apply (neg1_pow_neq_0 n).
+    (* from -neg1_pow n * (1#2) == 0 derive neg1_pow n == 0 *)
+    destruct (Qeq_dec (neg1_pow n) 0) as [Hz|Hnz]; [exact Hz|].
+    exfalso. apply Hnz.
+    apply Qmult_integral in H as [H|H].
+    + (* -neg1_pow n == 0 implies neg1_pow n == 0 *)
+      assert (neg1_pow n == - - neg1_pow n)%Q by ring.
+      rewrite H0, H. ring.
+    + unfold Qeq in H; simpl in H; discriminate.
+Qed.
+
+(* ============================================================ *)
+(* XOR_explicit is zero at all other masks                       *)
+(* ============================================================ *)
+
+Lemma XOR_explicit_other_zero : forall n (m : Mask n),
+  m <> mask_empty ->
+  m <> Vector.const true n ->
+  @XOR_explicit n m == 0.
+Proof.
+  intros n m Hne Hnf.
+  unfold XOR_explicit, mv_add, mv_scale, basis.
+  destruct (mask_eq_dec m mask_empty) as [Heq|_];
+    [contradiction|].
+  destruct (mask_eq_dec m (Vector.const true n)) as [Heq|_];
+    [contradiction|].
+  ring.
+Qed.
+
+(* ============================================================ *)
+(* Lower bound: 2 distinct nonzero coefficients ⟹ support ≥ 2  *)
+(* ============================================================ *)
+
+Lemma support_size_at_least_two :
+  forall n (F : MV n) (a b : Mask n),
+    a <> b -> ~(F a == 0) -> ~(F b == 0) ->
+    (2 <= support_size F)%nat.
+Proof.
+  intros n F a b Hneq Ha Hb.
+  unfold support_size.
+  set (p := fun m : Mask n => negb (Qeq_bool (F m) 0)).
+  assert (HinA : In a (filter p (all_masks n))).
+  { apply filter_In. split; [apply all_masks_complete|].
+    unfold p. destruct (Qeq_bool (F a) 0) eqn:E.
+    + exfalso. apply Ha. apply Qeq_bool_eq. exact E.
+    + reflexivity. }
+  assert (HinB : In b (filter p (all_masks n))).
+  { apply filter_In. split; [apply all_masks_complete|].
+    unfold p. destruct (Qeq_bool (F b) 0) eqn:E.
+    + exfalso. apply Hb. apply Qeq_bool_eq. exact E.
+    + reflexivity. }
+  (* [a; b] is NoDup and included in the filter, so length ≥ 2 *)
+  assert (Hincl : incl [a; b] (filter p (all_masks n))).
+  { intros x [->|[->|[]]]; assumption. }
+  assert (Hnd : NoDup [a; b]).
+  { constructor.
+    - simpl. intros [H|[]]. apply Hneq. now symmetry.
+    - constructor; [simpl; tauto | constructor]. }
+  pose proof (@NoDup_incl_length (Mask n) [a;b] (filter p (all_masks n)) Hnd Hincl) as Hle.
+  simpl in Hle. lia.
+Qed.
+
+(* ============================================================ *)
+(* support_size(XOR_explicit) ≤ 2                                *)
+(* ============================================================ *)
+
+Lemma support_size_basis_general : forall n (M : Mask n),
+  support_size (basis M) = 1%nat.
+Proof.
+  intros n M.
+  unfold support_size.
+  set (p := fun m : Mask n => negb (Qeq_bool (basis M m) 0)).
+  rewrite (filter_singleton (Mask n) p (all_masks n) M
+             (all_masks_nodup n) (all_masks_complete M)).
+  - simpl. reflexivity.
+  - (* p M = true *)
+    unfold p, basis.
+    destruct (mask_eq_dec M M) as [_|Hc]; [|contradiction].
+    rewrite Qeq_bool_10. reflexivity.
+  - (* p x = false for x ≠ M *)
+    intros x _ Hneq.
+    unfold p, basis.
+    destruct (mask_eq_dec x M) as [Heq|_];
+      [contradiction|].
+    rewrite Qeq_bool_00. reflexivity.
+Qed.
+
+Lemma support_size_XOR_explicit_le :
+  forall n, (support_size (@XOR_explicit n) <= 2)%nat.
+Proof.
+  intro n.
+  unfold XOR_explicit.
+  eapply Nat.le_trans; [apply support_size_add|].
+  assert (H1 : ~((1 # 2) == 0)%Q)
+    by (unfold Qeq; simpl; discriminate).
+  assert (H2 : ~((- neg1_pow n * (1 # 2)) == 0)%Q).
+  { intro H. apply (neg1_pow_neq_0 n).
+    apply Qmult_integral in H as [H|H].
+    - assert (neg1_pow n == - - neg1_pow n)%Q by ring.
+      rewrite H0, H. ring.
+    - unfold Qeq in H; simpl in H; discriminate. }
+  rewrite (support_size_scale n _ _ H1).
+  rewrite (support_size_scale n _ _ H2).
+  rewrite !support_size_basis_general.
+  lia.
+Qed.
+
+(* ============================================================ *)
+(* The main result                                               *)
+(* ============================================================ *)
+
 Lemma support_size_XOR : forall n,
   (n > 0)%nat ->
   support_size (embed (@XOR_n_func n)) = 2%nat.
 Proof.
-Admitted.
+  intros n Hn.
+  (* Transfer from embed(XOR) to XOR_explicit *)
+  rewrite (support_size_ext n _ _ (embed_XOR_eq_explicit n)).
+  (* Upper bound: ≤ 2 *)
+  assert (Hle := support_size_XOR_explicit_le n).
+  (* Lower bound: ≥ 2 *)
+  assert (Hge := @support_size_at_least_two n
+                   (@XOR_explicit n) mask_empty (Vector.const true n)
+                   (mask_empty_neq_full n Hn)
+                   (XOR_explicit_empty_nonzero n Hn)
+                   (XOR_explicit_full_nonzero n Hn)).
+  lia.
+Qed.
 
 (* ============================================================ *)
 (* Inner Product mod 2:  IP(x₀,y₀,x₁,y₁,...) = ⊕ᵢ (xᵢ ∧ yᵢ)  *)
@@ -794,17 +1080,33 @@ Proof.
   reflexivity.
 Qed.
 
-(* Majority function on n variables (n odd):
-   has Θ(2^n / √n) nonzero Fourier coefficients *)
-(* This requires real work — skip for now *)
-
-(* Inner product mod 2: IP(x,y) = ⊕ᵢ (xᵢ ∧ yᵢ)
-   on 2n variables, has 2^n nonzero coefficients *)
+(* ============================================================ *)
+(* Corrected: IP on 2m variables has FULL support (2^{2m})       *)
+(*                                                               *)
+(* Proof sketch (tensor product structure):                      *)
+(*   (-1)^{IP(s)} = Π_i (-1)^{AND(s_{2i}, s_{2i+1})}           *)
+(*   Each factor has all 4 Walsh coefficients = ±1/2            *)
+(*   Product over m independent pairs: all 4^m = 2^{2m} nonzero *)
+(*   bQ(IP) = (1 - (-1)^IP)/2 inherits full support             *)
+(*   For M≠∅: embed(IP)(M) = -(±1)/2^{m+1} ≠ 0                 *)
+(*   For M=∅: embed(IP)(∅) = (2^m - 1)/2^{m+1} ≠ 0             *)
+(* ============================================================ *)
 
 Lemma support_size_IP : forall m,
   (m > 0)%nat ->
-  support_size (embed (@IP_n_func (m + m))) = (Nat.pow 2 m)%nat.
+  support_size (embed (@IP_n_func (m + m))) = Nat.pow 2 (m + m).
 Proof.
+  (* The key is showing every coefficient of embed(IP) is nonzero.
+     This follows from the tensor product factorization:
+     
+     1. Define signed_IP(s) = (-1)^{IP(s)} : Corner (m+m) -> Q
+     2. Prove: signed_IP = product over m pairs of signed_AND
+     3. Prove: Walsh coefficient of signed_AND at any 2-bit mask is ±1/2
+     4. By tensor product: Walsh coeff of signed_IP at any mask is ±1/2^m
+     5. embed(IP)(M) = (1/2)δ_{M,∅} - (1/2)·(Walsh coeff of signed_IP)(M)
+     6. Both cases (M=∅ and M≠∅) give nonzero values for m≥1
+     7. Full support => support_size = 2^{2m}
+  *)
 Admitted.
 
         (* The support-based separation theorem *)
@@ -818,12 +1120,40 @@ Theorem IP_formula_size_lower_bound :
     (formula_size phi >= m)%nat.
 Proof.
   intros m sq phi Hm Hsq Hbf.
-  (* From translate_correct + Hbf:
-     eval_expr sq (translate phi) is pointwise == embed(IP) *)
-  (* From translate_support_size_bound:
-     support_size(eval_expr ...) ≤ 2^(formula_size phi) *)
-  (* From support_size_IP:
-     support_size(embed(IP)) = 2^m *)
-  (* Need: support_size is preserved/reflected through translate_correct *)
-  (* Combine: 2^m ≤ 2^(formula_size phi), so formula_size ≥ m *)
-Admitted.
+
+  (* Step 1: translate_correct + Hbf gives pointwise equality *)
+  assert (Hpt : forall mm : Mask (m + m),
+    eval_expr sq (translate phi) mm == embed (@IP_n_func (m + m)) mm).
+  {
+    intro mm.
+    rewrite (translate_correct (m + m) sq phi Hsq mm).
+    rewrite Hbf. apply Qeq_refl.
+  }
+
+  (* Step 2: support sizes are equal *)
+  assert (Hss : support_size (eval_expr sq (translate phi))
+                = support_size (embed (@IP_n_func (m + m)))).
+  { apply (support_size_ext (m + m) _ _ Hpt). }
+
+  (* Step 3: upper bound from formula structure *)
+  assert (Hub : (support_size (eval_expr sq (translate phi))
+                 <= Nat.pow 2 (formula_size phi))%nat).
+  { apply translate_support_size_bound. }
+
+  (* Step 4: lower bound from IP Fourier analysis *)
+  assert (Hlb : support_size (embed (@IP_n_func (m + m)))
+                = Nat.pow 2 (m + m)).
+  { apply support_size_IP. exact Hm. }
+
+  (* Step 5: chain:  2^(m+m) = supp(embed IP) = supp(eval_expr ...) ≤ 2^(formula_size phi) *)
+  assert (Hpow : (Nat.pow 2 (m + m) <= Nat.pow 2 (formula_size phi))%nat).
+  { lia. }
+
+  (* Step 6: monotonicity of 2^x gives m+m ≤ formula_size phi, hence m ≤ formula_size phi *)
+  destruct (le_gt_dec m (formula_size phi)) as [Hle|Hlt]; [exact Hle|].
+  exfalso.
+  assert (Hfs : (formula_size phi < m + m)%nat) by lia.
+  assert (Hpow2 : (Nat.pow 2 (formula_size phi) < Nat.pow 2 (m + m))%nat).
+  { apply Nat.pow_lt_mono_r; lia. }
+  lia.
+Qed.
