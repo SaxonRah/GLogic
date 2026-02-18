@@ -1531,10 +1531,3 @@ Proof.
 Qed.
 
 
-Theorem eval_support_within_bound :
-  forall n sq e m,
-    supp (eval_expr sq e) m ->
-    supp_bound e m.
-Proof.
-Admitted.
-
