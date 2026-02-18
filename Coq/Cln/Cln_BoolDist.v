@@ -1026,3 +1026,53 @@ Proof.
     lia.
 Qed.
 
+Corollary parity_varcount_lower_bound :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (n > 0)%nat ->
+    eval_expr sq (translate phi) = embed (@XOR_n_func n) ->
+    (bf_varcount phi >= n)%nat.
+Proof.
+  intros n sq phi Hn Heq.
+  (* lower bound from parity *)
+  pose proof (@parity_excursion n sq (translate phi) Hn Heq) as Hlb.
+  (* upper bound from translation *)
+  pose proof (translate_excursion_upper n sq phi) as Hub.
+  lia.
+Qed.
+
+Corollary parity_varcount_lower_bound_semantic :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (n > 0)%nat ->
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = @XOR_n_func n ->
+    (bf_varcount phi >= n)%nat.
+Proof.
+  intros n sq phi Hn Hsq Hbool.
+
+  (* pointwise correctness of translation, specialized to XOR *)
+  pose proof (translate_correct n sq phi Hsq) as Heq_point.
+  rewrite Hbool in Heq_point.
+  (* Heq_point : forall m, eval_expr sq (translate phi) m == embed XOR m *)
+
+  (* lower bound on excursion via a high-grade nonzero coefficient *)
+  assert (Hexc : (max_grade_during sq (translate phi) >= n)%nat).
+  {
+    eapply (@excursion_lower_bound n sq (translate phi) (eval_expr sq (translate phi))).
+    - reflexivity.
+    - exists (Vector.const true n).
+      split.
+      + rewrite grade_full_mask. lia.
+      + (* show: ~(eval_expr ... fullmask == 0) *)
+        intro Hz.
+        (* transport Hz through Heq_point to contradict XOR_has_grade_n_component *)
+        apply (XOR_has_grade_n_component Hn).
+        eapply Qeq_trans.
+        * apply Qeq_sym. apply Heq_point.
+        * exact Hz.
+  }
+
+  (* upper bound from translation *)
+  pose proof (translate_excursion_upper n sq phi) as Hub.
+
+  lia.
+Qed.
