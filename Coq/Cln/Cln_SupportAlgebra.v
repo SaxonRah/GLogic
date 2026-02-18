@@ -678,25 +678,89 @@ Fixpoint formula_size {n} (phi : BoolFormula n) : nat :=
   | BNot p   => 1 + formula_size p
   end.
 
+Lemma formula_size_pos : forall n (phi : BoolFormula n),
+  (formula_size phi >= 1)%nat.
+Proof. intros n phi; destruct phi; simpl; lia. Qed.
+
+Lemma pow2_pos : forall k, (1 <= Nat.pow 2 k)%nat.
+Proof. induction k; simpl; lia. Qed.
+
+Lemma pow2_ge_2 : forall k, (k >= 1)%nat -> (2 <= Nat.pow 2 k)%nat.
+Proof.
+  intros [|k'] Hk; [lia|]. simpl. pose proof (pow2_pos k'). lia.
+Qed.
+
+
 Lemma support_size_bound_translate :
   forall n (phi : BoolFormula n),
     (support_size_bound (translate phi) <= Nat.pow 2 (formula_size phi))%nat.
 Proof.
-Admitted.
+  intros n phi.
+  induction phi as [i|[]|p IHp q IHq|p IHp q IHq|p IHp].
+  - (* BVar: Mul (Scalar _) (Add (Scalar _) (Basis _))
+       support_size_bound = 1 + 1 = 2, formula_size = 1, 2^1 = 2 *)
+    simpl. lia.
+  - (* BConst true: Scalar 1, bound = 1 ≤ 2 *)
+    simpl. lia.
+  - (* BConst false: Scalar 0, bound = 1 ≤ 2 *)
+    simpl. lia.
+  - (* BAnd p q: Conv (translate p) (translate q)
+       bound = ssb_p * ssb_q, need ≤ 2^(1 + sp + sq) *)
+    simpl support_size_bound. simpl formula_size.
+    (* ssb_p * ssb_q ≤ 2^sp * 2^sq = 2^(sp+sq) ≤ 2^(1+sp+sq) *)
+    transitivity (Nat.pow 2 (formula_size p) * Nat.pow 2 (formula_size q))%nat.
+    { apply Nat.mul_le_mono; assumption. }
+    rewrite <- Nat.pow_add_r.
+    apply Nat.pow_le_mono_r; lia.
+  - (* BOr p q: Add (Add tp tq) (Mul (Scalar -1) (Conv tp tq))
+       bound = (ssb_p + ssb_q) + ssb_p * ssb_q
+       need ≤ 2^(1 + sp + sq) = 2 * 2^sp * 2^sq *)
+    simpl support_size_bound. simpl formula_size.
+    pose proof (pow2_ge_2 (formula_size p) (formula_size_pos n p)).
+    pose proof (pow2_ge_2 (formula_size q) (formula_size_pos n q)).
+    (* Step 1: replace bounds via IH *)
+    transitivity
+      (Nat.pow 2 (formula_size p) + Nat.pow 2 (formula_size q)
+       + Nat.pow 2 (formula_size p) * Nat.pow 2 (formula_size q))%nat.
+    { assert (support_size_bound (translate p) * support_size_bound (translate q)
+              <= Nat.pow 2 (formula_size p) * Nat.pow 2 (formula_size q))%nat
+        by (apply Nat.mul_le_mono; lia).
+      lia. }
+    (* Step 2: a + b + a*b ≤ 2*a*b for a,b ≥ 2  
+       (because a + b ≤ a*b when a,b ≥ 2) *)
+    transitivity (2 * (Nat.pow 2 (formula_size p) * Nat.pow 2 (formula_size q)))%nat.
+    { nia. }
+    (* Step 3: 2 * 2^sp * 2^sq = 2^(1+sp+sq) *)
+    rewrite <- Nat.pow_add_r.
+    change (1 + formula_size p + formula_size q)%nat
+      with (S (formula_size p + formula_size q)).
+    simpl Nat.pow. lia.
+  - (* BNot p: Add (Scalar 1) (Mul (Scalar -1) (translate p))
+       bound = 1 + ssb_p, need ≤ 2^(1 + sp) = 2 * 2^sp *)
+    simpl support_size_bound. simpl formula_size.
+    pose proof (pow2_pos (formula_size p)).
+    (* 1 + ssb_p ≤ 1 + 2^sp ≤ 2^sp + 2^sp = 2 * 2^sp *)
+    change (1 + formula_size p)%nat with (S (formula_size p)).
+    simpl Nat.pow. lia.
+Qed.
 
 Corollary translate_support_size_bound :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
     (support_size (eval_expr sq (translate phi))
      <= Nat.pow 2 (formula_size phi))%nat.
 Proof.
-Admitted.
+  intros n sq phi.
+  eapply Nat.le_trans.
+  - apply eval_support_size_le.
+  - apply support_size_bound_translate.
+Qed.
 
         (* Lemma Block 5 *)
 
 (* Parity: exactly 1 nonzero coefficient (the pseudoscalar) *)
 Lemma support_size_XOR : forall n,
   (n > 0)%nat ->
-  support_size (embed (@XOR_n_func n)) = 1%nat.
+  support_size (embed (@XOR_n_func n)) = 2%nat.
 Proof.
 Admitted.
 
