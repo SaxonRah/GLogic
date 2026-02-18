@@ -1309,7 +1309,7 @@ Proof.
   apply Nat.le_refl.
 Qed.
 
-(* Eval compute in (support_size (embed (@XOR_n_func 3))).  == 2*)
+(* Eval compute in (support_size (embed (@XOR_n_func 3))).  == 2 *)
 
 Corollary support_size_embed_XOR :
   forall n,
@@ -1344,5 +1344,233 @@ Proof.
   intros n Hn.
   rewrite (support_size_XOR n Hn).
   lia.
+Qed.
+
+Corollary full_support_implies_size_ge_n :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool),
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    support_size (embed f) = Nat.pow 2 n ->
+    (formula_size phi >= n)%nat.
+Proof.
+  intros n sq phi f Hsq Heq Hfull.
+  apply (formula_size_full_support n sq phi f Hsq Heq Hfull).
+Qed.
+
+Fixpoint occurs_var {n} (i : Fin.t n) (phi : BoolFormula n) : Prop :=
+  match phi with
+  | BVar j     => i = j
+  | BConst _   => False
+  | BAnd p q   => occurs_var i p \/ occurs_var i q
+  | BOr  p q   => occurs_var i p \/ occurs_var i q
+  | BNot p     => occurs_var i p
+  end.
+
+Lemma length_filter_eq_Forall :
+  forall (A : Type) (p : A -> bool) (l : list A),
+    length (List.filter p l) = length l ->
+    List.Forall (fun x => p x = true) l.
+Proof.
+  intros A p l.
+  induction l as [|a l IH]; simpl; intro Hlen.
+  - constructor.
+  - destruct (p a) eqn:Ha.
+    + constructor.
+      * exact Ha.
+      * apply IH.
+        apply Nat.succ_inj.
+        exact Hlen.
+    + exfalso.
+      (* Here: p a = false, so filter (a::l) = filter l and Hlen becomes: length(filter p l) = S(length l) *)
+      simpl in Hlen.
+
+      (* Use the partition identity to get length(filter p l) <= length l *)
+      assert (Hpart :
+        (length (List.filter p l) +
+         length (List.filter (fun x => negb (p x)) l))%nat = length l).
+      { apply List.filter_length. }
+
+      (* Hence length(filter p l) <= length l *)
+      assert (Hle : (length (List.filter p l) <= length l)%nat).
+      { rewrite <- Hpart. apply Nat.le_add_r. }
+
+      lia.
+Qed.
+
+Lemma full_support_all_masks_nz :
+  forall n (F : MV n),
+    support_size F = Nat.pow 2 n ->
+    forall m, List.In m (all_masks n) ->
+      negb (Qeq_bool (F m) 0) = true.
+Proof.
+  intros n F Hfull m Hin.
+  unfold support_size in Hfull.
+  set (p := fun mm : Mask n => negb (Qeq_bool (F mm) 0)) in *.
+
+  assert (Hall_len : length (all_masks n) = Nat.pow 2 n).
+  { apply all_masks_length_pow2. }
+
+  assert (Hlen : length (List.filter p (all_masks n)) = length (all_masks n)).
+  { rewrite Hall_len; exact Hfull. }
+
+  pose proof (length_filter_eq_Forall (Mask n) p (all_masks n) Hlen) as Hfor.
+  (* Hfor : Forall (fun x => p x = true) (all_masks n) *)
+
+  (* Convert Forall into a pointwise fact using proj1 of the <-> lemma *)
+  pose proof (proj1 (List.Forall_forall (fun x : Mask n => p x = true) (all_masks n)) Hfor)
+    as Hall.
+
+  (* Now apply to m *)
+  unfold p in Hall.
+  exact (Hall m Hin).
+Qed.
+
+Lemma nz_bool_to_neq0 :
+  forall q : Q,
+    negb (Qeq_bool q 0) = true ->
+    ~ q == 0.
+Proof.
+  intros q Hnz Heq.
+  assert (Hb : Qeq_bool q 0 = true).
+  { apply Qeq_eq_bool. exact Heq. }
+  rewrite Hb in Hnz.
+  simpl in Hnz.
+  discriminate.
+Qed.
+
+Lemma full_support_all_nonzero :
+  forall n (F : MV n),
+    support_size F = Nat.pow 2 n ->
+    forall m, In m (all_masks n) -> ~(F m == 0).
+Proof.
+  intros n F Hfull m Hin Heq.
+  (* from full support, boolean-nonzero holds on all masks *)
+  pose proof (full_support_all_masks_nz n F Hfull m Hin) as Hnz_bool.
+  (* convert boolean-nonzero to Prop-nonzero *)
+  apply (nz_bool_to_neq0 (F m) Hnz_bool).
+  exact Heq.
+Qed.
+
+Lemma eval_bf_independent_if_not_occurs :
+  forall n (phi : BoolFormula n) i,
+    ~ occurs_var (n:=n) i phi ->
+    forall c1 c2 : Corner n,
+      (forall j, j <> i -> Vector.nth c1 j = Vector.nth c2 j) ->
+      eval_bf phi c1 = eval_bf phi c2.
+Proof.
+  intros n phi.
+  induction phi as [j|b|p IHp q IHq|p IHp q IHq|p IHp]; intros i Hno c1 c2 Hagree; simpl.
+  - (* BVar j *)
+    simpl in Hno.
+    assert (Hij : j <> i).
+    { intro Hji. apply Hno. subst. reflexivity. }
+    (* use Hagree at index j *)
+    specialize (Hagree j Hij).
+    (* eval_bf reads Vector.nth at j; rewrite it *)
+    rewrite Hagree. reflexivity.
+  - (* BConst *)
+    reflexivity.
+ - (* BAnd *)
+    simpl in Hno.
+    assert (Hno_p : ~ occurs_var i p).
+    { intro Hp. apply Hno. left. exact Hp. }
+    assert (Hno_q : ~ occurs_var i q).
+    { intro Hq. apply Hno. right. exact Hq. }
+    rewrite (IHp i Hno_p c1 c2 Hagree).
+    rewrite (IHq i Hno_q c1 c2 Hagree).
+    reflexivity.
+
+  - (* BOr *)
+    simpl in Hno.
+    assert (Hno_p : ~ occurs_var i p).
+    { intro Hp. apply Hno. left. exact Hp. }
+    assert (Hno_q : ~ occurs_var i q).
+    { intro Hq. apply Hno. right. exact Hq. }
+    rewrite (IHp i Hno_p c1 c2 Hagree).
+    rewrite (IHq i Hno_q c1 c2 Hagree).
+    reflexivity.
+
+  - (* BNot *)
+    simpl in Hno.
+    rewrite (IHp i Hno c1 c2 Hagree).
+    reflexivity.
+Qed.
+
+Corollary full_support_implies_reads_all :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool),
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    support_size (embed f) = Nat.pow 2 n ->
+    forall i, occurs_var i phi.
+Proof.
+Admitted.
+
+Theorem max_grade_of_full_support :
+  forall n (F : MV n),
+    support_size F = Nat.pow 2 n ->
+    max_grade F = n.
+Proof.
+  intros n F Hfull.
+
+  assert (Hnz_bool : negb (Qeq_bool (F (Vector.const true n)) 0) = true).
+  {
+    apply (full_support_all_masks_nz n F Hfull).
+    apply all_masks_complete.
+  }
+
+  assert (Hnz : ~ F (Vector.const true n) == 0).
+  { apply nz_bool_to_neq0. exact Hnz_bool. }
+
+  assert (Hge : (n <= max_grade F)%nat).
+  {
+    pose proof (max_grade_spec F (Vector.const true n) Hnz) as Hle.
+    rewrite grade_full_mask in Hle.
+    exact Hle.
+  }
+
+  pose proof (max_grade_le_n F) as Hle_n.
+  lia.
+Qed.
+
+Theorem full_support_implies_max_grade_n :
+  forall n (F : MV n),
+    support_size F = Nat.pow 2 n ->
+    max_grade F = n.
+Proof.
+  intros n F Hfull.
+  set (U := Vector.const true n).
+
+  (* boolean nonzero from full support *)
+  assert (HnzU_bool : negb (Qeq_bool (F U) 0) = true).
+  {
+    apply (full_support_all_masks_nz n F Hfull U).
+    apply all_masks_complete.
+  }
+
+  (* convert boolean nonzero to Prop nonzero *)
+  assert (HnzU : ~ F U == 0).
+  { apply nz_bool_to_neq0. exact HnzU_bool. }
+
+  (* grade(U)=n <= max_grade F *)
+  assert (Hge : (n <= max_grade F)%nat).
+  {
+    pose proof (max_grade_spec F U HnzU) as Hle.
+    rewrite grade_full_mask in Hle.
+    exact Hle.
+  }
+
+  (* always max_grade F <= n *)
+  pose proof (max_grade_le_n F) as Hle_n.
+  lia.
+Qed.
+
+Corollary support_or_max_grade :
+  forall n (F : MV n),
+    support_size F <> Nat.pow 2 n \/ max_grade F = n.
+Proof.
+  intros n F.
+  destruct (Nat.eq_dec (support_size F) (Nat.pow 2 n)) as [Heq|Hneq].
+  - right. apply full_support_implies_max_grade_n. exact Heq.
+  - left. exact Hneq.
 Qed.
 
