@@ -1157,3 +1157,192 @@ Proof.
   { apply Nat.pow_lt_mono_r; lia. }
   lia.
 Qed.
+
+Corollary IP_formula_size_lower_bound_tight :
+  forall m (sq : Vector.t Q (m + m)) (phi : BoolFormula (m + m)),
+    (m > 0)%nat ->
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = @IP_n_func (m + m) ->
+    (formula_size phi >= m + m)%nat.
+Proof.
+  intros m sq phi Hm Hsq Hbf.
+
+  (* Pointwise equality of the translated GA object with embed(IP) *)
+  assert (Hpt : forall mm : Mask (m + m),
+            eval_expr sq (translate phi) mm
+            == embed (@IP_n_func (m + m)) mm).
+  {
+    intro mm.
+    rewrite (translate_correct (m + m) sq phi Hsq mm).
+    rewrite Hbf.
+    apply Qeq_refl.
+  }
+
+  (* Hence equal support sizes *)
+  assert (Hss :
+    support_size (eval_expr sq (translate phi))
+    = support_size (embed (@IP_n_func (m + m)))).
+  { apply (support_size_ext (m + m) _ _ Hpt). }
+
+  (* Structural upper bound: support_size ≤ 2^(formula_size) *)
+  assert (Hub :
+    (support_size (eval_expr sq (translate phi))
+     <= Nat.pow 2 (formula_size phi))%nat).
+  { apply translate_support_size_bound. }
+
+  (* Fourier fact: IP has full support *)
+  assert (Hlb :
+    support_size (embed (@IP_n_func (m + m)))
+    = Nat.pow 2 (m + m)).
+  { apply support_size_IP; exact Hm. }
+
+  (* Chain them to get 2^(2m) ≤ 2^(formula_size phi) *)
+  assert (Hpowle : (Nat.pow 2 (m + m) <= Nat.pow 2 (formula_size phi))%nat).
+  {
+    (* Goal: 2^(m+m) <= 2^(size) *)
+    rewrite <- Hlb.          (* replace 2^(m+m) by support_size(embed IP) *)
+    rewrite <- Hss.          (* replace support_size(embed IP) by support_size(eval_expr ...) *)
+    exact Hub.
+  }
+
+  (* Monotonicity of pow base 2 gives (m+m) ≤ formula_size phi *)
+  destruct (le_gt_dec (m + m) (formula_size phi)) as [Hle | Hgt].
+  - exact Hle.
+  - exfalso.
+    assert (Hlt : (formula_size phi < m + m)%nat) by lia.
+    assert (Hpowlt : (Nat.pow 2 (formula_size phi) < Nat.pow 2 (m + m))%nat).
+    { apply Nat.pow_lt_mono_r; lia. }
+    lia.
+Qed.
+
+Lemma formula_size_lower_bound_from_support :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool),
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    (support_size (embed f) <= Nat.pow 2 (formula_size phi))%nat.
+Proof.
+  intros n sq phi f Hsq Heq.
+
+  (* Pointwise equality between eval_expr(translate phi) and embed f *)
+  assert (Hpt :
+    forall m : Mask n,
+      eval_expr sq (translate phi) m == embed f m).
+  {
+    intro m.
+    rewrite (translate_correct n sq phi Hsq m).
+    rewrite Heq.
+    apply Qeq_refl.
+  }
+
+  (* Equal support sizes by extensionality *)
+  assert (Hss :
+    support_size (eval_expr sq (translate phi))
+    = support_size (embed f)).
+  { apply (support_size_ext n _ _ Hpt). }
+
+  (* Structural upper bound on translated expressions *)
+  assert (Hub :
+    (support_size (eval_expr sq (translate phi))
+     <= Nat.pow 2 (formula_size phi))%nat).
+  { apply translate_support_size_bound. }
+
+  (* Finish by rewriting Hub using Hss *)
+  rewrite <- Hss.
+  exact Hub.
+Qed.
+
+Corollary formula_size_lower_bound_from_support_k :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool) k,
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    (k <= support_size (embed f))%nat ->
+    (k <= Nat.pow 2 (formula_size phi))%nat.
+Proof.
+  intros n sq phi f k Hsq Heq Hk.
+  eapply Nat.le_trans.
+  - exact Hk.
+  - apply (formula_size_lower_bound_from_support n sq phi f Hsq Heq).
+Qed.
+
+Corollary formula_size_lower_bound_from_support_pow2 :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool) t,
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    (Nat.pow 2 t <= support_size (embed f))%nat ->
+    (t <= formula_size phi)%nat.
+Proof.
+  intros n sq phi f t Hsq Heq Hpow.
+
+  assert (Hupper :
+    (support_size (embed f) <= Nat.pow 2 (formula_size phi))%nat).
+  { apply (formula_size_lower_bound_from_support n sq phi f Hsq Heq). }
+
+  assert (Hle :
+    (Nat.pow 2 t <= Nat.pow 2 (formula_size phi))%nat).
+  {
+    eapply Nat.le_trans.
+    - exact Hpow.
+    - exact Hupper.
+  }
+
+  destruct (le_gt_dec t (formula_size phi)) as [Hts | Hts].
+  - exact Hts.
+  - exfalso.
+    assert (Hlt : (formula_size phi < t)%nat) by lia.
+    assert (Hpowlt : (Nat.pow 2 (formula_size phi) < Nat.pow 2 t)%nat).
+    { apply Nat.pow_lt_mono_r; lia. }
+    lia.
+Qed.
+
+Corollary formula_size_full_support :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n) (f : Corner n -> bool),
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = f ->
+    support_size (embed f) = Nat.pow 2 n ->
+    (formula_size phi >= n)%nat.
+Proof.
+  intros n sq phi f Hsq Heq Hfull.
+  (* turn equality into the >= hypothesis needed by _pow2 *)
+  apply (formula_size_lower_bound_from_support_pow2
+           n sq phi f n Hsq Heq).
+  rewrite Hfull.
+  apply Nat.le_refl.
+Qed.
+
+(* Eval compute in (support_size (embed (@XOR_n_func 3))).  == 2*)
+
+Corollary support_size_embed_XOR :
+  forall n,
+    (n > 0)%nat ->
+    support_size (embed (@XOR_n_func n)) = 2%nat.
+Proof.
+  intros n Hn.
+  apply support_size_XOR; exact Hn.
+Qed.
+
+Corollary IP_formula_size_lower_bound_via_full_support :
+  forall m (sq : Vector.t Q (m + m)) (phi : BoolFormula (m + m)),
+    (m > 0)%nat ->
+    (forall i, Vector.nth sq i == 1) ->
+    eval_bf phi = @IP_n_func (m + m) ->
+    (formula_size phi >= m + m)%nat.
+Proof.
+  intros m sq phi Hm Hsq Heq.
+  (* Use the full-support corollary specialized to n := m+m and f := IP *)
+  eapply formula_size_full_support.
+  - exact Hsq.
+  - exact Heq.
+  - apply support_size_IP; exact Hm.
+Qed.
+
+
+Corollary XOR_support_size_small :
+  forall n,
+    (n > 0)%nat ->
+    (support_size (embed (@XOR_n_func n)) <= 2)%nat.
+Proof.
+  intros n Hn.
+  rewrite (support_size_XOR n Hn).
+  lia.
+Qed.
+
