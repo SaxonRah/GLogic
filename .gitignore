@@ -8,6 +8,3 @@ GeoAI/NNGeoPaticipatory/NNGeoPaticipatory6/best_model.pt
 *.vo
 *.glob
 *.aux
-*.aux
-*.glob
-*.vo
