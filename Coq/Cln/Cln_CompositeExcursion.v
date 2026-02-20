@@ -659,13 +659,69 @@ Proof.
   unfold mv_conv.
   rewrite (@mv_add_apply n (mv_conv F1 G) (mv_conv F2 G) U).
   set (MS := all_masks n).
+
   eapply Qeq_trans.
-  - apply sumQ_map_ext; intros A HA.
-    apply sumQ_map_ext; intros B HB.
-    unfold mv_add.
-    destruct (mask_eq_dec (mask_xor A B) U); ring.
-  - repeat (rewrite sumQ_map_add).
-    ring.
+  - (* pointwise: push mv_add inside the kernel *)
+    apply (sumQ_map_ext (A := Mask n)
+        (fun A =>
+           sumQ (map (fun B =>
+             if mask_eq_dec (mask_xor A B) U
+             then (F1 ⊕ F2) A * G B else 0) MS))
+        (fun A =>
+           sumQ (map (fun B =>
+             (if mask_eq_dec (mask_xor A B) U then F1 A * G B else 0) +
+             (if mask_eq_dec (mask_xor A B) U then F2 A * G B else 0)) MS))
+        MS).
+    intros A HA.
+
+  apply (sumQ_map_ext (A := Mask n)
+          (fun B =>
+             if mask_eq_dec (mask_xor A B) U
+             then (F1 A + F2 A) * G B else 0)
+          (fun B =>
+             (if mask_eq_dec (mask_xor A B) U then F1 A * G B else 0) +
+             (if mask_eq_dec (mask_xor A B) U then F2 A * G B else 0))
+          MS).
+  intros B HB.
+  destruct (mask_eq_dec (mask_xor A B) U); ring.
+
+  - (* now split sums: inner first (pointwise), then outer *)
+    set (inner1 := fun A : Mask n =>
+      sumQ (map (fun B0 : Mask n =>
+        if mask_eq_dec (mask_xor A B0) U then F1 A * G B0 else 0) MS)).
+    set (inner2 := fun A : Mask n =>
+      sumQ (map (fun B0 : Mask n =>
+        if mask_eq_dec (mask_xor A B0) U then F2 A * G B0 else 0) MS)).
+
+    eapply Qeq_trans.
+    + (* rewrite each A-summand using inner sumQ_map_add *)
+      apply (sumQ_map_ext (A := Mask n)
+              (fun A =>
+                 sumQ (map (fun B0 =>
+                   (if mask_eq_dec (mask_xor A B0) U then F1 A * G B0 else 0) +
+                   (if mask_eq_dec (mask_xor A B0) U then F2 A * G B0 else 0)) MS))
+              (fun A => (inner1 A + inner2 A)%Q)
+              MS).
+      intros A HA.
+      unfold inner1, inner2.
+      (* THIS is where sumQ_map_add applies: inside the B0-sum *)
+      apply (sumQ_map_add (A := Mask n)
+        (fun B0 =>
+           if mask_eq_dec (mask_xor A B0) U then F1 A * G B0 else 0)
+        (fun B0 =>
+           if mask_eq_dec (mask_xor A B0) U then F2 A * G B0 else 0)
+        MS).
+
+    + (* now split the outer sum over A *)
+      unfold inner1, inner2.
+      apply (sumQ_map_add (A := Mask n)
+              (fun A =>
+                 sumQ (map (fun B0 =>
+                   if mask_eq_dec (mask_xor A B0) U then F1 A * G B0 else 0) MS))
+              (fun A =>
+                 sumQ (map (fun B0 =>
+                   if mask_eq_dec (mask_xor A B0) U then F2 A * G B0 else 0) MS))
+              MS).
 Qed.
 
 Lemma mv_conv_add_r :
@@ -674,29 +730,72 @@ Lemma mv_conv_add_r :
 Proof.
   intros n F G1 G2 U.
   unfold mv_conv.
-  (* expand ⊕ in the argument of G *)
-  (* We’ll push the + through the finite sums *)
   rewrite (@mv_add_apply n (mv_conv F G1) (mv_conv F G2) U).
-  (* Now RHS is mv_conv F G1 U + mv_conv F G2 U *)
-  (* Show LHS equals that by distributing inside *)
   set (MS := all_masks n).
-  (* use ext and sumQ_map_add twice *)
-  (* outer sum over A *)
+
+  (* Expand the RHS mv_add at U, then split the double sum on the LHS *)
   eapply Qeq_trans.
-  - apply sumQ_map_ext; intros A HA.
-    (* inner sum over B *)
-    apply sumQ_map_ext; intros B HB.
-    (* inside: F A * (G1 B + G2 B) *)
-    unfold mv_add.
-    destruct (mask_eq_dec (mask_xor A B) U).
-    rewrite Qplus_assoc.
-    ring.
-  - (* now we have sum of terms; use sumQ_map_add to split B-sum, then A-sum *)
-    (* This part relies on sumQ_map_add in your library. *)
-    (* First split the B sum for each A, then split the A sum. *)
-    (* Concretely: sum_A sum_B (t1+t2) = sum_A (sum_B t1 + sum_B t2) = sum_A sum_B t1 + sum_A sum_B t2 *)
-    repeat (rewrite sumQ_map_add).
-    ring.
+  - (* pointwise: expand (G1 ⊕ G2) B0 inside the kernel *)
+    apply (sumQ_map_ext (A := Mask n)
+            (fun A : Mask n =>
+               sumQ (map (fun B0 : Mask n =>
+                 if mask_eq_dec (mask_xor A B0) U
+                 then F A * (G1 ⊕ G2) B0
+                 else 0) MS))
+            (fun A : Mask n =>
+               sumQ (map (fun B0 : Mask n =>
+                 (if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0) +
+                 (if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0)) MS))
+            MS).
+    intros A HA.
+    apply (sumQ_map_ext (A := Mask n)
+            (fun B0 : Mask n =>
+               if mask_eq_dec (mask_xor A B0) U
+               then F A * (G1 ⊕ G2) B0
+               else 0)
+            (fun B0 : Mask n =>
+               (if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0) +
+               (if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0))
+            MS).
+    intros B0 HB0.
+    unfold mv_add. (* so (G1 ⊕ G2) B0 becomes G1 B0 + G2 B0 *)
+    destruct (mask_eq_dec (mask_xor A B0) U); ring.
+
+  - (* now split sums: inner (over B0) first, then outer (over A) *)
+    set (inner1 := fun A : Mask n =>
+      sumQ (map (fun B0 : Mask n =>
+        if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0) MS)).
+    set (inner2 := fun A : Mask n =>
+      sumQ (map (fun B0 : Mask n =>
+        if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0) MS)).
+
+    eapply Qeq_trans.
+    + (* rewrite each A-summand using inner sumQ_map_add *)
+      apply (sumQ_map_ext (A := Mask n)
+              (fun A : Mask n =>
+                 sumQ (map (fun B0 : Mask n =>
+                   (if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0) +
+                   (if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0)) MS))
+              (fun A : Mask n => (inner1 A + inner2 A)%Q)
+              MS).
+      intros A HA.
+      unfold inner1, inner2.
+      apply (sumQ_map_add
+              (fun B0 : Mask n =>
+                 if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0)
+              (fun B0 : Mask n =>
+                 if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0)
+              MS).
+    + (* now split the outer sum over A *)
+      unfold inner1, inner2.
+      apply (sumQ_map_add
+              (fun A : Mask n =>
+                 sumQ (map (fun B0 : Mask n =>
+                   if mask_eq_dec (mask_xor A B0) U then F A * G1 B0 else 0) MS))
+              (fun A : Mask n =>
+                 sumQ (map (fun B0 : Mask n =>
+                   if mask_eq_dec (mask_xor A B0) U then F A * G2 B0 else 0) MS))
+              MS).
 Qed.
 
 Lemma conv_error_split :
@@ -707,79 +806,582 @@ Lemma conv_error_split :
 Proof.
   intros n F G eF eG U.
   unfold mv_sub.
-
-  (* Rewrite G as eG ⊕ (G-eG) and expand by right linearity *)
   assert (HGdecomp :
     mv_conv F G U == mv_conv F (eG ⊕ mv_sub G eG) U).
   {
-    (* pointwise: (eG ⊕ (G-eG)) m == G m, so conv results equal *)
     unfold mv_conv.
-    apply sumQ_map_ext; intros A HA.
-    apply sumQ_map_ext; intros B HB.
-    (* rewrite G B via mv_add_sub_cancel_r *)
-    rewrite <- (@mv_add_sub_cancel_r n G eG B).
-    reflexivity.
+    apply (sumQ_map_ext (A := Mask n)
+            (fun A =>
+               sumQ (map (fun B =>
+                 if mask_eq_dec (mask_xor A B) U then F A * G B else 0) (all_masks n)))
+            (fun A =>
+               sumQ (map (fun B =>
+                 if mask_eq_dec (mask_xor A B) U then F A * (eG ⊕ mv_sub G eG) B else 0) (all_masks n)))
+            (all_masks n)).
+    intros A HA.
+    apply (sumQ_map_ext (A := Mask n)
+            (fun B =>
+               if mask_eq_dec (mask_xor A B) U then F A * G B else 0)
+            (fun B =>
+               if mask_eq_dec (mask_xor A B) U then F A * (eG ⊕ mv_sub G eG) B else 0)
+            (all_masks n)).
+    intros B HB.
+    destruct (mask_eq_dec (mask_xor A B) U) as [HAB|HAB].
+    - unfold mv_add, mv_sub. ring.
+    - reflexivity.
   }
 
   rewrite HGdecomp.
-  rewrite (mv_conv_add_r (n:=n) (F:=F) (G1:=eG) (G2:=mv_sub G eG) (U:=U)).
-  (* Now: mv_conv F (eG ⊕ dG) = mv_conv F eG ⊕ mv_conv F dG *)
-
-  (* Rewrite F as eF ⊕ (F-eF) and expand by left linearity on the term mv_conv F eG *)
+  rewrite (@mv_conv_add_r n F eG (mv_sub G eG) U).
   assert (HFdecomp :
     mv_conv F eG U == mv_conv (eF ⊕ mv_sub F eF) eG U).
   {
     unfold mv_conv.
-    apply sumQ_map_ext; intros A HA.
-    apply sumQ_map_ext; intros B HB.
-    (* rewrite F A via mv_add_sub_cancel_r (but with roles swapped) *)
-    (* (eF ⊕ (F-eF)) A == F A *)
-    unfold mv_add, mv_sub.
-    ring.
+    apply (sumQ_map_ext (A := Mask n)); intros A HA.
+    apply (sumQ_map_ext (A := Mask n)); intros B HB.
+    destruct (mask_eq_dec (mask_xor A B) U) as [HAB|HAB].
+    - unfold mv_add, mv_sub. ring.
+    - reflexivity.
   }
 
-  rewrite HFdecomp.
-  rewrite (mv_conv_add_l (n:=n) (F1:=eF) (F2:=mv_sub F eF) (G:=eG) (U:=U)).
-  (* Now: mv_conv (eF ⊕ dF) eG = mv_conv eF eG ⊕ mv_conv dF eG *)
+  set (dF := mv_sub F eF).
+  set (dG := mv_sub G eG).
 
-  (* Put it all together: ( (eF*eG ⊕ dF*eG) ⊕ F*dG ) - (eF*eG) = F*dG ⊕ dF*eG *)
-  unfold mv_add.
+  rewrite (@mv_add_apply n (mv_conv F eG) (mv_conv F dG) U).
+  change (mv_conv F (fun m : Mask n => G m - eG m) ⊕ mv_conv (fun m : Mask n => F m - eF m) eG) with
+       (mv_conv F dG ⊕ mv_conv dF eG).
+
+  rewrite (@mv_add_apply n (mv_conv F dG) (mv_conv dF eG) U).
+  rewrite HFdecomp.
+
+  set (T := mv_conv (eF ⊕ mv_sub F eF) eG U).
+
+  assert (HT : T == (mv_conv eF eG ⊕ mv_conv dF eG) U).
+  {
+    unfold T.
+    fold dF.
+    exact (@mv_conv_add_l n eF dF eG U).
+  }
+
+  set (X := mv_conv F dG U).
+  set (Y := mv_conv eF eG U).
+  set (Z := mv_conv dF eG U).
+
+  assert (HT' : T == mv_conv eF eG U + mv_conv dF eG U).
+  { eapply Qeq_trans; [ exact HT | exact (@mv_add_apply n (mv_conv eF eG) (mv_conv dF eG) U) ]. }
+
+  rewrite HT'.
+  change (mv_conv eF eG U + mv_conv dF eG U + mv_conv F dG U - mv_conv eF eG U
+          == mv_conv F dG U + mv_conv dF eG U).
   ring.
 Qed.
 
-
 Lemma gp_error_bound_l1 :
   forall (n : nat) (sq : Vector.t Q n) (F G eF eG : MV n),
+    (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
     l1_norm (mv_sub (mv_gp sq F G) (mv_gp sq eF eG))
     <= l1_norm F * l1_norm (mv_sub G eG)
      + l1_norm (mv_sub F eF) * l1_norm eG.
 Proof.
-  intros n sq F G eF eG.
-
-  (* Step 1: rewrite the error MV using gp_error_split, inside l1_norm *)
+  intros n sq F G eF eG Hsq.
   eapply Qle_trans.
-  - (* equality step via l1_norm_ext *)
-    apply Qle_of_Qeq.
-    apply l1_norm_ext.
-    intro m.
-    (* gp_error_split gives pointwise equality of the mv_sub *)
+  - apply Qle_of_Qeq.
+    apply l1_norm_ext; intro m.
     apply (@gp_error_split n sq F G eF eG m).
-  - (* Step 2: triangle inequality *)
-    eapply Qle_trans.
+  - eapply Qle_trans.
     + apply l1_add_bound.
-    + (* Step 3: apply submultiplicativity to each term *)
-      (* You need your lemma names here. Replace the next two lines if names differ. *)
-
-      (* term1: l1_norm (mv_gp sq F (mv_sub G eG)) <= l1_norm F * l1_norm (mv_sub G eG) *)
-      (* term2: l1_norm (mv_gp sq (mv_sub F eF) eG) <= l1_norm (mv_sub F eF) * l1_norm eG *)
-
-      apply Qplus_le_compat.
-      * (* REPLACE THIS with your actual gp submult lemma name if needed *)
-        apply l1_gp_submultiplicative.
-      * (* REPLACE THIS with your actual gp submult lemma name if needed *)
-        apply l1_gp_submultiplicative.
+    + apply Qplus_le_compat.
+      * eapply l1_gp_submultiplicative.
+        exact Hsq.
+      * eapply l1_gp_submultiplicative.
+        exact Hsq.
 Qed.
 
+Lemma boolish_k_le_mono :
+  forall n (F : MV n) k1 k2 d,
+    (k1 <= k2)%nat ->
+    boolish_k_le F k1 d ->
+    boolish_k_le F k2 d.
+Proof.
+  intros n F k1 k2 d Hle [cs [gs [Hwf [Hlen Hd]]]].
+  exists cs, gs; repeat split; try assumption.
+  - lia.
+Qed.
+
+Definition poly1 (n : nat) (a c : nat) : nat :=
+  c * Nat.pow (n + 1) a.
+
+Definition poly_bound1 (f : nat -> nat) : Prop :=
+  exists a c,
+    forall n, (f n <= poly1 n a c)%nat.
+
+Definition poly_in_nat (s x : nat) (a b c : nat) : nat :=
+  c * (Nat.pow (s + 1) a) * (Nat.pow (x + 1) b).
+
+Definition poly_bound2 (P : nat -> nat -> nat) : Prop :=
+  exists (a b c : nat),
+    forall (s x : nat),
+      (P s x <= poly_in_nat s x a b c)%nat.
+
+Definition dominates_poly (f : nat -> nat) : Prop :=
+  forall a c,
+    exists N, forall n, (n >= N)%nat ->
+      (poly1 n a c < f n)%nat.
+
+Definition dominates_poly2 (F : nat -> nat -> nat) : Prop :=
+  forall a b c,
+    exists N, forall s x,
+      (s >= N)%nat ->
+      (poly_in_nat s x a b c < F s x)%nat.
+
+Definition superpoly (f : nat -> nat) : Prop := dominates_poly f.
+
+Definition exp_lb (f : nat -> nat) : Prop :=
+  exists c, forall n, (Nat.pow 2 (c*n) <= f n)%nat.
+
+
+(* ------------------------------------------------------------ *)
+(* Basic facts about pow / monotonicity                          *)
+(* ------------------------------------------------------------ *)
+Local Open Scope nat_scope.
+Local Close Scope Q_scope.
+
+Lemma pow_le_succ :
+  forall base e,
+    (1 <= base)%nat ->
+    (base ^ e <= base ^ (S e))%nat.
+Proof.
+  intros base e Hb.
+  (* exponent monotonicity *)
+  apply (Nat.pow_le_mono_r base e (S e)).
+  - lia.
+  - lia.
+Qed.
+
+Lemma pow_mono_exp :
+  forall base e1 e2,
+    (1 <= base)%nat ->
+    (e1 <= e2)%nat ->
+    (base ^ e1 <= base ^ e2)%nat.
+Proof.
+  intros base e1 e2 Hb He.
+  apply (Nat.pow_le_mono_r base e1 e2).
+  - (* base <> 0 *)
+    lia.
+  - exact He.
+Qed.
+
+Lemma pow_mono_base :
+  forall base1 base2 e,
+    (base1 <= base2)%nat ->
+    (Nat.pow base1 e <= Nat.pow base2 e)%nat.
+Proof.
+  intros base1 base2 e Hle.
+  (* In this Coq version: pow_le_mono_l is monotone in the base *)
+  apply (Nat.pow_le_mono_l base1 base2 e).
+  exact Hle.
+Qed.
+
+(* Useful corollaries for (s+1) and (x+1) bases *)
+Lemma pow_s_mono :
+  forall s1 s2 a,
+    (s1 <= s2)%nat ->
+    (Nat.pow (s1 + 1) a <= Nat.pow (s2 + 1) a)%nat.
+Proof.
+  intros s1 s2 a H.
+  apply pow_mono_base. lia.
+Qed.
+
+Lemma pow_x_mono :
+  forall x1 x2 b,
+    (x1 <= x2)%nat ->
+    (Nat.pow (x1 + 1) b <= Nat.pow (x2 + 1) b)%nat.
+Proof.
+  intros x1 x2 b H.
+  apply pow_mono_base. lia.
+Qed.
+
+(* ------------------------------------------------------------ *)
+(* Monotonicity of poly_in_nat                                   *)
+(* ------------------------------------------------------------ *)
+Lemma poly_in_nat_mono_a :
+  forall s x a1 a2 b c,
+    (a1 <= a2)%nat ->
+    poly_in_nat s x a1 b c <= poly_in_nat s x a2 b c.
+Proof.
+  intros s x a1 a2 b c Ha.
+  unfold poly_in_nat.
+
+  (* Put both sides into the form (c * (s+1)^a) * (x+1)^b *)
+  repeat rewrite Nat.mul_assoc.
+
+  (* multiply both sides on the right by the same factor preserves <= *)
+  apply Nat.mul_le_mono_r.
+
+  (* now goal: c * (s+1)^a1 <= c * (s+1)^a2 *)
+  apply Nat.mul_le_mono_l.
+
+  (* now goal: (s+1)^a1 <= (s+1)^a2 *)
+  apply pow_mono_exp; lia.
+Qed.
+
+Lemma poly_in_nat_mono_b :
+  forall s x a b1 b2 c,
+    (b1 <= b2)%nat ->
+    poly_in_nat s x a b1 c <= poly_in_nat s x a b2 c.
+Proof.
+  intros s x a b1 b2 c Hb.
+  unfold poly_in_nat.
+  (* force the shape (c*(s+1)^a) * (x+1)^b *)
+  repeat rewrite Nat.mul_assoc.
+  apply Nat.mul_le_mono_l.
+  apply pow_mono_exp; lia.
+Qed.
+
+Lemma poly_in_nat_mono_s :
+  forall s1 s2 x a b c,
+    (s1 <= s2)%nat ->
+    poly_in_nat s1 x a b c <= poly_in_nat s2 x a b c.
+Proof.
+  intros s1 s2 x a b c Hs.
+  unfold poly_in_nat.
+  (* regroup as (c * (s+1)^a) * (x+1)^b *)
+  repeat rewrite Nat.mul_assoc.
+  apply Nat.mul_le_mono_r.
+  (* now prove: c * (s1+1)^a <= c * (s2+1)^a *)
+  apply Nat.mul_le_mono_l.
+  apply pow_mono_base.
+  lia.
+Qed.
+
+Lemma poly_in_nat_mono_x :
+  forall s x1 x2 a b c,
+    (x1 <= x2)%nat ->
+    poly_in_nat s x1 a b c <= poly_in_nat s x2 a b c.
+Proof.
+  intros s x1 x2 a b c Hx.
+  unfold poly_in_nat.
+  (* c * (s+1)^a is a common left factor *)
+  apply Nat.mul_le_mono_l.
+  (* now prove: (x1+1)^b <= (x2+1)^b *)
+  apply pow_mono_base.
+  lia.
+Qed.
+
+(* A handy “upgrade exponents to max” lemma *)
+Lemma poly_in_nat_le_with_max :
+  forall s x a a' b b' c,
+    poly_in_nat s x a b c
+    <= poly_in_nat s x (Nat.max a a') (Nat.max b b') c.
+Proof.
+  intros s x a a' b b' c.
+  eapply Nat.le_trans.
+  - (* raise a to max a a' *)
+    eapply poly_in_nat_mono_a.
+    apply Nat.le_max_l.
+  - (* raise b to max b b' *)
+    eapply poly_in_nat_mono_b.
+    apply Nat.le_max_l.
+Qed.
+
+(* ------------------------------------------------------------ *)
+(* Algebraic closure at the envelope level                       *)
+(* ------------------------------------------------------------ *)
+
+(* Exact multiplicativity: envelope * envelope = envelope with added exponents *)
+Lemma poly_in_nat_mul_exact :
+  forall s x a1 b1 c1 a2 b2 c2,
+    poly_in_nat s x a1 b1 c1 * poly_in_nat s x a2 b2 c2
+    =
+    poly_in_nat s x (a1 + a2) (b1 + b2) (c1 * c2).
+Proof.
+  intros s x a1 b1 c1 a2 b2 c2.
+  unfold poly_in_nat.
+  (* pow_add_r: base^(m+n) = base^m * base^n *)
+  rewrite Nat.pow_add_r.
+  rewrite Nat.pow_add_r.
+  nia.
+Qed.
+
+(* Additive closure (loose but clean): use max exponents and add constants *)
+Lemma poly_in_nat_add_const_le :
+  forall s x a b c1 c2,
+    poly_in_nat s x a b c1 + poly_in_nat s x a b c2
+    <= poly_in_nat s x a b (c1 + c2).
+Proof.
+  intros s x a b c1 c2.
+  unfold poly_in_nat.
+  nia.
+Qed.
+
+Lemma poly_in_nat_add_le :
+  forall s x a1 b1 c1 a2 b2 c2,
+    poly_in_nat s x a1 b1 c1 + poly_in_nat s x a2 b2 c2
+    <= poly_in_nat s x (Nat.max a1 a2) (Nat.max b1 b2) (c1 + c2).
+Proof.
+  intros s x a1 b1 c1 a2 b2 c2.
+  set (A := Nat.max a1 a2).
+  set (B := Nat.max b1 b2).
+
+  eapply Nat.le_trans
+    with (m := poly_in_nat s x A B c1 + poly_in_nat s x A B c2).
+  - (* bound each summand up to (A,B) *)
+    apply Nat.add_le_mono.
+    + eapply Nat.le_trans.
+      * eapply poly_in_nat_mono_a. apply Nat.le_max_l.
+      * eapply poly_in_nat_mono_b. apply Nat.le_max_l.
+    + eapply Nat.le_trans.
+      * eapply poly_in_nat_mono_a. apply Nat.le_max_r.
+      * eapply poly_in_nat_mono_b. apply Nat.le_max_r.
+  - (* combine constants *)
+    apply poly_in_nat_add_const_le.
+Qed.
+
+(* Scaling constant closure: c0 * poly <= poly with constant multiplied *)
+Lemma poly_in_nat_scale :
+  forall s x a b c c0,
+    c0 * poly_in_nat s x a b c
+    = poly_in_nat s x a b (c0 * c).
+Proof.
+  intros s x a b c c0.
+  unfold poly_in_nat.
+  nia.
+Qed.
+
+(* ------------------------------------------------------------ *)
+(* Closure lemmas for poly_bound2                                *)
+(* ------------------------------------------------------------ *)
+
+Definition P_add (P Q : nat -> nat -> nat) : nat -> nat -> nat :=
+  fun s x => P s x + Q s x.
+
+Definition P_mul (P Q : nat -> nat -> nat) : nat -> nat -> nat :=
+  fun s x => P s x * Q s x.
+
+Definition P_scale (c0 : nat) (P : nat -> nat -> nat) : nat -> nat -> nat :=
+  fun s x => c0 * P s x.
+
+Lemma poly_bound2_mono :
+  forall P Q,
+    (forall s x, (P s x <= Q s x)%nat) ->
+    poly_bound2 Q ->
+    poly_bound2 P.
+Proof.
+  intros P Q Hle [a [b [c HQ]]].
+  exists a, b, c. intros s x.
+  eapply Nat.le_trans; [apply Hle | apply HQ].
+Qed.
+
+Lemma poly_bound2_add :
+  forall P Q,
+    poly_bound2 P ->
+    poly_bound2 Q ->
+    poly_bound2 (P_add P Q).
+Proof.
+  intros P Q [a1 [b1 [c1 HP]]] [a2 [b2 [c2 HQ]]].
+  exists (Nat.max a1 a2), (Nat.max b1 b2), (c1 + c2).
+  intros s x.
+  unfold P_add.
+  eapply Nat.le_trans.
+  - apply Nat.add_le_mono; [apply HP | apply HQ].
+  - apply poly_in_nat_add_le.
+Qed.
+
+Lemma poly_bound2_mul :
+  forall P Q,
+    poly_bound2 P ->
+    poly_bound2 Q ->
+    poly_bound2 (P_mul P Q).
+Proof.
+  intros P Q [a1 [b1 [c1 HP]]] [a2 [b2 [c2 HQ]]].
+  exists (a1 + a2), (b1 + b2), (c1 * c2).
+  intros s x.
+  unfold P_mul.
+  eapply Nat.le_trans.
+  - apply Nat.mul_le_mono; [apply HP | apply HQ].
+  - rewrite <- poly_in_nat_mul_exact.
+    apply Nat.le_refl.
+Qed.
+
+Lemma poly_bound2_scale :
+  forall c0 P,
+    poly_bound2 P ->
+    poly_bound2 (P_scale c0 P).
+Proof.
+  intros c0 P [a [b [c HP]]].
+  exists a, b, (c0 * c).
+  intros s x.
+  unfold P_scale.
+  eapply Nat.le_trans.
+  - apply Nat.mul_le_mono_l. apply HP.
+  - rewrite <- poly_in_nat_scale.
+    apply Nat.le_refl.
+Qed.
+
+Lemma l1_conv_submultiplicative :
+  forall n (F G : MV n),
+    (l1_norm (mv_conv F G) <= l1_norm F * l1_norm G)%Q.
+Proof.
+  intros n F G.
+  exact (@l1_conv_bound n F G).
+Qed.
+
+Definition and_gen {n} (g1 g2 : Corner n -> bool) : Corner n -> bool :=
+  fun x => andb (g1 x) (g2 x).
+
+Definition and_gens {n}
+  (gs1 gs2 : list (Corner n -> bool)) : list (Corner n -> bool) :=
+  concat (map (fun g1 => map (and_gen g1) gs2) gs1).
+  
+Definition mul_coeffs (cs1 cs2 : list Q) : list Q :=
+  concat (map (fun c1 => map (fun c2 => (c1 * c2)%Q) cs2) cs1).
+
+Lemma lincomb_embed_conv {n : nat} :
+  forall (cs1 cs2 : list Q)
+         (gs1 gs2 : list (Corner n -> bool)),
+    mv_conv (lincomb_embed cs1 gs1) (lincomb_embed cs2 gs2)
+    =
+    lincomb_embed (mul_coeffs cs1 cs2) (and_gens gs1 gs2).
+Proof.
+Admitted.
+
+Lemma boolish_k_le_conv :
+  forall n (F G : MV n) k1 k2 d1 d2,
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (mv_conv F G) (k1 * k2)
+      (d1 * l1_norm G + l1_norm F * d2 + d1 * d2).
+Proof.
+  intros n F G k1 k2 d1 d2
+         [csF [gsF [HwfF [HlenF HdF]]]]
+         [csG [gsG [HwfG [HlenG HdG]]]].
+
+  set (F0 := lincomb_embed csF gsF).
+  set (G0 := lincomb_embed csG gsG).
+
+  (* Witness: product lincomb *)
+  exists (mul_coeffs csF csG), (and_gens gsF gsG).
+  repeat split.
+  - (* wf_lincomb for the new witness *)
+    (* You need: wf_lincomb_mul / wf_lincomb_and_gens *)
+    admit.
+  - (* length bound: |csF|*|csG| <= k1*k2 *)
+    (* If mul_coeffs is cartesian product, length is length csF * length csG. *)
+    (* Use HlenF, HlenG and Nat.mul_le_mono / lia. *)
+    admit.
+  - (* error bound *)
+    (* We bound: ||F*G - F0*G0||_1 *)
+    (* Add/subtract: F0*G and F0*G0 *)
+    eapply Qle_trans.
+    2: {
+      (* final algebra to match stated RHS *)
+      admit.
+    }
+
+    (* Step 1: triangle split *)
+    (* ||F*G - F0*G0|| <= ||F*G - F0*G|| + ||F0*G - F0*G0|| *)
+    admit.
+
+    (* Step 2: first term = ||(F-F0)*G||, bound by d1 * ||G|| *)
+    (* use l1_conv_submultiplicative and HdF *)
+
+    (* Step 3: second term = ||F0*(G-G0)||, bound by ||F0|| * d2 *)
+    (* use l1_conv_submultiplicative and HdG *)
+
+    (* Step 4: replace ||F0|| by ||F|| + d1 to get:
+         (||F|| + d1)*d2 = ||F||*d2 + d1*d2
+       using triangle: ||F0|| <= ||F|| + ||F-F0|| <= ||F|| + d1 *)
+ 
+
+    (* Step 5: use lincomb_embed_conv to identify mv_conv F0 G0 with witness lincomb *)
+
+Admitted.
+
+Lemma lincomb_embed_gp :
+  forall (n : nat) (sq : Vector.t Q n)
+         (csF csG : list Q)
+         (gsF gsG : list (Corner n -> bool))
+         (U : Mask n),
+    @mv_gp n sq (lincomb_embed csF gsF) (lincomb_embed csG gsG) U
+    =
+    lincomb_embed (mul_coeffs csF csG) (and_gens gsF gsG) U.
+Proof.
+Admitted.
+
+Lemma boolish_k_le_gp :
+  forall n (sq : Vector.t Q n) (F G eF eG : MV n) k1 k2 d1 d2,
+    (forall i : Fin.t n, Qabs (Vector.nth sq i) = 1%Q) ->
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (mv_gp sq F G) (k1 * k2)
+      (d1 * l1_norm G + l1_norm F * d2 + d1*d2).
+Proof.
+Admitted.
+
+Lemma trace_boolish_le_implies_small_k :
+  exists P : nat -> nat -> nat,
+  forall n (sq : Vector.t Q n) (e : GA_expr n) (d : Q),
+    trace_boolish_le sq e d ->
+    exists k,
+      trace_boolish_k_le sq e k d /\
+      (k <= P (expr_size e)
+              (Z.to_nat (Qnum (exc_l1 (exc_of sq e)))))%nat.
+Proof.
+Admitted.
+
+Lemma trace_boolish_le_to_k :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) (d : Q),
+    trace_boolish_le sq e d ->
+    exists k,
+      trace_boolish_k_le sq e k d
+      /\ (* k bounded by a function of exc_l1 (exc_of sq e) *) True.
+Proof.
+Admitted.
+
+Lemma trace_k_bound_by_size :
+  forall (n : nat) (sq : Vector.t Q n) (e : GA_expr n) (d : Q) (k : nat),
+    trace_boolish_k_le sq e k d ->
+    exists a b c,
+      k <= poly_in_nat (expr_size e)
+                       (Z.to_nat (Qnum (exc_l1 (exc_of sq e))))
+                       a b c.
+Proof.
+Admitted.
+
+Fixpoint trace_boolish_global_le {n}
+  (sq : Vector.t Q n) (e : GA_expr n)
+  (gs : list (Corner n -> bool)) (d : Q) : Prop :=
+  match e with
+  | Basis _ | Scalar _ =>
+      exists cs, wf_lincomb cs gs /\
+        (l1_norm (mv_sub (eval_expr sq e) (lincomb_embed cs gs)) <= d)%Q
+
+  | Cln_Grade.Add e1 e2 =>
+      trace_boolish_global_le sq e1 gs d /\
+      trace_boolish_global_le sq e2 gs d /\
+      exists cs, wf_lincomb cs gs /\
+        (l1_norm (mv_sub (eval_expr sq (Cln_Grade.Add e1 e2)) (lincomb_embed cs gs)) <= d)%Q
+
+  | Mul e1 e2 =>
+      trace_boolish_global_le sq e1 gs d /\
+      trace_boolish_global_le sq e2 gs d /\
+      exists cs, wf_lincomb cs gs /\
+        (l1_norm (mv_sub (eval_expr sq (Mul e1 e2)) (lincomb_embed cs gs)) <= d)%Q
+
+  | Conv e1 e2 =>
+      trace_boolish_global_le sq e1 gs d /\
+      trace_boolish_global_le sq e2 gs d /\
+      exists cs, wf_lincomb cs gs /\
+        (l1_norm (mv_sub (eval_expr sq (Conv e1 e2)) (lincomb_embed cs gs)) <= d)%Q
+  end.
+
+Lemma trace_boolish_k_le_of_global {n : nat} :
+  forall (sq : Vector.t Q n) (e : GA_expr n)
+         (gs : list (Corner n -> bool)) (d : Q),
+    trace_boolish_global_le sq e gs d ->
+    exists k : nat, trace_boolish_k_le sq e k d.
+Proof.
+Admitted.
 
 Theorem hard_family_separates :
   forall d : Q,
@@ -788,7 +1390,7 @@ Theorem hard_family_separates :
     forall n (sq : Vector.t Q n) (e : GA_expr n),
       computes sq e (f n) ->
       trace_boolish_le sq e d ->
-      Qpow2 (c * n) <= exc_l1 (exc_of sq e).
+      (Qpow2 (c * n) <= exc_l1 (exc_of sq e))%Q.
 Proof.
 Admitted.
 
