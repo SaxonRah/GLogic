@@ -567,7 +567,8 @@ Qed.
 
 Definition Qpow2 (k : nat) : Q := inject_Z (Z.pow 2 (Z.of_nat k)).
 
-Fixpoint trace_boolish_k_le {n} (sq : Vector.t Q n) (e : GA_expr n) (k : nat) (d : Q) : Prop :=
+Fixpoint trace_boolish_k_le {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (k : nat) (d : Q) : Prop :=
   match e with
   | Basis _ | Scalar _ => boolish_k_le (eval_expr sq e) k d
   | Cln_Grade.Add e1 e2 =>
@@ -583,6 +584,202 @@ Fixpoint trace_boolish_k_le {n} (sq : Vector.t Q n) (e : GA_expr n) (k : nat) (d
       trace_boolish_k_le sq e2 k d /\
       boolish_k_le (mv_conv (eval_expr sq e1) (eval_expr sq e2)) k d
   end.
+
+(* subexpression lemmas: Add *)
+Lemma trace_boolish_k_le_sub_left_Add :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Cln_Grade.Add e1 e2) k d ->
+    trace_boolish_k_le sq e1 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_sub_right_Add :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Cln_Grade.Add e1 e2) k d ->
+    trace_boolish_k_le sq e2 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_node_Add :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Cln_Grade.Add e1 e2) k d ->
+    boolish_k_le (eval_expr sq (Cln_Grade.Add e1 e2)) k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+(* subexpression lemmas: Mul *)
+Lemma trace_boolish_k_le_sub_left_Mul :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Mul e1 e2) k d ->
+    trace_boolish_k_le sq e1 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_sub_right_Mul :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Mul e1 e2) k d ->
+    trace_boolish_k_le sq e2 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_node_Mul :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Mul e1 e2) k d ->
+    boolish_k_le (mv_gp sq (eval_expr sq e1) (eval_expr sq e2)) k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+(* subexpression lemmas: Conv *)
+Lemma trace_boolish_k_le_sub_left_Conv :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Conv e1 e2) k d ->
+    trace_boolish_k_le sq e1 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_sub_right_Conv :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Conv e1 e2) k d ->
+    trace_boolish_k_le sq e2 k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma trace_boolish_k_le_node_Conv :
+  forall n (sq : Vector.t Q n) (k : nat) (d : Q) (e1 e2 : GA_expr n),
+    trace_boolish_k_le sq (Conv e1 e2) k d ->
+    boolish_k_le (mv_conv (eval_expr sq e1) (eval_expr sq e2)) k d.
+Proof. intros; simpl in *; tauto. Qed.
+
+Lemma mv_add_sub_cancel_r :
+  forall n (G eG : MV n) (m : Mask n),
+    (eG ⊕ mv_sub G eG) m == G m.
+Proof.
+  intros n G eG m.
+  unfold mv_add, mv_sub.
+  ring.
+Qed.
+
+Lemma mv_conv_add_l :
+  forall n (F1 F2 G : MV n) (U : Mask n),
+    mv_conv (F1 ⊕ F2) G U == (mv_conv F1 G ⊕ mv_conv F2 G) U.
+Proof.
+  intros n F1 F2 G U.
+  unfold mv_conv.
+  rewrite (@mv_add_apply n (mv_conv F1 G) (mv_conv F2 G) U).
+  set (MS := all_masks n).
+  eapply Qeq_trans.
+  - apply sumQ_map_ext; intros A HA.
+    apply sumQ_map_ext; intros B HB.
+    unfold mv_add.
+    destruct (mask_eq_dec (mask_xor A B) U); ring.
+  - repeat (rewrite sumQ_map_add).
+    ring.
+Qed.
+
+Lemma mv_conv_add_r :
+  forall n (F G1 G2 : MV n) (U : Mask n),
+    mv_conv F (G1 ⊕ G2) U == (mv_conv F G1 ⊕ mv_conv F G2) U.
+Proof.
+  intros n F G1 G2 U.
+  unfold mv_conv.
+  (* expand ⊕ in the argument of G *)
+  (* We’ll push the + through the finite sums *)
+  rewrite (@mv_add_apply n (mv_conv F G1) (mv_conv F G2) U).
+  (* Now RHS is mv_conv F G1 U + mv_conv F G2 U *)
+  (* Show LHS equals that by distributing inside *)
+  set (MS := all_masks n).
+  (* use ext and sumQ_map_add twice *)
+  (* outer sum over A *)
+  eapply Qeq_trans.
+  - apply sumQ_map_ext; intros A HA.
+    (* inner sum over B *)
+    apply sumQ_map_ext; intros B HB.
+    (* inside: F A * (G1 B + G2 B) *)
+    unfold mv_add.
+    destruct (mask_eq_dec (mask_xor A B) U).
+    rewrite Qplus_assoc.
+    ring.
+  - (* now we have sum of terms; use sumQ_map_add to split B-sum, then A-sum *)
+    (* This part relies on sumQ_map_add in your library. *)
+    (* First split the B sum for each A, then split the A sum. *)
+    (* Concretely: sum_A sum_B (t1+t2) = sum_A (sum_B t1 + sum_B t2) = sum_A sum_B t1 + sum_A sum_B t2 *)
+    repeat (rewrite sumQ_map_add).
+    ring.
+Qed.
+
+Lemma conv_error_split :
+  forall (n : nat) (F G eF eG : MV n) (U : Mask n),
+    mv_sub (mv_conv F G) (mv_conv eF eG) U
+    ==
+    (mv_conv F (mv_sub G eG) ⊕ mv_conv (mv_sub F eF) eG) U.
+Proof.
+  intros n F G eF eG U.
+  unfold mv_sub.
+
+  (* Rewrite G as eG ⊕ (G-eG) and expand by right linearity *)
+  assert (HGdecomp :
+    mv_conv F G U == mv_conv F (eG ⊕ mv_sub G eG) U).
+  {
+    (* pointwise: (eG ⊕ (G-eG)) m == G m, so conv results equal *)
+    unfold mv_conv.
+    apply sumQ_map_ext; intros A HA.
+    apply sumQ_map_ext; intros B HB.
+    (* rewrite G B via mv_add_sub_cancel_r *)
+    rewrite <- (@mv_add_sub_cancel_r n G eG B).
+    reflexivity.
+  }
+
+  rewrite HGdecomp.
+  rewrite (mv_conv_add_r (n:=n) (F:=F) (G1:=eG) (G2:=mv_sub G eG) (U:=U)).
+  (* Now: mv_conv F (eG ⊕ dG) = mv_conv F eG ⊕ mv_conv F dG *)
+
+  (* Rewrite F as eF ⊕ (F-eF) and expand by left linearity on the term mv_conv F eG *)
+  assert (HFdecomp :
+    mv_conv F eG U == mv_conv (eF ⊕ mv_sub F eF) eG U).
+  {
+    unfold mv_conv.
+    apply sumQ_map_ext; intros A HA.
+    apply sumQ_map_ext; intros B HB.
+    (* rewrite F A via mv_add_sub_cancel_r (but with roles swapped) *)
+    (* (eF ⊕ (F-eF)) A == F A *)
+    unfold mv_add, mv_sub.
+    ring.
+  }
+
+  rewrite HFdecomp.
+  rewrite (mv_conv_add_l (n:=n) (F1:=eF) (F2:=mv_sub F eF) (G:=eG) (U:=U)).
+  (* Now: mv_conv (eF ⊕ dF) eG = mv_conv eF eG ⊕ mv_conv dF eG *)
+
+  (* Put it all together: ( (eF*eG ⊕ dF*eG) ⊕ F*dG ) - (eF*eG) = F*dG ⊕ dF*eG *)
+  unfold mv_add.
+  ring.
+Qed.
+
+
+Lemma gp_error_bound_l1 :
+  forall (n : nat) (sq : Vector.t Q n) (F G eF eG : MV n),
+    l1_norm (mv_sub (mv_gp sq F G) (mv_gp sq eF eG))
+    <= l1_norm F * l1_norm (mv_sub G eG)
+     + l1_norm (mv_sub F eF) * l1_norm eG.
+Proof.
+  intros n sq F G eF eG.
+
+  (* Step 1: rewrite the error MV using gp_error_split, inside l1_norm *)
+  eapply Qle_trans.
+  - (* equality step via l1_norm_ext *)
+    apply Qle_of_Qeq.
+    apply l1_norm_ext.
+    intro m.
+    (* gp_error_split gives pointwise equality of the mv_sub *)
+    apply (@gp_error_split n sq F G eF eG m).
+  - (* Step 2: triangle inequality *)
+    eapply Qle_trans.
+    + apply l1_add_bound.
+    + (* Step 3: apply submultiplicativity to each term *)
+      (* You need your lemma names here. Replace the next two lines if names differ. *)
+
+      (* term1: l1_norm (mv_gp sq F (mv_sub G eG)) <= l1_norm F * l1_norm (mv_sub G eG) *)
+      (* term2: l1_norm (mv_gp sq (mv_sub F eF) eG) <= l1_norm (mv_sub F eF) * l1_norm eG *)
+
+      apply Qplus_le_compat.
+      * (* REPLACE THIS with your actual gp submult lemma name if needed *)
+        apply l1_gp_submultiplicative.
+      * (* REPLACE THIS with your actual gp submult lemma name if needed *)
+        apply l1_gp_submultiplicative.
+Qed.
+
 
 Theorem hard_family_separates :
   forall d : Q,
