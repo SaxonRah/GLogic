@@ -441,14 +441,6 @@ Definition boolish_k_le {n} (F : MV n) (k : nat) (d : Q) : Prop :=
     (length gs <= k)%nat /\
     l1_norm (mv_sub F (lincomb_embed cs gs)) <= d.
 
-Lemma boolish_k_le_add :
-  forall n (F G : MV n) k1 k2 d1 d2,
-    boolish_k_le F k1 d1 ->
-    boolish_k_le G k2 d2 ->
-    boolish_k_le (mv_add F G) (k1 + k2) (d1 + d2).
-Proof.
-Admitted.
-
 Theorem all_easy_are_easy_under :
   forall (C : EasyCompiler) n (sq : Vector.t Q n) (f : Corner n -> bool),
     easy C (n:=n) f ->
@@ -479,10 +471,8 @@ Proof.
   -
     destruct gs1 as [|g gs1]; simpl in *.
     + unfold mv_add, mv_zero; ring.
-    +
-      discriminate.
-  -
-    destruct gs1 as [|g gs1]; simpl in *.
+    + discriminate.
+  - destruct gs1 as [|g gs1]; simpl in *.
     + discriminate.
     +
       specialize (IH gs1).
@@ -496,12 +486,112 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma wf_lincomb_app :
+  forall n (cs1 cs2 : list Q) (gs1 gs2 : list (Corner n -> bool)),
+    wf_lincomb cs1 gs1 ->
+    wf_lincomb cs2 gs2 ->
+    wf_lincomb (cs1 ++ cs2) (gs1 ++ gs2).
+Proof.
+  intros n cs1 cs2 gs1 gs2 H1 H2.
+  unfold wf_lincomb in *.
+  now rewrite length_app, length_app, H1, H2.
+Qed.
+
+Lemma mv_sub_add_split_general :
+  forall n (F1 F2 G1 G2 : MV n) (m : Mask n),
+    mv_sub (F1 ⊕ F2) (G1 ⊕ G2) m == (mv_sub F1 G1 ⊕ mv_sub F2 G2) m.
+Proof.
+  intros n F1 F2 G1 G2 m.
+  unfold mv_sub.
+  (* expand ⊕ at m *)
+  rewrite (@mv_add_apply n F1 F2 m).
+  rewrite (@mv_add_apply n G1 G2 m).
+  rewrite (@mv_add_apply n (mv_sub F1 G1) (mv_sub F2 G2) m).
+  unfold mv_sub.
+  ring.
+Qed.
+
+Lemma boolish_k_le_add :
+  forall n (F G : MV n) k1 k2 d1 d2,
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (F ⊕ G) (k1 + k2) (d1 + d2).
+Proof.
+  intros n F G k1 k2 d1 d2 HF HG.
+  destruct HF as [csF [gsF [HwfF [HlenF HdistF]]]].
+  destruct HG as [csG [gsG [HwfG [HlenG HdistG]]]].
+
+  unfold boolish_k_le.
+  exists (csF ++ csG), (gsF ++ gsG).
+  repeat split.
+  - (* wf *)
+    apply (wf_lincomb_app (n:=n)); assumption.
+  - (* length bound *)
+    rewrite length_app; lia.
+  - (* distance bound *)
+    set (AF := lincomb_embed csF gsF).
+    set (AG := lincomb_embed csG gsG).
+    assert (Hlin_app :
+      forall m : Mask n,
+        lincomb_embed (csF ++ csG) (gsF ++ gsG) m == (AF ⊕ AG) m).
+    {
+      intro m. unfold AF, AG.
+      apply lincomb_embed_app; assumption.
+    }
+    assert (Hnorm_rewrite :
+      l1_norm (mv_sub (F ⊕ G) (lincomb_embed (csF ++ csG) (gsF ++ gsG)))
+      == l1_norm (mv_sub (F ⊕ G) (AF ⊕ AG))).
+    {
+      apply l1_norm_ext.
+      intro m.
+      unfold mv_sub.
+      rewrite (Hlin_app m).
+      reflexivity.
+    }
+    eapply Qle_trans.
+    + apply Qle_of_Qeq. exact Hnorm_rewrite.
+    + eapply Qle_trans.
+      * 
+        eapply Qle_trans.
+        -- (* rewrite inside l1_norm *)
+           apply (Qle_of_Qeq).
+           apply l1_norm_ext.
+           intro m.
+           apply mv_sub_add_split_general.
+        -- (* triangle inequality *)
+           apply l1_add_bound.
+      * 
+        unfold AF, AG in *.
+        apply Qplus_le_compat; assumption.
+Qed.
+
+Definition Qpow2 (k : nat) : Q := inject_Z (Z.pow 2 (Z.of_nat k)).
+
+Fixpoint trace_boolish_k_le {n} (sq : Vector.t Q n) (e : GA_expr n) (k : nat) (d : Q) : Prop :=
+  match e with
+  | Basis _ | Scalar _ => boolish_k_le (eval_expr sq e) k d
+  | Cln_Grade.Add e1 e2 =>
+      trace_boolish_k_le sq e1 k d /\
+      trace_boolish_k_le sq e2 k d /\
+      boolish_k_le (eval_expr sq (Cln_Grade.Add e1 e2)) k d
+  | Mul e1 e2 =>
+      trace_boolish_k_le sq e1 k d /\
+      trace_boolish_k_le sq e2 k d /\
+      boolish_k_le (mv_gp sq (eval_expr sq e1) (eval_expr sq e2)) k d
+  | Conv e1 e2 =>
+      trace_boolish_k_le sq e1 k d /\
+      trace_boolish_k_le sq e2 k d /\
+      boolish_k_le (mv_conv (eval_expr sq e1) (eval_expr sq e2)) k d
+  end.
+
 Theorem hard_family_separates :
+  forall d : Q,
   exists f : forall n, Corner n -> bool,
-  exists c > 0,
-  forall n sq e,
-    computes sq e (f n) ->
-    trace_boolish_le sq e d ->
-    exc_l1 (exc_of sq e) >= 2^(c*n).
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      trace_boolish_le sq e d ->
+      Qpow2 (c * n) <= exc_l1 (exc_of sq e).
 Proof.
 Admitted.
+
