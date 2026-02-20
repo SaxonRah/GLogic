@@ -184,50 +184,31 @@ $$
 Under convolution,
 
 ```math
-\mathrm{eval}(F \odot G, s)
-
-=
-
-\mathrm{eval}(F,s)\cdot\mathrm{eval}(G,s).
+\mathrm{eval}(F \odot G, s) = \mathrm{eval}(F,s)\cdot\mathrm{eval}(G,s).
 ```
-
-### Proof Sketch
 
 Expand evaluation:
 
 $$
-\mathrm{eval}(F,s)
-=
-
-\sum_A F(A)\chi(A,s).
+\mathrm{eval}(F,s) = \sum_A F(A)\chi(A,s).
 $$
 
 Then:
 
 $$
-\mathrm{eval}(F\odot G,s)
-=
-
-\sum_{A,B} F(A)G(B)\chi(A\oplus B,s).
+\mathrm{eval}(F\odot G,s) = \sum_{A,B} F(A)G(B)\chi(A\oplus B,s).
 $$
 
 Using the multiplicativity of characters:
 
 $$
-\chi(A,s)\chi(B,s)
-=
-
-\chi(A\oplus B,s),
+\chi(A,s)\chi(B,s) = \chi(A\oplus B,s),
 $$
 
 we obtain:
 
 $$
-\mathrm{eval}(F\odot G,s)
-=
-
-\left(\sum_A F(A)\chi(A,s)\right)
-\left(\sum_B G(B)\chi(B,s)\right).
+\mathrm{eval}(F\odot G,s) = \left(\sum_A F(A)\chi(A,s)\right) \left(\sum_B G(B)\chi(B,s)\right).
 $$
 
 Thus evaluation becomes a ring homomorphism.
