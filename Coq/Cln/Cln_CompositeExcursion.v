@@ -1385,12 +1385,14 @@ Proof.
 Qed.
 
 Lemma wf_lincomb_mul_and :
-  forall n csF gsF csG gsG,
+  forall (n : nat)
+         (csF csG : list Q)
+         (gsF gsG : list (Corner n -> bool)),
     wf_lincomb csF gsF ->
     wf_lincomb csG gsG ->
     wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
 Proof.
-  intros n csF gsF csG gsG HwfF HwfG.
+  intros n csF csG gsF gsG HwfF HwfG.
   unfold wf_lincomb in *.
   rewrite length_mul_coeffs, length_and_gens.
   now rewrite HwfF, HwfG.
@@ -1398,7 +1400,7 @@ Qed.
 
 Lemma l1_sub_bound :
   forall n (F G : MV n),
-    l1_norm (mv_sub F G) <= l1_norm F + l1_norm G.
+    (l1_norm (mv_sub F G) <= l1_norm F + l1_norm G)%Q.
 Proof.
   intros n F G.
   unfold l1_norm, mv_sub.
