@@ -53,8 +53,8 @@ So GA is not “a different representation space.” It is a **cohomological def
 
 **Computation is a trajectory forced by a mismatch between:**
 
-* semantic multiplicativity (untwisted (\odot)), and
-* geometric dynamics (twisted (\star)).
+* semantic multiplicativity (untwisted $\odot$), and
+* geometric dynamics (twisted $\star$).
 
 And **complexity** is the minimum unavoidable “escape” from the semantic/Boolean submanifold while operating in the twisted dynamics.
 
