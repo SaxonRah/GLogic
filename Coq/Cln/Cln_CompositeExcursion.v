@@ -1421,13 +1421,12 @@ Proof.
     apply Qle_refl.
 Qed.
 
-Lemma mv_sub_cancel :
-  forall n (G G0 : MV n),
-    mv_sub G (mv_sub G G0) = G0.
+Lemma mv_sub_cancel_qeq :
+  forall n (G G0 : MV n) m,
+    Qeq (mv_sub G (mv_sub G G0) m) (G0 m).
 Proof.
-  intros n G G0.
-  apply functional_extensionality; intro m.
-  unfold mv_sub.
+  intros n G G0 m.
+  unfold mv_sub, Qminus.
   ring.
 Qed.
 
