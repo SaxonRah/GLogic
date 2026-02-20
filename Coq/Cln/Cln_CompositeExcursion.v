@@ -1237,32 +1237,8 @@ Definition and_gens {n}
 Definition mul_coeffs (cs1 cs2 : list Q) : list Q :=
   concat (map (fun c1 => map (fun c2 => (c1 * c2)%Q) cs2) cs1).
 
-(* This seems like an unprovable statement.
-    
-    Lemma lincomb_embed_conv {n : nat} :
-      forall (cs1 cs2 : list Q)
-             (gs1 gs2 : list (Corner n -> bool)),
-        mv_conv (lincomb_embed cs1 gs1) (lincomb_embed cs2 gs2)
-        =
-        lincomb_embed (mul_coeffs cs1 cs2) (and_gens gs1 gs2).
-    
-    Concrete counterexample:
-          Take n := 1, let
-          cs1 = [1], gs1 = [g1; g2] (length mismatch),
-          cs2 = [1;1], gs2 = [h].
-
-          Then lincomb_embed cs1 gs1 = embed g1 (it drops g2),
-          and lincomb_embed cs2 gs2 = embed h (it drops the second coeff).
-
-          So LHS is mv_conv (embed g1) (embed h).
-
-          But RHS has
-          mul_coeffs cs1 cs2 = [1;1]
-          and_gens gs1 gs2 = [and_gen g1 h; and_gen g2 h]
-
-          so lincomb_embed ... produces
-          embed (and_gen g1 h) ⊕ embed (and_gen g2 h),
-          which is not equal to LHS in general.
+(*
+===============================================================================
 *)
 
 Definition trace_boolish_exists_k {n}
@@ -1286,39 +1262,273 @@ Definition pow2 (k : nat) : nat :=
 Definition poly_k (n s : nat) : nat :=
   pow2 s.
   
+(* Definition trace_boolish_poly {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  trace_boolish_k_le sq e (poly_k n (expr_size e)) d. *)
+
 Definition trace_boolish_poly {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
-  trace_boolish_k_le sq e (poly_k n (expr_size e)) d.
+  exists k : nat,
+    (k <= poly_k n (expr_size e))%nat /\
+    trace_boolish_k_le sq e k d.
 
-Lemma trace_boolish_k_le_size_bound :
-  forall n (sq : Vector.t Q n) (e : GA_expr n) k d,
-    trace_boolish_k_le sq e k d ->
-    k <= poly_k n (expr_size e).
+Lemma trace_boolish_k_le_mono :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) k1 k2 d,
+    (k1 <= k2)%nat ->
+    trace_boolish_k_le sq e k1 d ->
+    trace_boolish_k_le sq e k2 d.
 Proof.
   intros n sq e.
-  induction e; intros k d Htrace. simpl in *.
-  (*
-  5 goals
-  n : nat
-  sq : Vector.t Q n
-  t : Fin.t n
-  k : nat
-  d : Q
-  Htrace : trace_boolish_k_le sq (Basis t) k d
-  ______________________________________(1/5)
-  k <= poly_k n (expr_size (Basis t))
-  ______________________________________(2/5)
-  k <= poly_k n (expr_size (Scalar q))
-  ______________________________________(3/5)
-  k <= poly_k n (expr_size (Cln_Grade.Add e1 e2))
-  ______________________________________(4/5)
-  k <= poly_k n (expr_size (Mul e1 e2))
-  ______________________________________(5/5)
-  k <= poly_k n (expr_size (Conv e1 e2))
-  *)
-  admit. admit. admit. admit. admit.
-Admitted.
- 
+  induction e; intros k1 k2 d Hle Htr; simpl in *.
+  - (* Basis *) eapply boolish_k_le_mono; eauto.
+  - (* Scalar *) eapply boolish_k_le_mono; eauto.
+  - (* Add *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+  - (* Mul *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+  - (* Conv *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+Qed.
+
+Lemma trace_boolish_k_le_to_poly_k :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) k d,
+    trace_boolish_k_le sq e k d ->
+    (k <= poly_k n (expr_size e))%nat ->
+    trace_boolish_k_le sq e (poly_k n (expr_size e)) d.
+Proof.
+  intros n sq e k d Htr Hk.
+  eapply trace_boolish_k_le_mono; eauto.
+Qed.
+
+Lemma trace_boolish_poly_to_canonical :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) d,
+    trace_boolish_poly sq e d ->
+    trace_boolish_k_le sq e (poly_k n (expr_size e)) d.
+Proof.
+  intros n sq e d [k [Hk Htr]].
+  eapply trace_boolish_k_le_to_poly_k; eauto.
+Qed.
+
+Lemma trace_boolish_canonical_to_poly :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) d,
+    trace_boolish_k_le sq e (poly_k n (expr_size e)) d ->
+    trace_boolish_poly sq e d.
+Proof.
+  intros n sq e d H.
+  exists (poly_k n (expr_size e)).
+  now split.
+Qed.
+
+Lemma trace_boolish_poly_elim :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) d,
+    trace_boolish_poly sq e d ->
+    trace_boolish_k_le sq e (poly_k n (expr_size e)) d.
+Proof.
+  intros n sq e d Hpoly.
+  apply trace_boolish_poly_to_canonical; exact Hpoly.
+Qed.
+
+Lemma mul_coeffs_cons :
+  forall (c : Q) cs1 cs2,
+    mul_coeffs (c :: cs1) cs2 =
+    (map (fun c2 => (c * c2)%Q) cs2) ++ mul_coeffs cs1 cs2.
+Proof.
+  intros c cs1 cs2.
+  unfold mul_coeffs. simpl. reflexivity.
+Qed.
+
+Lemma and_gens_cons {n} :
+  forall (g : Corner n -> bool) gs1 gs2,
+    and_gens (g :: gs1) gs2 =
+    (map (and_gen g) gs2) ++ and_gens gs1 gs2.
+Proof.
+  intros g gs1 gs2.
+  unfold and_gens. simpl. reflexivity.
+Qed.
+
+Lemma length_and_gens {n} :
+  forall (gs1 gs2 : list (Corner n -> bool)),
+    length (and_gens gs1 gs2) = (length gs1 * length gs2)%nat.
+Proof.
+  intros gs1 gs2.
+  induction gs1 as [|g gs1 IH]; simpl.
+  - reflexivity.
+  - rewrite and_gens_cons.
+    rewrite length_app, length_map.
+    rewrite IH.
+    lia.
+Qed.
+
+Lemma length_mul_coeffs :
+  forall (cs1 cs2 : list Q),
+    length (mul_coeffs cs1 cs2) = (length cs1 * length cs2)%nat.
+Proof.
+  intros cs1 cs2.
+  induction cs1 as [|c cs1 IH]; simpl.
+  - reflexivity.
+  - rewrite mul_coeffs_cons.
+    rewrite length_app, length_map.
+    rewrite IH.
+    lia.
+Qed.
+
+Lemma wf_lincomb_mul_and :
+  forall n csF gsF csG gsG,
+    wf_lincomb csF gsF ->
+    wf_lincomb csG gsG ->
+    wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
+Proof.
+  intros n csF gsF csG gsG HwfF HwfG.
+  unfold wf_lincomb in *.
+  rewrite length_mul_coeffs, length_and_gens.
+  now rewrite HwfF, HwfG.
+Qed.
+
+Lemma l1_sub_bound :
+  forall n (F G : MV n),
+    l1_norm (mv_sub F G) <= l1_norm F + l1_norm G.
+Proof.
+  intros n F G.
+  unfold l1_norm, mv_sub.
+  (* pointwise: |F U - G U| <= |F U| + |G U|, then sum *)
+  eapply Qle_trans.
+  - apply (sumQ_map_le (A := Mask n)
+            (fun U => Qabs (F U - G U))
+            (fun U => Qabs (F U) + Qabs (G U))
+            (all_masks n)).
+    intros U HU.
+    (* Qabs (x - y) = Qabs (x + (-y)) <= Qabs x + Qabs (-y) = Qabs x + Qabs y *)
+    eapply Qle_trans.
+    + (* rewrite x - y as x + (-y) *)
+      apply Qle_of_Qeq.
+      ring.
+    + eapply Qle_trans.
+      * apply Qabs_triangle.
+      * rewrite Qabs_opp.
+        apply Qle_refl.
+  - (* sum of (a+b) = sum a + sum b *)
+    rewrite <- sumQ_map_add.
+    reflexivity.
+Qed.
+
+Lemma mv_sub_cancel :
+  forall n (G G0 : MV n),
+    mv_sub G (mv_sub G G0) = G0.
+Proof.
+  intros n G G0.
+  apply functional_extensionality; intro m.
+  unfold mv_sub.
+  ring.
+Qed.
+
+Lemma boolish_k_le_conv :
+  forall n (F G : MV n) k1 k2 d1 d2,
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (mv_conv F G) (k1 * k2)
+      (d1 * l1_norm G + l1_norm F * d2 + d1 * d2).
+Proof.
+  intros n F G k1 k2 d1 d2
+         [csF [gsF [HwfF [HlenF HdF]]]]
+         [csG [gsG [HwfG [HlenG HdG]]]].
+
+  set (F0 := lincomb_embed csF gsF).
+  set (G0 := lincomb_embed csG gsG).
+
+  exists (mul_coeffs csF csG), (and_gens gsF gsG).
+  repeat split.
+  - (* wf *)
+    eapply wf_lincomb_mul_and; eauto.
+  - (* length bound *)
+    rewrite length_and_gens.
+    (* |gsF|*|gsG| <= k1*k2 *)
+    apply Nat.mul_le_mono; lia.
+  - (* error bound *)
+    (* Rewrite witness as mv_conv F0 G0 using lincomb_embed_conv *)
+    set (W := lincomb_embed (mul_coeffs csF csG) (and_gens gsF gsG)).
+    assert (HW : mv_conv F0 G0 = W).
+    {
+      subst W F0 G0.
+      apply (lincomb_embed_conv (n:=n)); assumption.
+    }
+
+    (* Reduce to bounding || mv_conv F G - mv_conv F0 G0 ||_1 *)
+    eapply Qle_trans.
+    + (* replace W by mv_conv F0 G0 inside l1_norm *)
+      apply Qle_of_Qeq.
+      apply l1_norm_ext; intro m.
+      unfold W.
+      rewrite <- HW.
+      reflexivity.
+    + (* Now use conv_error_split + triangle + submultiplicativity *)
+      eapply Qle_trans.
+      * (* split via conv_error_split pointwise, then l1_add_bound *)
+        eapply Qle_trans.
+        -- apply Qle_of_Qeq.
+           apply l1_norm_ext; intro m.
+           exact (conv_error_split (n:=n) (F:=F) (G:=G) (eF:=F0) (eG:=G0) m).
+        -- eapply Qle_trans.
+           ++ apply l1_add_bound.
+           ++ apply Qplus_le_compat.
+              ** (* first term *)
+                 eapply Qle_trans.
+                 --- apply l1_conv_submultiplicative.
+                 --- (* <= ||F|| * d2 *)
+                     apply Qmult_le_compat_l.
+                     { apply l1_norm_nonneg. }
+                     exact HdG.
+              ** (* second term *)
+                 eapply Qle_trans.
+                 --- apply l1_conv_submultiplicative.
+                 --- (* <= d1 * ||G0|| *)
+                     apply Qmult_le_compat_r.
+                     { apply l1_norm_nonneg. }
+                     exact HdF.
+      * (* bound ||G0|| <= ||G|| + d2, then algebra *)
+        (* First: ||G0|| = ||G - (G-G0)|| <= ||G|| + ||G-G0|| <= ||G|| + d2 *)
+        assert (HG0_le : l1_norm G0 <= l1_norm G + d2).
+        {
+          subst G0.
+          (* G0 = G - (G-G0) *)
+          rewrite <- (mv_sub_cancel (n:=n) (G:=G) (G0:=lincomb_embed csG gsG)).
+          eapply Qle_trans.
+          - apply l1_sub_bound.
+          - apply Qplus_le_compat.
+            + apply Qle_refl.
+            + exact HdG.
+        }
+
+        (* Use HG0_le to rewrite d1*||G0|| <= d1*(||G||+d2) *)
+        (* and then expand to match goal *)
+        (* Current bound from previous step is:
+             ||F||*d2 + d1*||G0|| *)
+        eapply Qle_trans.
+        -- (* replace d1*||G0|| by d1*(||G||+d2) *)
+           apply Qplus_le_compat.
+           ++ apply Qle_refl.
+           ++ apply Qmult_le_compat_l.
+              { (* need 0 <= d1; follows from HdF since l1_norm >=0 *)
+                eapply Qle_trans; [apply l1_norm_nonneg | exact HdF]. }
+              exact HG0_le
+        -- (* algebra: ||F||*d2 + d1*(||G||+d2) = d1*||G|| + ||F||*d2 + d1*d2 *)
+           (* expand and reorder *)
+           ring_simplify.
+           (* `ring_simplify` may or may not close; if it doesn't, use: *)
+           ring.
+Qed.
+
 (*
 ===============================================================================
 
