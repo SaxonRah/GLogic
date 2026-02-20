@@ -1404,25 +1404,21 @@ Lemma l1_sub_bound :
 Proof.
   intros n F G.
   unfold l1_norm, mv_sub.
-  (* pointwise: |F U - G U| <= |F U| + |G U|, then sum *)
+
   eapply Qle_trans.
-  - apply (sumQ_map_le (A := Mask n)
-            (fun U => Qabs (F U - G U))
-            (fun U => Qabs (F U) + Qabs (G U))
-            (all_masks n)).
+  - (* lift pointwise inequality through sum *)
+    apply (@sumQ_map_le (Mask n)
+             (fun U => Qabs (F U + (- G U))%Q)
+             (fun U => (Qabs (F U) + Qabs (G U))%Q)
+             (all_masks n)).
     intros U HU.
-    (* Qabs (x - y) = Qabs (x + (-y)) <= Qabs x + Qabs (-y) = Qabs x + Qabs y *)
+    (* |x + (-y)| <= |x| + |y| *)
     eapply Qle_trans.
-    + (* rewrite x - y as x + (-y) *)
-      apply Qle_of_Qeq.
-      ring.
-    + eapply Qle_trans.
-      * apply Qabs_triangle.
-      * rewrite Qabs_opp.
-        apply Qle_refl.
+    + apply Qabs_triangle.
+    + rewrite Qabs_opp. exact (Qle_refl _).
   - (* sum of (a+b) = sum a + sum b *)
     rewrite <- sumQ_map_add.
-    reflexivity.
+    apply Qle_refl.
 Qed.
 
 Lemma mv_sub_cancel :
