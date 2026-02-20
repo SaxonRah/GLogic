@@ -1265,6 +1265,63 @@ Definition mul_coeffs (cs1 cs2 : list Q) : list Q :=
           which is not equal to LHS in general.
 *)
 
+Definition trace_boolish_exists_k {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  exists k : nat, trace_boolish_k_le sq e k d.
+
+Theorem hard_family_separates :
+  forall d : Q,
+  exists f : forall n, Corner n -> bool,
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      trace_boolish_exists_k sq e d ->
+      (Qpow2 (c * n) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
+Definition pow2 (k : nat) : nat :=
+  Nat.pow 2 k.
+  
+Definition poly_k (n s : nat) : nat :=
+  pow2 s.
+  
+Definition trace_boolish_poly {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  trace_boolish_k_le sq e (poly_k n (expr_size e)) d.
+
+Lemma trace_boolish_k_le_size_bound :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) k d,
+    trace_boolish_k_le sq e k d ->
+    k <= poly_k n (expr_size e).
+Proof.
+  intros n sq e.
+  induction e; intros k d Htrace. simpl in *.
+  (*
+  5 goals
+  n : nat
+  sq : Vector.t Q n
+  t : Fin.t n
+  k : nat
+  d : Q
+  Htrace : trace_boolish_k_le sq (Basis t) k d
+  ______________________________________(1/5)
+  k <= poly_k n (expr_size (Basis t))
+  ______________________________________(2/5)
+  k <= poly_k n (expr_size (Scalar q))
+  ______________________________________(3/5)
+  k <= poly_k n (expr_size (Cln_Grade.Add e1 e2))
+  ______________________________________(4/5)
+  k <= poly_k n (expr_size (Mul e1 e2))
+  ______________________________________(5/5)
+  k <= poly_k n (expr_size (Conv e1 e2))
+  *)
+  admit. admit. admit. admit. admit.
+Admitted.
+ 
+(*
+===============================================================================
+
 
 Lemma mv_conv_scale_l :
   forall n (c : Q) (F G : MV n),
@@ -1609,4 +1666,4 @@ Theorem hard_family_separates :
       (Qpow2 (c * n) <= exc_l1 (exc_of sq e))%Q.
 Proof.
 Admitted.
-
+*)
