@@ -1430,6 +1430,26 @@ Proof.
   ring.
 Qed.
 
+Lemma conv_error_bound_l1 :
+  forall (n : nat) (F G eF eG : MV n),
+    ( l1_norm (mv_sub (mv_conv F G) (mv_conv eF eG))
+      <= l1_norm F * l1_norm (mv_sub G eG)
+       + l1_norm (mv_sub F eF) * l1_norm eG )%Q.
+Proof.
+  intros n F G eF eG.
+  eapply Qle_trans.
+  - apply Qle_of_Qeq.
+    apply l1_norm_ext; intro U.
+    apply (@conv_error_split n F G eF eG U).
+  - eapply Qle_trans.
+    + apply l1_add_bound.
+    + apply Qplus_le_compat.
+      * (* || F ⋆ (G-eG) ||₁ <= ||F||₁ ||G-eG||₁ *)
+        apply l1_conv_bound.
+      * (* || (F-eF) ⋆ eG ||₁ <= ||F-eF||₁ ||eG||₁ *)
+        apply l1_conv_bound.
+Qed.
+
 Lemma boolish_k_le_conv :
   forall n (F G : MV n) k1 k2 d1 d2,
     boolish_k_le F k1 d1 ->
