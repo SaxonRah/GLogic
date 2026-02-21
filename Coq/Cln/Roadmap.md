@@ -25,9 +25,9 @@ This establishes a representation-theoretic lower bound: simulating flat Boolean
 
 * Product: (F \odot G)
 * Evaluation is multiplicative:
-  [
+  ```math
   \mathrm{eval}(F \odot G, s) = \mathrm{eval}(F,s)\mathrm{eval}(G,s).
-  ]
+  ```
 * Boolean AND corresponds cleanly to convolution.
 * This layer models **Boolean semantics**.
 
@@ -48,9 +48,9 @@ The twist is the structural obstruction.
 
 Boolean functions are embedded as:
 
-[
+```math
 \mathrm{embed}(f) = \sum_{a} f(a)\Pi(a),
-]
+```
 
 with evaluation recovering Boolean values.
 
@@ -225,11 +225,11 @@ So you can control k.
 
 You need list-level lemmas:
 
-[
+```math
 \ell_1(mul_coeffs(cs1, cs2))
 \le
 \ell_1(cs1)\ell_1(cs2).
-]
+```
 
 And similarly for GP coefficient interaction.
 
@@ -297,9 +297,9 @@ Conclude separation.
 
 Does your hard family satisfy:
 
-[
+```math
 \text{any } k\text{-generator approximation requires } k \ge 2^{\Omega(n)}?
-]
+```
 
 If yes, separation follows.
 
@@ -363,33 +363,33 @@ Then every correct computation has `max_l1_during ≥ l1_norm (embed (f n))`, in
 
 With your projector–character embedding, the coefficients of `embed(f)` are (up to the (2^{-n}) factor) the Walsh–Fourier coefficients of `f`. Concretely:
 
-[
+```math
 (\mathrm{embed}(f))(S) = 2^{-n},\widehat f(S)
 \quad\Rightarrow\quad
 |\mathrm{embed}(f)|_1 = 2^{-n},|\widehat f|_1.
-]
+```
 
 So you want a Boolean family with **huge Fourier ℓ₁ norm**.
 
 ### Best explicit candidate: a bent family
 
 For even (n), the classic explicit bent function is the quadratic form
-[
+```math
 b_n(x) ;=; x_1x_2 \oplus x_3x_4 \oplus \cdots \oplus x_{n-1}x_n
 \quad(\text{over } \mathbb{F}_2),
-]
+```
 viewed as a ({\pm 1})-valued function via ((-1)^{b_n(x)}).
 
 Bent functions have *flat* Walsh spectrum:
-[
+```math
 |\widehat b_n(S)| = 2^{n/2}\quad\forall S.
-]
+```
 Therefore
-[
+```math
 |\widehat b_n|_1 = 2^n \cdot 2^{n/2} = 2^{3n/2}
 \quad\Rightarrow\quad
 |\mathrm{embed}(b_n)|_1 = 2^{-n}\cdot 2^{3n/2} = 2^{n/2}.
-]
+```
 
 That is exactly an exponential lower bound with constant (c=\tfrac12).
 
@@ -402,9 +402,9 @@ That is exactly an exponential lower bound with constant (c=\tfrac12).
 
 **How to handle odd (n):**
 Pad:
-[
+```math
 b_{n}(x_1,\dots,x_n) := b_{n-1}(x_1,\dots,x_{n-1})
-]
+```
 (or add a dummy variable). You’ll still get (|\mathrm{embed}(b_n)|_1 \ge 2^{\lfloor n/2\rfloor}), which is still (2^{\Omega(n)}).
 
 ### Alternative (even easier to prove, but non-explicit): random family
@@ -475,9 +475,9 @@ If your intended narrative is “staying close to low-k Boolean shadows forces �
 ## What you’d prove concretely in Coq for the bent family
 
 Define (for even n) a boolean function on `Corner n` corresponding to
-[
+```math
 (-1)^{x_1x_2 \oplus x_3x_4 \oplus \cdots}.
-]
+```
 
 Then prove:
 
@@ -1301,3 +1301,475 @@ This version keeps every point we discussed:
 
 ```
 
+Here’s a roadmap that matches what you’ve already built (boolish witnesses, `k`/`d` calculus, excursion metric, GP vs Conv), and lays out the pathways to the “representation ⇔ computation” equivalence that would make a P≠NP-style separation a corollary *inside your framework*.
+
+---
+
+# Roadmap: Representation ⇔ Computation (Excursion + Phase)
+
+## North Star deliverable
+
+A theorem schema of the form:
+
+> **(Representation/Computation Equivalence)**
+> For an appropriate class of computations (\mathcal{C}) (your `GA_expr` traces),
+> “computable with poly resources” ⇔ “admits poly-bounded boolish representation along the trace”
+> with quantitative bounds in `k`, `d`, and `exc_l1`.
+
+Then a corollary pipeline:
+
+> If a language (e.g. SAT via an encoding) forces super-poly excursion *or* super-poly representational phase cost under that equivalence, it’s not in the poly-computable fragment.
+
+You’re explicitly *not* proving P≠NP in ZFC; you’re building the internal equivalence and a clean separation statement.
+
+---
+
+# Pathway A: Excursion as a Complexity Measure
+
+### A1. Define the “poly computation” class in your system
+
+* **Goal:** a canonical predicate like:
+
+  * `poly_trace sq e d` or reuse `trace_boolish_poly sq e d`
+  * ensure it is stable under your semantics (`computes`, `exc_of`)
+* **Deliverable:** a single definition that is used everywhere downstream.
+
+### A2. Prove *upper bounds*: poly-boolish ⇒ bounded excursion
+
+* **Goal:** a lemma that turns representation constraints into geometric constraints.
+* **Target statement shape:**
+
+  * `trace_boolish_poly sq e d -> exc_l1 (exc_of sq e) <= poly_bound(n, expr_size e, d)`
+* **How:** reuse/finish your “core lemma you’ll reuse” (GP error bound) and extend it to conv/mul/add.
+* **Deliverables:**
+
+  * `exc_upper_bound_of_boolish` (master lemma)
+  * closure-based corollaries for `Add`, `Mul`, `Conv` (each updating the bound)
+
+### A3. Prove *lower bounds*: hard families force large excursion
+
+* **You already have:** `hard_family_separates` with `trace_boolish_exists_k`.
+* **Next:** strengthen/standardize it to consume `trace_boolish_poly` (your canonical version).
+* **Deliverable:**
+
+  * `hard_family_separates_poly : ... -> trace_boolish_poly sq e d -> Qpow2(c*n) <= exc_l1 ...`
+
+### A4. Identify/encode target problems (SAT path later)
+
+* **Goal:** an encoding lemma: “SAT instance ↦ `Corner n -> bool` / `GA_expr` trace”.
+* **Deliverables:**
+
+  * `encode_cnf : CNF -> exists n, Corner n -> bool`
+  * `sat_correctness : sat φ <-> exists assignment, ...`
+  * `computes_of_encoding : ... computes sq e (f n)`
+
+This is the “bridge to complexity theory,” but you can postpone it until the geometry/representation core is solid.
+
+---
+
+# Pathway B: Phase / Twist Cost (GP vs Conv) as Representational Complexity
+
+This is the “−1111 becomes long” pathway.
+
+### B1. Formalize a “phase complexity” predicate
+
+You already have the right object: `boolish_k_le F k d`.
+
+Package it into “approximate membership in the boolean manifold”:
+
+* `approx_boolish(F, K, d) := ∃k≤K, boolish_k_le F k d`
+* `far_from_boolish(F, K, d0) := ∀d<d0, ¬ approx_boolish(F,K,d)`
+
+**Deliverable:** one file with these wrappers and basic monotonicity lemmas.
+
+### B2. Prove conv is “diagonalizable” / flat in the boolish regime
+
+* **Goal:** show that conv respects a transform or a basis that preserves low complexity.
+* In your ecosystem this likely uses `Cln_BoolDist` (Walsh / distribution lemmas).
+* **Deliverables:**
+
+  * `conv_preserves_boolish_poly` (already aiming for `boolish_k_le_conv`)
+  * optional: `conv_characterization` (conv = pointwise mult in transform domain)
+
+### B3. Prove GP introduces a nontrivial cocycle (twist)
+
+* **Goal:** isolate the sign kernel used by `mv_gp`.
+* **Deliverables:**
+
+  * a lemma that writes GP as “twisted convolution”:
+
+    * `(mv_gp F G) U = Σ_{A⊕B=U} s(A,B) * F A * G B`
+  * `abs_s_is_1 : Qabs (s(A,B)) == 1` (or equalities you actually use)
+
+This makes later proofs copy-paste from conv, except for the sign/twist reasoning.
+
+### B4. The key lower bound: twist forces k blowup or d blowup
+
+This is the exact formal version of your “negativity becomes long” intuition.
+
+* **Goal statement shape:**
+
+  * There exists a family `H n : MV n` such that:
+
+    * `H n` is easy to generate by GP (small `GA_expr`)
+    * but any boolish approximation with `k ≤ poly(n)` must have `d` bounded below (not tiny),
+      or equivalently if `d` is tiny then `k` must be huge.
+* **Deliverable:** `twist_forces_far_from_boolish` (quantitative).
+
+This is the centerpiece of the representational pathway.
+
+### B5. Connect B4 to excursion via A2
+
+Once you have “either k huge or d huge,” you combine with A2 to get:
+
+* poly-k + small d ⇒ small excursion
+* but `H n` has large excursion (or forces large excursion)
+  ⇒ contradiction
+
+**Deliverable:** a single “composition theorem” that takes a representational lower bound and outputs a geometric lower bound (or vice versa).
+
+---
+
+# Pathway C: Representation ⇔ Computation Equivalence Theorem
+
+This is where you unify A and B into the equivalence you actually want.
+
+### C1. Define the resource measures cleanly
+
+Pick a tuple, e.g.:
+
+* size resource: `expr_size e`
+* representational resource: `k`
+* approximation resource: `d`
+* geometric resource: `exc_l1`
+
+Then define “poly resource” as:
+
+* `k ≤ poly_k n (expr_size e)`
+* `d ≤ poly_d n (expr_size e)` (optional; you currently pass `d` universally)
+
+### C2. Prove “⇒” direction: poly computation implies poly representation (soundness)
+
+* **Meaning:** If a trace computes in your allowed model with bounded structural resources, then along the trace it remains approx-boolish with poly k and controlled d.
+* This is the hardest direction conceptually; but your development suggests you’re *building it by closure*:
+
+  * base cases (Basis/Scalar) are boolish
+  * Add/Mul/Conv/GP preserve boolish with explicit k/d update rules
+* **Deliverable:** `trace_boolish_poly_sound : syntactic_poly e -> trace_boolish_poly sq e d`
+
+### C3. Prove “⇐” direction: poly representation gives poly computation (completeness)
+
+* **Meaning:** if along the trace you have poly-boolish witnesses, you can simulate/compute in a poly-time-ish way (in your formal notion).
+* Practically: show that from the witness (lists `cs`, `gs` with length k) you can extract a “poly evaluator” for the trace or approximate outputs.
+* **Deliverable:** `trace_boolish_poly_complete : trace_boolish_poly sq e d -> exists poly evaluator ...`
+
+This is the true “equivalence” statement you’re aiming for.
+
+### C4. Corollary separation template
+
+Once C2–C3 exist, you can state separation results cleanly without invoking external complexity theory:
+
+> If a problem family forces `far_from_boolish` (or large excursion) under the encoding, it is not in your poly-trace class.
+
+This is where SAT can drop in as a corollary once encoded.
+
+---
+
+# Pathway D: SAT as a Corollary (Optional / Later)
+
+### D1. Choose an encoding
+
+* CNF formulas → circuits → your `Corner n -> bool`
+* ensure uniformity in `n` and size
+
+### D2. Show SAT forces the twist family
+
+* Show that deciding SAT would imply computing a twist-heavy `H n` (or approximating it below some d0).
+* This is the reduction step inside your model.
+
+### D3. Conclude non-poly in your model
+
+* Combine D2 + B4 + A2 (or the unified C theorem).
+
+This yields your internal “SAT not in poly-trace-boolish” theorem, and *then* you can interpret it as a P≠NP-style separation once you assert your model captures P.
+
+---
+
+# Immediate Next Milestones (what to do next week in Coq)
+
+1. **Finish closure + wf infrastructure**
+
+   * `wf_lincomb_mul_and`
+   * `boolish_k_le_conv`
+   * and the GP analogue(s) if missing
+
+2. **Standardize equality / rewriting discipline**
+
+   * decide whether you work with `=` or a setoid relation for Q-valued functions
+   * make one “extensionality for l1_norm / sumQ / mv_*” lemma that you reuse everywhere
+
+3. **Write the “master sandwich” lemma**
+
+   * `(poly boolish) -> (exc upper bound)`
+   * then `hard_family_separates` becomes plug-and-play
+
+4. **Design the twist witness family `H n`**
+
+   * simplest GP-generated element whose conv/boolish approximation provably needs large k or d
+
+That last item is the mathematical heart of the “−1111 becomes long” pathway.
+
+---
+
+Cool — here’s a concrete, file-level plan that fits your current module layout (`Cln_Full`, `Cln_Grade`, `Cln_finite_l1_submultiplicativity`, `Cln_BoolDist`, `Cln_CompositeExcursion`) and minimizes edits downstream.
+
+I’m going to structure this as “what lives where”, “what order”, and “what the key reusable lemmas look like”.
+
+---
+
+# File-level plan
+
+## 0) Conventions to adopt once (so you stop fighting Coq)
+
+**Goal:** avoid the `Q`/`=` headaches and make rewriting predictable.
+
+* Treat all `MV n` equalities extensionally, and for `Q` arithmetic prefer *normal-form lemmas* you control rather than hoping library lemmas exist.
+* Add a small internal lemma library (in one place) for:
+
+  * pointwise extensionality of `mv_add`, `mv_sub`, `mv_scale`, `mv_conv`, `mv_gp`
+  * `l1_norm` monotonicity and triangle bounds
+  * `sumQ` congruence wrt pointwise equality (whatever equality notion you’re using)
+
+**Where:** create a tiny helper section near the top of `Cln_Full.v` or a new file `Cln_AlgebraLemmas.v` imported by everything.
+
+**Immediate fix:** replace “`mv_sub_cancel : ... = ...`” by a lemma stated in the equality you actually use for rewriting (often pointwise `=` is fine because terms are computed, but don’t rely on non-existent `Qeq_eq` conversions).
+
+---
+
+## 1) `Cln_Full.v` (core defs + small extensional lemmas)
+
+**Keep this file definition-heavy. Only add lemmas that every file needs.**
+
+### 1.1 Definitions to keep stable
+
+* `MV n := Mask n -> Q`
+* `sumQ`, `all_masks`
+* `l1_norm`
+* `mv_conv`, `mv_gp` (if gp is defined here), `mv_add`, `mv_sub`, etc.
+* your generator encodings (`lincomb_embed`, `wf_lincomb`, `mul_coeffs`, `and_gens`)
+
+### 1.2 Add these “plumbing” lemmas here (or a helper module it exports)
+
+These stop 80% of future pain:
+
+* `mv_ext : (forall m, F m = G m) -> F = G`
+* `sumQ_ext` / `sumQ_map_ext`
+* `l1_norm_ext` (if you can get it)
+* `l1_norm_triangle : l1_norm (mv_add F G) <= l1_norm F + l1_norm G`
+* `l1_norm_scale`, `l1_norm_nonneg`
+* any “sum over all masks respects pointwise equality”
+
+**Milestone:** after this, you should be able to do almost all algebra proofs without ad-hoc rewriting.
+
+---
+
+## 2) `Cln_BoolDist.v` (representation theory: boolish, generators, wf)
+
+This is where your requested lemmas belong.
+
+### 2.1 Finish well-formedness closure first
+
+You already hit:
+
+```coq
+Lemma wf_lincomb_mul_and :
+  forall n csF gsF csG gsG,
+    wf_lincomb csF gsF ->
+    wf_lincomb csG gsG ->
+    wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
+```
+
+**Make it compile** by either:
+
+* dropping `n` if unused, OR
+* typing it explicitly if Coq can’t infer: `(n : nat)`.
+
+The error “Cannot infer the type of n” means `n` is syntactically unused in the statement/proof, so Coq can’t guess its type.
+
+**Fix:**
+
+```coq
+Lemma wf_lincomb_mul_and :
+  forall (n : nat) csF gsF csG gsG,
+    wf_lincomb csF gsF ->
+    wf_lincomb csG gsG ->
+    wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
+```
+
+Then your proof via lengths is exactly right *if* `wf_lincomb` is just `length cs = length gs`. If it has extra conditions, finish those here too.
+
+**Milestone:** all `wf_lincomb_*` closure lemmas done:
+
+* for `Add`-style list append
+* for `Mul`-style `mul_coeffs/and_gens`
+* for any `Conv` witness constructor you use
+
+### 2.2 Prove “boolish is closed under conv” next
+
+Your target:
+
+```coq
+Lemma boolish_k_le_conv :
+  forall n (F G : MV n) k1 k2 d1 d2,
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (mv_conv F G) (k1 * k2)
+      (d1 * l1_norm G + l1_norm F * d2 + d1 * d2).
+```
+
+**Why in this file:** it’s fundamentally “representation calculus”: witness construction + norm bound.
+
+**Proof structure (almost certainly):**
+
+1. destruct the boolish witnesses for `F` and `G`:
+
+   * you get `csF gsF` and `csG gsG`
+   * plus wf/length and an approximation inequality (your `Hd` field)
+2. build witness for `mv_conv F G`:
+
+   * coeffs: `mul_coeffs csF csG`
+   * gens: `and_gens gsF gsG`  (or the conv-appropriate generator operator if different)
+3. show wf/length using `wf_lincomb_mul_and`
+4. prove the error bound using the same “(F + ΔF) ⋆ (G + ΔG) − F⋆G” split:
+
+   * `ΔF ⋆ G` + `F ⋆ ΔG` + `ΔF ⋆ ΔG`
+   * then apply an ℓ₁ submultiplicativity lemma for conv (if you don’t have it, you prove it once: see below)
+   * and triangle inequality.
+
+**Milestone dependencies:**
+
+* `l1_conv_submultiplicative` or equivalent:
+
+  * `l1_norm (mv_conv A B) <= l1_norm A * l1_norm B`
+* “error split” lemma for conv:
+
+  * `mv_conv (F+ΔF) (G+ΔG) - mv_conv F G = ...`
+  * you can do pointwise ext + ring-ish rewriting at Q-level (but keep it in MV space).
+
+If you *don’t* have `l1_conv_submultiplicative`, prove it here (or in `Cln_finite_l1_submultiplicativity.v` if you want it generic).
+
+---
+
+## 3) `Cln_finite_l1_submultiplicativity.v` (norm algebra)
+
+This file should become your “one-stop shop” for ℓ₁ submultiplicativity lemmas.
+
+### 3.1 Make the interface uniform
+
+You already have a GP version:
+
+* `l1_gp_submultiplicative`
+
+Add the conv analogue here:
+
+* `l1_conv_submultiplicative : l1_norm (mv_conv F G) <= l1_norm F * l1_norm G`
+
+Even if you prove it by reducing conv to gp with trivial sign, keep it here because every downstream closure lemma uses it.
+
+### 3.2 Export “error split + norm bound” templates
+
+This is the reusable pattern:
+
+* `l1_error_split_bilinear` for any bilinear operator `⋆` with submultiplicativity:
+
+  * If you can abstract it, great.
+  * If not, just provide two specializations:
+
+    * `gp_error_split`
+    * `conv_error_split`
+
+Then `boolish_k_le_gp` and `boolish_k_le_conv` become “same proof, different operator”.
+
+**Milestone:** after this, `Cln_BoolDist.v` becomes mostly witness plumbing; all real inequalities live here.
+
+---
+
+## 4) `Cln_CompositeExcursion.v` (trace layer: from MV lemmas to GA_expr lemmas)
+
+This file should **only** talk about `GA_expr` and `trace_boolish_k_le`.
+
+### 4.1 Keep your `trace_boolish_*` API stable
+
+You already stabilized:
+
+* `trace_boolish_exists_k`
+* `trace_boolish_poly` (exists k ≤ poly_k …)
+* monotonicity lemma `trace_boolish_k_le_mono`
+* canonicalization lemmas to/from `poly_k`
+
+Good. Don’t touch this API again.
+
+### 4.2 Add closure lemmas at the trace level
+
+Prove these by structural recursion on `GA_expr`, delegating all heavy work to `Cln_BoolDist` lemmas:
+
+* `trace_boolish_k_le_add` (already similar)
+* `trace_boolish_k_le_mul` uses `boolish_k_le_gp` (or your Mul meaning)
+* `trace_boolish_k_le_conv` uses `boolish_k_le_conv`
+
+Then the poly versions follow by `trace_boolish_k_le_to_poly_k` + size bound lemma.
+
+**Milestone:** you get a single theorem:
+
+* `trace_boolish_poly_closed : closed under Add/Mul/Conv`
+
+That’s the “representation ⇒ computation stability” direction.
+
+---
+
+## 5) “Boundary / hardness” layer (new file or `Cln_CompositeExcursion.v`)
+
+Once the closure calculus is stable, add a *separate* file for hardness statements so you don’t destabilize core proofs.
+
+Suggested name: `Cln_HardnessBoundary.v`
+
+### 5.1 Define your boundary predicates
+
+* `approx_boolish` / `far_from_boolish`
+* `excursion_large` predicates
+
+### 5.2 Prove the two master implications
+
+1. **Poly-boolish ⇒ excursion upper bound**
+2. **Twist/phase family ⇒ far_from_boolish or large excursion**
+
+Then `hard_family_separates` becomes an instance, and SAT encoding can be plugged later.
+
+---
+
+# Order of work (what to do next)
+
+1. **Fix and finish `wf_lincomb_mul_and`** (and any sibling wf lemmas).
+2. **Add / prove `l1_conv_submultiplicative`** in `Cln_finite_l1_submultiplicativity.v`.
+3. **Prove `boolish_k_le_conv`** in `Cln_BoolDist.v` using:
+
+   * witness construction + wf lemma
+   * error split + submultiplicativity
+4. **Lift to trace:** `trace_boolish_k_le` closure for `Conv` in `Cln_CompositeExcursion.v`.
+5. Only then start formalizing the “twist costs k” boundary lemmas.
+
+---
+
+# Immediate patch for your current blockers
+
+* The `n` inference issue: make `n : nat` explicit OR remove it if unused.
+* Don’t try to use `==` notation or `Qeq_eq`; just stay in the equality notion your library actually supports.
+
+---
+
+If you paste the definitions of `wf_lincomb` and `boolish_k_le` (the exact sigma/witness fields) from your files, I’ll write the *exact* proof scripts for:
+
+* `wf_lincomb_mul_and` (fully)
+* the skeleton of `boolish_k_le_conv` (with the right destruct/exists structure matching your witness type)
+
+so you can drop them in with minimal edits.
