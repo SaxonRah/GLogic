@@ -832,5 +832,329 @@ The mathematical mechanism is now pinned down:
     Blow-ups come from square-+1 blades creating idempotent projectors 𝑝=(1−𝐵)/2
     that persist under GP and force commutator leakage against embedded Booleans;
     commutator leakage forces ℓ₁ mass, and max ℓ₁ during evaluation is exactly exc_l1.
+    
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+Once we’ve proved the “projector/commutator → BoolDist blow-up or ℓ₁ blow-up” package,
+the project stops being about *finding weird examples* and becomes about
+*amplifying that mechanism into an exponential lower bound*. Concretely, the next phase is:
+
+## 1) Turn the projector mechanism into a reusable “forcing gadget” lemma
+
+Right now you’ll have lemmas like:
+    * if a state has a (p=\tfrac12(1-B)) component, then multiplying interacts via commutator
+    * commutator mass forces either not-boolish or ℓ₁ large
+    * ℓ₁ large ⇒ `exc_l1` large (via max)
+
+Next you need a single lemma you can apply at *every GP node* in an expression tree.
+
+**Goal shape:**
+    > For any GP node computing (P = X ⋆ Y), if both children are (k)-boolish within (d), then either:
+    >
+    > * the parent is not (k')-boolish within (d'), or
+    > * the parent’s ℓ₁ grows by a factor (or additive bump) that you can iterate.
+
+This is the “one-step growth” lemma you’ll use inductively on syntax.
+
+## 2) Prove “density of bad directions” for your hard family
+
+The commutator bound needs a *reason it can’t always be small*. Otherwise, a clever computation might pick only (g)’s that commute with every dangerous (B).
+
+So the next theorem must say:
+> For the function family you’re separating, along any correct computation, you are forced to realize Boolean embeddings whose commutators with many (B)’s are nontrivial.
+
+There are two natural ways to do this:
+
+    ### Route A: many independent blades
+    Pick a set of pairwise-independent unit blades (B_1,\dots,B_m) (square (+1) under your signature choices) and show:
+        * no small (k)-term Boolean lincomb can lie simultaneously in the “commuting” subspace for all of them,
+        * hence at many steps you get a commutator lower bound for *some* (B_i).
+    This gives you repeated forced leakage.
+
+    ### Route B: Fourier/character obstruction
+    
+    Use the fact your `embed` is essentially a Walsh-character expansion. Then show:
+        * commuting with (B) corresponds to a parity/eigenspace constraint on the Fourier support,
+        * your hard family forces Fourier mass in both eigenspaces,
+        * hence projection via (p) extracts ℓ₁ mass.
+    
+    This is usually cleaner and makes the “Boolean shadow” story match the paper narrative.
+    
+    Either way, you need a lemma like:
+        ```math
+        \forall\ L=\sum_{i\le k} c_i,\mathrm{embed}(g_i),\qquad
+        \exists B\in\mathcal{B}\quad \text{s.t.}\quad |[B,L]|_1 \ge \alpha \sum |c_i|.
+        ```
+    
+    That’s the amplification hinge: it converts “bounded k” into “can’t hide from commutators”.
+
+## 3) Convert repeated forced leakage into coefficient explosion
+
+Your boolish notion is:
+    ```math
+    |F - \sum c_i \mathrm{embed}(g_i)|_1 \le d,\quad #{g_i}\le k.
+    ```
+
+So if GP repeatedly generates components that are “orthogonal” (in the eigenspace sense)
+to what a (k)-term lincomb can represent without large coefficients, you show:
+    * to keep the error ≤ d, the lincomb coefficients must grow,
+    * coefficient sum grows at least multiplicatively (or at least like (2^{\Omega(t)})) with depth.
+
+Then apply the lemma you already outlined:
+    * `l1(lincomb_embed cs gs) ≤ sumQ (map Qabs cs)`
+    * and triangle to get `l1(F) ≥ sum_abs - d` (or similar)
+
+This yields:
+    ```math
+    \text{(trace boolish)} \implies \max_t |F_t|_1 \ge 2^{\Omega(\text{#GP nodes})}.
+    ```
+That’s excursion growth.
+
+## 4) Upgrade from “growth with depth” to “growth with n” (the separation)
+
+Your final separation statement wants:
+    ```math
+    2^{c n} \le \mathrm{exc_l1}(\mathrm{exc_of}\ sq\ e)
+    ```
+for any expression (e) computing (f_n) under trace-boolishness.
+
+So next you pick a **hard family** with a known lower bound on “GP depth / necessary interactions” under your model.
+    Typical choices (in your setting):
+        * parity / inner product
+        * mod 2 of a large set
+        * pointer-chasing style functions
+        * a family engineered to force many independent eigenspace constraints
+
+    Then you prove:
+        1. Any correct computation must contain ≥ (Ω(n)) “forcing gadget” GP interactions (or else can’t compute (f_n)).
+        2. Each such interaction multiplies the required coefficient mass by ≥ (1+\epsilon) (or ≥ 2 in the cleanest case).
+        3. Therefore max ℓ₁ (hence excursion) is ≥ (2^{Ω(n)}).
+
+## 5) Practical Coq roadmap after “prove all that”
+
+In order, the next deliverables are:
+
+    1. **A normal form / induction principle for `GA_expr` traces**
+       * You want lemmas: trace of `Mul e1 e2` contains traces of subexpressions + the final product, etc.
+       * This is what makes “apply forcing lemma at every GP node” possible.
+    
+    2. **Subexpression lemmas for `trace_boolish_k_le`**
+       * You already flagged these: show that if the whole trace is boolish, each subtrace is boolish (maybe with same d or split d).
+       * This enables structural induction on syntax while keeping invariants.
+    
+    3. **Forcing lemma packaged for automation**
+       * A lemma with hypotheses in exactly the form your trace invariant provides.
+
+    4. **Hard family definition + “must-hit forcing nodes” lemma**
+       * This is the only place where the proof is “about computation” rather than pure algebra.
+    
+    5. **Final accumulation lemma**
+       * Iterates the growth across Ω(n) nodes and produces `Qpow2 (c*n) ≤ exc_l1 …`.
+    
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+Yes — that’s the right framing, and it avoids overclaiming while still giving you a sharp, publishable separation **inside the CLN model**.
+
+Here’s a clean way to formalize the classes + theorems so the “final accumulation lemma” plugs in, and so later reductions/soundness statements become modular.
+
+---
+
+## 1) Define the model classes crisply
+
+You already have the ingredients:
+
+* `computes sq e f` (semantic correctness)
+* `exc_of sq e` (grade + ℓ₁ excursion)
+* `trace_boolish_le sq e d` / `trace_boolish_k_le sq e k d` (the invariant you’re using)
+
+### A. “Boolish-bounded computations” (the regime you can prove things about)
+
+Two variants are useful:
+
+**Variant 1 (parameterized by k,d):**
+[
+\mathrm{CLN\text{-}Boolish}(k,d) := { f \mid \forall n,\ \exists e,\ \exists sq,\ \text{computes}\ sq\ e\ (f_n)\ \wedge\ \text{trace_boolish_k_le}\ sq\ e\ k\ d }.
+]
+
+**Variant 2 (polynomially bounded parameters):**
+[
+\mathrm{CLN\text{-}BoolishPoly} := { f \mid \exists \text{poly }k(n),d(n),\ \forall n,\ \exists e,sq,\ \text{computes}\ \wedge\ \text{trace boolish}_{k(n)}^{d(n)} }.
+]
+
+(If you want the “easy” class to look like a complexity class, this second one is better.)
+
+### B. “Easy” should include an excursion bound
+
+You want “easy” to mean: there exists a correct computation whose trace stays in the controlled regime **and** the excursion is not exploding.
+
+A clean definition is:
+
+[
+\mathrm{CLN\text{-}Easy} :=
+{ f \mid \exists c,\exists k,\exists d,\ \forall n,\ \exists sq,e,\
+\text{computes}\ sq\ e\ f_n \wedge \text{trace_boolish_k_le}\ sq\ e\ k\ d \wedge
+\mathrm{exc_l1}(\mathrm{exc_of}\ sq\ e) \le 2^{c n} }.
+]
+
+(You can choose the excursion upper bound family you like: poly, quasi-poly, (2^{O(n)}), etc. The point is: you *define* Easy as “has a low-excursion witness in the boolish regime.”)
+
+### C. “Hard family”
+
+Your separation theorem is then:
+
+> There exists a family `CLN_Hard` such that for every correct computation under trace-boolishness, excursion must be exponential.
+
+This is essentially your `hard_family_separates` statement.
+
+---
+
+## 2) The “final accumulation lemma” as a reusable engine
+
+The role of the final accumulation lemma is to bridge:
+
+* *local step growth* (projector/commutator forcing at a GP node)
+* to *global exponential growth* across (\Omega(n)) many forcing nodes.
+
+To do that cleanly, you want a lemma with this shape:
+
+### Lemma Accumulate (abstract form)
+
+Assume you can assign to each intermediate state (F_t) a nonnegative “potential” (\Phi(F_t)) such that:
+
+1. **Initialization:** (\Phi(F_0)\ge 1).
+2. **Step growth:** at each forcing GP node (t\in T),
+   [
+   \Phi(F_{t+1}) \ge (1+\epsilon),\Phi(F_t)
+   ]
+   or even (\ge 2\Phi(F_t)) if you get a clean doubling.
+3. **Potential-to-ℓ₁:** for all (t), (|F_t|_1 \ge \alpha \Phi(F_t) - \beta).
+4. **Many forcing nodes:** (|T|\ge c_0 n).
+
+Then:
+[
+\max_t |F_t|_1 \ge \alpha(1+\epsilon)^{c_0 n} - \beta \ge 2^{c n}
+]
+for some constant (c>0), which yields your excursion lower bound:
+[
+Qpow2(cn) \le exc_l1(exc_of\ sq\ e).
+]
+
+**In your framework, (\Phi) is usually “minimum ℓ₁ coefficient mass required for a k-term Boolean lincomb approximation.”** Your boolish invariant forces (\Phi) to exist; the forcing lemma makes it grow; the coefficient-mass-to-ℓ₁ lemmas turn it into excursion.
+
+That’s the correct structural proof.
+
+---
+
+## 3) How to phrase the separation without overclaiming
+
+What you wrote is exactly right: it’s a separation between *classes inside CLN*.
+
+A very safe, practical theorem chain is:
+
+### Theorem 1 (Hardness in the boolish regime)
+
+There exists `CLN_Hard` and constants (c,d) such that:
+[
+\forall n,\forall sq,e,\
+\text{computes}\ sq\ e\ (\mathrm{CLN_Hard}_n) \wedge \text{trace_boolish_le}\ sq\ e\ d
+\Rightarrow
+Qpow2(cn)\le exc_l1(exc_of\ sq\ e).
+]
+
+This is your current goal.
+
+### Corollary 2 (Not Easy)
+
+If you define `CLN-Easy` as “has a boolish computation with subexponential excursion,” then immediately:
+
+[
+\mathrm{CLN_Hard} \notin \mathrm{CLN\text{-}Easy}.
+]
+
+No classical complexity claims required.
+
+### Theorem 3 (Proper containment inside CLN-boolish-computable)
+
+Define a broader class:
+[
+\mathrm{CLN\text{-}ComputableUnderBoolishness}
+:= {f \mid \exists d,\forall n,\exists sq,e,\ \text{computes} \wedge \text{trace_boolish_le } d}.
+]
+
+Then your theorems can show:
+
+* `CLN_Hard ∈ CLN-ComputableUnderBoolishness` (by giving *some* computation, maybe with huge excursion)
+* but `CLN_Hard ∉ CLN-Easy`
+
+Hence:
+[
+\mathrm{CLN\text{-}Easy} \subsetneq \mathrm{CLN\text{-}ComputableUnderBoolishness}.
+]
+
+That’s a clean internal separation.
+
+---
+
+## 4) The next modular “classical” bridges (optional, later)
+
+You listed three directions; here’s how to make each one precise and defensible.
+
+### A) Soundness: CLN-Easy ⊆ P
+
+To prove this you’d need an **algorithm** that, given (n), (sq), and an expression (e) with:
+
+* bounded trace-boolishness (small (k,d))
+* and small excursion (say poly-bounded ℓ₁ + grade)
+
+can evaluate (e) on inputs in polynomial time.
+
+This is plausible because “k-boolish” says intermediates are close to a sparse Boolean lincomb—so you can represent them succinctly (as the (k) booleans + coefficients) and update through GP/conv with controlled blowup.
+
+This becomes a theorem like:
+[
+\text{(bounded-k boolish trace)} + \text{(poly excursion)} \Rightarrow \text{poly-time simulation}.
+]
+
+### B) Completeness: SAT ≤p CLN-Hard
+
+This is a separate project: you must encode CNF-SAT instances into your `GA_expr` computation problem, such that satisfying assignments correspond to something recognizable in the output (e.g., a particular coefficient, or a decision via evaluation map).
+
+You’d want a mapping:
+[
+\phi \mapsto (n, sq, e_\phi)
+]
+and show:
+[
+\phi \in SAT \iff \text{computes } sq\ e_\phi\ f_\phi
+]
+for some (f_\phi) that has the hard/excursion property.
+
+You can keep this very conservative by calling it a “reduction into the CLN-Hard family problem,” not a claim about (P) vs (NP).
+
+### C) “SAT requires leaving the boolish regime”
+
+This is a **model hardness statement**:
+
+> any CLN computation for SAT must violate trace-boolishness (or incur huge excursion).
+
+That’s arguably the most aligned with your current work, because it uses the same machinery and just swaps the target function.
+
+---
+
+## 5) What you should do next, in order
+
+Given where you are, the best next steps are:
+
+1. **Finalize the accumulation lemma in full generality** (parameterized by: number of forcing nodes, growth factor per node, coefficient-mass-to-ℓ₁ conversion).
+2. Prove a **“many forcing nodes” lemma** for your chosen hard family (this is the only function-specific part).
+3. Wrap it into the clean internal separations:
+
+   * `CLN_Hard ∉ CLN-Easy`
+   * `CLN-Easy ⊊ CLN-ComputableUnderBoolishness`
+
+Then you can decide whether to pursue (soundness) `CLN-Easy ⊆ P` or (completeness) `SAT ≤p CLN-Hard`.
+
+
 """
 
