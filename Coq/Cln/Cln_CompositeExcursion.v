@@ -1450,6 +1450,113 @@ Proof.
         apply l1_conv_bound.
 Qed.
 
+Lemma trace_boolish_k_le_subexpr_l :
+  forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
+    trace_boolish_k_le sq (Mul e1 e2) k d ->
+    trace_boolish_k_le sq e1 k d.
+Proof.
+  intros n sq e1 e2 k d H.
+  (* unfold trace_boolish_k_le and use that trace(Mul e1 e2) contains trace(e1) *)
+Admitted.
+
+Lemma trace_boolish_k_le_subexpr_r :
+  forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
+    trace_boolish_k_le sq (Mul e1 e2) k d ->
+    trace_boolish_k_le sq e2 k d.
+Proof.
+  intros n sq e1 e2 k d H.
+Admitted.
+
+Lemma trace_boolish_k_le_subexpr_conv_l :
+  forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
+    trace_boolish_k_le sq (Conv e1 e2) k d ->
+    trace_boolish_k_le sq e1 k d.
+Proof.
+Admitted.
+
+Lemma trace_boolish_k_le_subexpr_conv_r :
+  forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
+    trace_boolish_k_le sq (Conv e1 e2) k d ->
+    trace_boolish_k_le sq e2 k d.
+Proof.
+Admitted.
+
+Open Scope Q_scope.
+Lemma gp_boolish_witness_error_only :
+  forall n (sq : Vector.t Q n) (F G : MV n) k d,
+    (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
+    boolish_k_le F k d ->
+    boolish_k_le G k d ->
+    exists LF LG,
+      l1_norm (mv_sub F LF) <= d /\
+      l1_norm (mv_sub G LG) <= d /\
+      l1_norm (mv_sub (mv_gp sq F G) (mv_gp sq LF LG))
+      <= l1_norm F * d + d * l1_norm LG.
+Proof.
+  intros n sq F G k d Hsig HF HG.
+  destruct HF as [csF [gsF [HwfF [HlenF HdF]]]].
+  destruct HG as [csG [gsG [HwfG [HlenG HdG]]]].
+  set (LF := lincomb_embed csF gsF).
+  set (LG := lincomb_embed csG gsG).
+  exists LF, LG; repeat split; try assumption.
+  eapply Qle_trans.
+  - apply gp_error_bound_l1; auto.
+  - (* use HdF, HdG to rewrite ||F-LF|| and ||G-LG|| by d *)
+    (* plus algebra/mono; straightforward *)
+Admitted.
+(* Later do :
+
+Definition embed_gp_closed_up_to {n : nat} (sq : Vector.t Q n) (delta : Q) : Prop :=
+  forall (g h : Corner n -> bool),
+    exists gh : Corner n -> bool,
+      l1_norm (mv_sub (mv_gp sq (embed g) (embed h)) (embed gh)) <= delta.
+
+Lemma boolish_k_le_gp_of_boolish_k_le_up_to :
+  forall n (sq : Vector.t Q n) (F G : MV n) k d delta,
+    (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
+    embed_gp_closed_up_to sq delta ->
+    boolish_k_le F k d ->
+    boolish_k_le G k d ->
+    exists cs gs,
+      wf_lincomb cs gs /\
+      (length gs <= (k * k))%nat /\
+      l1_norm (mv_sub (mv_gp sq F G) (lincomb_embed cs gs))
+      <=
+        (* the GP “input approximation” error *)
+        (l1_norm F) * d
+      + d * (l1_norm (lincomb_embed cs gs))
+        (* plus the embed-closure slack accumulated across k*k terms;
+           in the proof it will look like (sum_abs(csF)*sum_abs(csG))*delta *)
+      + delta * (l1_norm (lincomb_embed cs gs)).
+Proof.
+Admitted.
+*)
+Close Scope Q_scope.
+
+Lemma boolish_k_le_conv_of_boolish_k_le :
+  forall n (F G : MV n) k d,
+    boolish_k_le F k d ->
+    boolish_k_le G k d ->
+    exists k' d',
+      boolish_k_le (mv_conv F G) k' d'.
+Proof.
+Admitted.
+
+Lemma boolish_k_le_gp_propagate :
+  forall n (sq : Vector.t Q n)
+         (F G : MV n)
+         k d,
+    (forall i : Fin.t n, Qabs (Vector.nth sq i) == 1) ->
+    boolish_k_le F k d ->
+    boolish_k_le G k d ->
+    exists cs gs k' d',
+      wf_lincomb cs gs /\
+      (length gs <= k')%nat /\
+      l1_norm (mv_sub (mv_gp sq F G)
+                      (lincomb_embed cs gs)) <= d'.
+Proof.
+Admitted.
+
 Lemma boolish_k_le_conv :
   forall n (F G : MV n) k1 k2 d1 d2,
     boolish_k_le F k1 d1 ->
