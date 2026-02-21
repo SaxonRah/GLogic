@@ -1562,5 +1562,17 @@ Or design a SAT→CLN reduction using Conv,
     
 Or analyze what structure of Conv gives you Boolean circuit equivalence.
 
+    Lemma chi_xor_mul :
+      forall n (A B : Mask n) (s : Corner n),
+        chi (mask_xor A B) s == (chi A s * chi B s)%Q.
+
+    Lemma eval_conv_mul :
+      forall n (F G : MV n) (s : Corner n),
+        eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+
+    Lemma eval_injective :
+      forall n (F G : MV n),
+        (forall s : Corner n, eval F s == eval G s) ->
+        forall m : Mask n, F m == G m.
 """
 
