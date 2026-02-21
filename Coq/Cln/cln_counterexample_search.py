@@ -1156,5 +1156,411 @@ Given where you are, the best next steps are:
 Then you can decide whether to pursue (soundness) `CLN-Easy ⊆ P` or (completeness) `SAT ≤p CLN-Hard`.
 
 
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+The “dangerousness checklist” (if all checked, classical consequences are forced)
+
+You become truly in P vs NP territory if you can check all four:
+    Uniformity: CLN programs for inputs are poly-time constructible and poly-size
+    Soundness: CLN-Easy ⊆ P (without advice / hidden witnesses)
+    NP embedding: SAT ≤p CLN-VALUE and the reduction lands in CLN-Easy
+    No leakage: coefficients’ bit-sizes are controlled so simulation is honest poly-time
+If you got (2) and (3) simultaneously, then SAT ∈ P. That’s literally P=NP.
+
+
+
+Lemma sumQ_map_exists_nonzero :
+  forall (A : Type) (f : A -> Q) (l : list A),
+    ~(sumQ (List.map f l) == 0%Q) ->
+    exists x, List.In x l /\ ~(f x == 0%Q).
+
+Lemma Qabs_sQ_eq_1 :
+  forall s : Sign, Qabs (sQ s) == 1%Q.
+Proof.
+  intros s; destruct s; simpl.
+  - now rewrite Qabs_Q1.
+  - (* Qabs (-1) = 1 *)
+    (* In QArith.Qabs, typically: Qabs_neg, Qabs_Q1, or compute directly *)
+    change (Qabs (-1)%Q == 1%Q).
+    (* One robust way: Qabs (-1) = Qabs 1 *)
+    rewrite <- (Qabs_opp 1%Q). (* if you have Qabs_opp : Qabs (-x) == Qabs x *)
+    now rewrite Qabs_Q1.
+Qed.
+
+Lemma Qabs_chi_eq_1 :
+  forall n (m : Mask n) (s : Corner n),
+    Qabs (chi m s) == 1%Q.
+Proof.
+  induction n as [|n IH]; intros m s; simpl.
+  - now rewrite Qabs_Q1.
+  - set (mh := Vector.hd m).
+    set (mt := Vector.tl m).
+    set (sh := Vector.hd s).
+    set (st := Vector.tl s).
+    rewrite Qabs_Qmult.
+    rewrite IH.
+    destruct mh.
+    + (* factor is sQ sh *)
+      rewrite Qabs_sQ_eq_1.
+      lra.
+    + (* factor is 1 *)
+      now rewrite Qabs_Q1; lra.
+Qed.
+
+Lemma Qabs_sumQ_le :
+  forall xs : list Q,
+    Qabs (sumQ xs) <= sumQ (map Qabs xs).
+Proof.
+  induction xs as [|x tl IH]; simpl.
+  - (* Qabs 0 <= 0 *) lra.
+  - eapply Qle_trans.
+    + (* triangle *) exact (Qabs_triangle x (sumQ tl)).
+    + (* use IH *) lra.
+Qed.
+
+Lemma eval_l1_bound :
+  forall n (F : MV n) (s : Corner n),
+    Qabs (eval F s) <= l1_norm F.
+Proof.
+  intros n F s.
+  unfold eval, l1_norm.
+  (* eval F s = sumQ (map (fun m => F m * chi m s) (all_masks n)) *)
+
+  (* 1) triangle over the sum *)
+  eapply Qle_trans.
+  - apply Qabs_sumQ_le.
+  - (* 2) bound termwise, then sumQ_map_le *)
+    eapply sumQ_map_le.
+    intros m HIn.
+    (* Qabs (F m * chi m s) <= Qabs (F m) *)
+    rewrite Qabs_Qmult.
+    rewrite (Qabs_chi_eq_1 n m s).
+    lra.
+Qed.
+
+Lemma eval_mv_sub :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_sub F G) s
+    ==
+    (eval F s - eval G s)%Q.
+Proof.
+  intros n F G s.
+  unfold eval, mv_sub.
+
+  apply sumQ_map_ext.
+  intros m _.
+  ring.
+
+  rewrite sumQ_map_sub.
+  reflexivity.
+Qed.
+
+Lemma eval_lipschitz_l1 :
+  forall n (F G : MV n) (s : Corner n),
+    Qabs (eval F s - eval G s) <= l1_norm (mv_sub F G).
+Proof.
+  intros n F G s.
+  (* eval F - eval G = eval(F-G) *)
+  rewrite <- (eval_mv_sub n F G s).
+  apply eval_l1_bound.
+Qed.
+
+Lemma eval_approx_of_boolish_k_le :
+  forall n (F : MV n) k d (s : Corner n),
+    boolish_k_le F k d ->
+    exists cs gs,
+      wf_lincomb cs gs /\
+      (length gs <= k)%nat /\
+      Qabs (eval F s - eval (lincomb_embed cs gs) s) <= d.
+Proof.
+  intros n F k d s [cs [gs [Hwf [Hlen Hd]]]].
+  exists cs, gs; repeat split; try assumption.
+  (* Apply Lipschitz with G = lincomb_embed cs gs *)
+  eapply Qle_trans.
+  - apply eval_lipschitz_l1.
+  - exact Hd.
+Qed.
+
+Lemma eval_mv_add :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_add F G) s
+    ==
+    (eval F s + eval G s)%Q.
+Proof.
+  intros n F G s.
+  unfold eval, mv_add.
+
+  (* Rewrite the mapped function *)
+  apply sumQ_map_ext.
+  intros m _.
+  ring.
+  
+  (* Now use sumQ_map_add *)
+  rewrite sumQ_map_add.
+  reflexivity.
+Qed.
+
+Lemma eval_mv_scale :
+  forall n (k : Q) (F : MV n) (s : Corner n),
+    eval (mv_scale k F) s
+    ==
+    (k * eval F s)%Q.
+Proof.
+  intros n k F s.
+  unfold eval, mv_scale.
+
+  apply sumQ_map_ext.
+  intros m _.
+  ring.
+
+  rewrite sumQ_map_scale_l.
+  reflexivity.
+Qed.
+
+Lemma eval_lincomb_embed :
+  forall n (cs : list Q) (gs : list (Corner n -> bool)) (s : Corner n),
+    wf_lincomb cs gs ->
+    eval (lincomb_embed cs gs) s
+    ==
+    sumQ (map (fun '(c,g) => (c * eval (embed g) s)%Q)
+              (combine cs gs)).
+Proof.
+  intros n cs.
+  induction cs as [|c cs' IH]; intros gs s Hwf.
+  - destruct gs; simpl in *.
+    + simpl. unfold eval, mv_zero.
+      reflexivity.
+    + discriminate Hwf.
+  - destruct gs as [|g gs']; simpl in *.
+    + discriminate Hwf.
+    + inversion Hwf; subst.
+      simpl.
+
+      rewrite eval_mv_add.
+      rewrite eval_mv_scale.
+      rewrite IH; auto.
+
+      simpl.
+      ring.
+Qed.
+
+Lemma eval_lincomb_embed_bQ :
+  forall n (cs : list Q) (gs : list (Corner n -> bool)) (s : Corner n),
+    wf_lincomb cs gs ->
+    eval (lincomb_embed cs gs) s
+    ==
+    sumQ (map (fun '(c,g) => (c * bQ (g s))%Q)
+              (combine cs gs)).
+Proof.
+  intros n cs gs s Hwf.
+  rewrite eval_lincomb_embed; auto.
+
+  apply sumQ_map_ext.
+  intros [c g] Hin.
+  simpl.
+  rewrite embed_correct.
+  reflexivity.
+Qed.
+
+Lemma eval_approx_by_boolish_witness :
+  forall n (F : MV n) k d (s : Corner n),
+    boolish_k_le F k d ->
+    exists cs gs,
+      wf_lincomb cs gs /\
+      (length gs <= k)%nat /\
+      Qabs (eval F s -
+        sumQ (map (fun '(c,g) => (c * bQ (g s))%Q) (combine cs gs)))
+      <= d.
+Proof.
+  intros n F k d s [cs [gs [Hwf [Hlen Hd]]]].
+  exists cs, gs; repeat split; try assumption.
+  (* eval F - eval(L) bounded by d *)
+  eapply Qle_trans.
+  - (* use lipschitz *)
+    (* rewrite eval(L) into the bQ sum via eval_lincomb_embed_bQ *)
+    (* then it's exactly the statement *)
+Admitted.
+
+Lemma Qabs_Pi :
+  forall n (a : Corner n) (m : Mask n),
+    Qabs (Pi a m) == (1 / pow2 n)%Q.
+Proof.
+  intros.
+  unfold Pi.
+  rewrite Qabs_Qmult.
+  rewrite Qabs_chi_eq_1.
+  (* Qabs((1/pow2 n)) is itself since positive; then simplify *)
+Admitted.
+
+----
+
+Formalize a CLN_VALUE decision problem cleanly in Coq,
+
+    (* CLN_VALUE: does expression e evaluate to true at corner s? *)
+    Definition CLN_VALUE {n : nat} (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n) : Prop :=
+      eval (eval_expr sq e) s == bQ true.
+    
+    (* More general: value equals an arbitrary Boolean bit b *)
+    Definition CLN_VALUE_bit {n : nat} (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n) (b : bool) : Prop :=
+      eval (eval_expr sq e) s == bQ b.
+
+    Lemma computes_implies_CLN_VALUE_bit :
+      forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool) (s : Corner n),
+        computes sq e f ->
+        CLN_VALUE_bit sq e s (f s).
+    Proof.
+      intros n sq e f s Hc.
+      unfold CLN_VALUE_bit.
+      (* rewrite eval_expr sq e to embed f pointwise, then apply embed_correct *)
+      (* extensionality is not needed because eval is defined by sum over masks;
+         we can use sumQ_map_ext with the hypothesis Hc. *)
+    
+      unfold eval.
+      (* Replace (eval_expr sq e m) with (embed f m) under the sum *)
+      eapply Qeq_trans.
+      - apply sumQ_map_ext.
+        intros m HIn.
+        specialize (Hc m).
+        (* Hc : eval_expr sq e m == embed f m *)
+        (* rewrite coefficient *)
+        (* "==" is Qeq, so rewrite should work with setoid rewriting *)
+        now rewrite Hc.
+      - (* Now it's eval (embed f) s *)
+        exact (embed_correct n f s).
+    Qed.
+    
+    Lemma bQ_inj : forall b1 b2 : bool, bQ b1 == bQ b2 -> b1 = b2.
+    
+    Corollary computes_implies_CLN_VALUE :
+      forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool) (s : Corner n),
+        computes sq e f ->
+        (CLN_VALUE sq e s <-> f s = true).
+    Proof.
+      intros n sq e f s Hc.
+      unfold CLN_VALUE.
+      split.
+      - intro H.
+        (* From CLN_VALUE we have eval(...) s == bQ true.
+           But also eval(...) s == bQ (f s). Conclude f s = true using bQ injectivity. *)
+        pose proof (computes_implies_CLN_VALUE_bit n sq e f s Hc) as Hb.
+        (* Hb : eval(eval_expr sq e) s == bQ (f s) *)
+        (* combine Hb and H: bQ (f s) == bQ true -> f s = true *)
+        (* You’ll want a lemma: bQ_inj : bQ a == bQ b -> a = b. *)
+        admit.
+      - intro Hft.
+        subst.
+        (* use computes_implies_CLN_VALUE_bit with b = true *)
+        unfold CLN_VALUE_bit in *.
+        exact (computes_implies_CLN_VALUE_bit n sq e f s Hc).
+    Admitted.
+
+    Definition CLN_VALUEb {n : nat} (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n) : bool :=
+      if Qeq_dec (eval (eval_expr sq e) s) (bQ true) then true else false.
+    
+    Definition CLN_VALUEb_bit {n : nat} (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n) (b : bool) : bool :=
+      if Qeq_dec (eval (eval_expr sq e) s) (bQ b) then true else false.
+
+    Lemma CLN_VALUEb_correct :
+      forall n (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n),
+        CLN_VALUEb sq e s = true <-> CLN_VALUE sq e s.
+    Proof.
+      intros n sq e s.
+      unfold CLN_VALUEb, CLN_VALUE.
+      destruct (Qeq_dec (eval (eval_expr sq e) s) (bQ true)) as [Heq|Hneq].
+      - split; intro; try reflexivity; exact Heq.
+      - split.
+        + intro H; discriminate H.
+        + intro H; exfalso; exact (Hneq H).
+    Qed.
+
+Or design a SAT→CLN reduction using Conv,
+    
+    Lemma eval_conv :
+      forall n (F G : MV n) (s : Corner n),
+        eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+        
+    Lemma chi_xor :
+      forall n (A B : Mask n) (s : Corner n),
+        chi (mask_xor A B) s == (chi A s * chi B s)%Q.
+
+    Corollary eval_conv_embed :
+      forall n (f g : Corner n -> bool) (s : Corner n),
+        eval (mv_conv (embed f) (embed g)) s
+        ==
+        (bQ (f s) * bQ (g s))%Q.
+
+    Lemma eval_basis_single :
+      forall n (i : Fin.t n) (s : Corner n),
+        eval (basis (mask_single i)) s == sQ (Vector.nth s i).
+
+    (* value in Q at corner s should be (1 + sign_i)/2 *)
+    Definition lit_pos (n) (i : Fin.t n) : GA_expr n :=
+      Mul (Scalar (1#2))
+          (Add (Scalar 1) (Basis i)).
+    
+    (* value should be (1 - sign_i)/2 *)
+    Definition lit_neg (n) (i : Fin.t n) : GA_expr n :=
+      Mul (Scalar (1#2))
+          (Add (Scalar 1) (Mul (Scalar (-1)) (Basis i))).
+
+    Lemma eval_lit_pos :
+      forall n sq (i : Fin.t n) (s : Corner n),
+        eval (eval_expr sq (lit_pos n i)) s
+        ==
+        ( (1 + sQ (Vector.nth s i)) / 2 )%Q.
+    
+    Lemma eval_lit_neg :
+      forall n sq (i : Fin.t n) (s : Corner n),
+        eval (eval_expr sq (lit_neg n i)) s
+        ==
+        ( (1 - sQ (Vector.nth s i)) / 2 )%Q.
+
+    (* product under Conv *)
+    Fixpoint conv_prod (n) (es : list (GA_expr n)) : GA_expr n :=
+      match es with
+      | [] => Scalar 1
+      | e :: tl => Conv e (conv_prod n tl)
+      end.
+    
+    Definition one_minus {n} (e : GA_expr n) : GA_expr n :=
+      Add (Scalar 1) (Mul (Scalar (-1)) e).
+    
+    Definition clause_expr (n) (lits : list (GA_expr n)) : GA_expr n :=
+      one_minus (conv_prod n (map one_minus lits)).
+      
+    Definition cnf_expr (n) (clauses : list (list (GA_expr n))) : GA_expr n :=
+      conv_prod n (map (clause_expr n) clauses).
+      
+    Theorem cnf_expr_correct :
+      forall n sq (phi : CNF n) (s : Corner n),
+        eval (eval_expr sq (cnf_expr n (compile_phi phi))) s
+        ==
+        bQ (f_phi phi s).
+    
+    Lemma embed_empty_coeff_average :
+      forall n (f : Corner n -> bool),
+        embed f mask_empty
+        ==
+        ( (1 / pow2 n) * sumQ (map (fun a => bQ (f a)) (all_corners n)) )%Q.
+
+    Lemma sat_iff_empty_coeff_pos :
+      forall n (f : Corner n -> bool),
+        (exists a, f a = true) <->
+        (0 < embed f mask_empty)%Q.
+        
+    Theorem SAT_reduces_to_CLN_coef_pos :
+      forall phi,
+        SAT phi <->
+        (0 < eval_expr sq (e_phi phi) mask_empty)%Q.
+    
+    Definition Scale (c : Q) (e : GA_expr n) := Mul (Scalar c) e.
+    
+Or analyze what structure of Conv gives you Boolean circuit equivalence.
+
 """
 
