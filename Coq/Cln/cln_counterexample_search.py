@@ -1576,3 +1576,348 @@ Or analyze what structure of Conv gives you Boolean circuit equivalence.
         forall m : Mask n, F m == G m.
 """
 
+"""
+Define a whole “computational geometry” vocabulary **purely from the objects you already proved about**
+(ℓ₁, BoolDist, grade, GP/Conv error bounds, eval Lipschitz).
+
+## More “space/time” observables you can define today
+
+### 1) Action (total effort along the trace)
+
+Instead of just max ℓ₁ (excursion), measure *accumulated* ℓ₁:
+
+* **Action₁**:  (\sum_t |F_t|_1)
+* **ActionΔ** (total variation): (\sum_t |F_{t+1}-F_t|_1)
+
+Why it’s meaningful in your code:
+
+* You already have **Lipschitz of eval wrt ℓ₁** (`eval_lipschitz_l1`), so total variation controls how wildly the semantics can change along the computation.
+
+### 2) Robustness / stability radius (how brittle the computation is)
+
+For a node output (P = X⋆Y), your proven lemmas give a **stability inequality**:
+
+* GP: `gp_error_bound_l1`
+* Conv: `conv_error_bound_l1`
+
+So define a local “condition number”:
+
+* **cond_gp(X,Y)** ≈ (|X|_1 + |Y|_1) (more precisely: the coefficients multiplying the perturbations in your error bound)
+
+Interpretation:
+
+* small cond → stable gate (perturbations don’t blow up)
+* large cond → unstable gate (tiny deviation from boolean shadow explodes)
+
+This is *directly* reusing the error bounds you just got compiling.
+
+### 3) Semantic amplitude and “light cone” at a corner
+
+You proved:
+
+* `eval_l1_bound : |eval F s| ≤ l1_norm F`
+
+So define:
+
+* **amplitude(s,t)** := (|eval(F_t) s|)
+* **amplitude_excursion(s)** := (\max_t |eval(F_t) s|)
+
+Interpretation:
+
+* ℓ₁ excursion bounds *all* corner-amplitudes uniformly (a real “speed limit” / “light cone” inequality).
+
+### 4) Booleanity potential (distance-to-Boolean energy)
+
+You already have:
+
+* `booldist_le_l1`
+
+So define:
+
+* **Boolean energy**: (E_B(F) := bool_dist(F))
+* Or relative: (E_B(F;g) := bool_dist_wrt(F,g))
+
+Interpretation:
+
+* This is literally “how far you’ve drifted from the Boolean universe.”
+* And since (bool_dist(F) \le |F|_1), ℓ₁ excursion is an upper envelope on Boolean drift.
+
+### 5) Compression cost / description length (your k-boolish “dimension”)
+
+Your `boolish_k_le` says: “F is within d of a k-term lincomb of boolean generators”.
+
+So define:
+
+* **model dimension**: (k)
+* **approximation radius**: (d)
+* **coefficient mass**: (\sum |c_i|) (you were already heading here with `l1_lincomb_embed_le_sum_abs`-style lemmas)
+
+Interpretation:
+
+* `k` is like **intrinsic dimension** of the representation.
+* (\sum |c_i|) is like **mass/energy needed to stay near Boolean**.
+* Growth of (\sum |c_i|) under repeated forcing is exactly your separation mechanism.
+
+### 6) Torsion / noncommutativity budget
+
+You already identified commutator magnitude as “curvature”:
+
+* **curvature_B(F)** := (|[B,F]|_1)
+
+You can go one step more “differential-geometric” without leaving algebra:
+
+* **torsion-like asymmetry** at a projector (p=(1-B)/2):
+  [
+  \tau(F) := |F⋆p - p⋆F|_1
+  ]
+  and you had the identity sketch:
+  [
+  F⋆p - p⋆F = \tfrac12 (B⋆F - F⋆B)
+  ]
+  So torsion is basically commutator/2.
+
+Interpretation:
+
+* If torsion is persistently nonzero across many nodes, something must pay in ℓ₁ (your planned lower-bound lemma).
+
+### 7) Grade pressure (how much “dimension leakage” is happening)
+
+You have `exc_grade` already. You can refine it:
+
+* **grade variance**: (\sum_t |\mathrm{grade}(F_{t+1})-\mathrm{grade}(F_t)|)
+* **high-grade occupancy**: fraction of steps where `max_grade(F_t) ≥ r`
+
+Interpretation:
+
+* “Hardness” often shows up as persistent grade mixing under GP.
+
+---
+
+## A compact dictionary (fits your narrative)
+
+* **Time**: GP node count / depth of `GA_expr`
+* **Space**: `exc_l1` (max ℓ₁ along evaluation)
+* **Speed**: (|F_{t+1}-F_t|_1) (or change in `eval` via Lipschitz)
+* **Action**: (\sum_t |F_t|*1) or (\sum_t |F*{t+1}-F_t|_1)
+* **Curvature**: (|[B,F_t]|_1) (commutator magnitude)
+* **Torsion**: (|F⋆p - p⋆F|_1)
+* **Dimension**: `k` in `boolish_k_le`
+* **Mass**: (\sum |c_i|) for the best k-term witness (representation cost)
+* **Stability/condition number**: the prefactors in `gp_error_bound_l1` / `conv_error_bound_l1`
+* **Light cone bound**: (|eval(F_t)s| ≤ |F_t|_1)
+
+All of these are already “in reach” of your Coq infrastructure.
+
+---
+
+If you want the next **most useful formal step**, it’s this:
+
+> Define an explicit “step metric” on traces:
+> [
+> \Delta_t := |F_{t+1}-F_t|*1
+> ]
+> then prove a lemma that relates semantic change:
+> [
+> |eval(F*{t+1})s - eval(F_t)s| \le \Delta_t
+> ]
+> which you basically already have (`eval_lipschitz_l1`). That gives you a clean “velocity ⇒ semantic movement” theorem you can reuse everywhere.
+
+No problem — you can still get almost everything you want **without** a concrete trace list, because your `trace_boolish_k_le` is already a *structural* “trace predicate”: it asserts the property for subexpressions + the node result. That’s enough to define “time/space/velocity/curvature” as **recursive semantics over syntax** rather than as a runtime log.
+
+Here’s the right way to do it in your setting.
+
+---
+
+## 1) Replace “trace” by a structural semantics: define a step-count and a path metric
+
+### Time
+
+“time = number of GP nodes” is just a syntactic measure:
+
+```coq
+Fixpoint gp_nodes {n} (e : GA_expr n) : nat :=
+  match e with
+  | Basis _ | Scalar _ => 0
+  | Cln_Grade.Add e1 e2 => gp_nodes e1 + gp_nodes e2
+  | Mul e1 e2 => S (gp_nodes e1 + gp_nodes e2)
+  | Conv e1 e2 => gp_nodes e1 + gp_nodes e2
+  end.
+```
+
+(If you want total “steps” including Conv/Add, add counters similarly.)
+
+### Space
+
+You already have “space = excursion magnitude”. Without a trace list, define “excursion” structurally as **max ℓ₁ seen anywhere in the expression tree**:
+
+```coq
+Fixpoint exc_l1_struct {n} (sq : Vector.t Q n) (e : GA_expr n) : Q :=
+  match e with
+  | Basis _ | Scalar _ => l1_norm (eval_expr sq e)
+  | Cln_Grade.Add e1 e2 =>
+      Qmax (exc_l1_struct sq e1)
+           (Qmax (exc_l1_struct sq e2)
+                 (l1_norm (eval_expr sq (Cln_Grade.Add e1 e2))))
+  | Mul e1 e2 =>
+      Qmax (exc_l1_struct sq e1)
+           (Qmax (exc_l1_struct sq e2)
+                 (l1_norm (mv_gp sq (eval_expr sq e1) (eval_expr sq e2))))
+  | Conv e1 e2 =>
+      Qmax (exc_l1_struct sq e1)
+           (Qmax (exc_l1_struct sq e2)
+                 (l1_norm (mv_conv (eval_expr sq e1) (eval_expr sq e2))))
+  end.
+```
+
+This is *not* “chronological max during evaluation order”, but it is a legitimate **semantic excursion over the computation tree**. And it matches your current “structural trace” predicate.
+
+### Grade excursion (same idea)
+
+You can do the same with `max_grade` if you have it per MV:
+
+```coq
+Fixpoint exc_grade_struct {n} (sq : Vector.t Q n) (e : GA_expr n) : nat := ...
+```
+
+---
+
+## 2) Velocity without a trace: define “edge velocity” per node
+
+You can define “velocity” as the ℓ₁ jump between the node output and its children outputs — again structurally:
+
+```coq
+Fixpoint vel_struct {n} (sq : Vector.t Q n) (e : GA_expr n) : Q :=
+  match e with
+  | Basis _ | Scalar _ => 0
+  | Cln_Grade.Add e1 e2 =>
+      let F1 := eval_expr sq e1 in
+      let F2 := eval_expr sq e2 in
+      let P  := eval_expr sq (Cln_Grade.Add e1 e2) in
+      Qmax (vel_struct sq e1)
+           (Qmax (vel_struct sq e2)
+                 (Qmax (l1_norm (mv_sub P F1))
+                       (l1_norm (mv_sub P F2))))
+  | Mul e1 e2 =>
+      let F1 := eval_expr sq e1 in
+      let F2 := eval_expr sq e2 in
+      let P  := mv_gp sq F1 F2 in
+      Qmax (vel_struct sq e1)
+           (Qmax (vel_struct sq e2)
+                 (Qmax (l1_norm (mv_sub P F1))
+                       (l1_norm (mv_sub P F2))))
+  | Conv e1 e2 =>
+      let F1 := eval_expr sq e1 in
+      let F2 := eval_expr sq e2 in
+      let P  := mv_conv F1 F2 in
+      Qmax (vel_struct sq e1)
+           (Qmax (vel_struct sq e2)
+                 (Qmax (l1_norm (mv_sub P F1))
+                       (l1_norm (mv_sub P F2))))
+  end.
+```
+
+That gives you a well-defined “maximum local jump” metric.
+
+And you already have the semantic control:
+`eval_lipschitz_l1` lets you translate ℓ₁ jumps into bounded evaluation jumps at any corner.
+
+---
+
+## 3) Curvature without a trace: define it as “max commutator in the tree”
+
+Pick a family of “probe blades” (or any MV probes) `B : MV n` and define:
+
+```coq
+Definition gp_comm {n} (sq : Vector.t Q n) (X Y : MV n) : MV n :=
+  mv_sub (mv_gp sq X Y) (mv_gp sq Y X).
+
+Fixpoint curv_struct {n} (sq : Vector.t Q n) (B : MV n) (e : GA_expr n) : Q :=
+  match e with
+  | Basis _ | Scalar _ => l1_norm (gp_comm sq B (eval_expr sq e))
+  | Cln_Grade.Add e1 e2 =>
+      Qmax (curv_struct sq B e1)
+           (Qmax (curv_struct sq B e2)
+                 (l1_norm (gp_comm sq B (eval_expr sq (Cln_Grade.Add e1 e2)))))
+  | Mul e1 e2 =>
+      let P := mv_gp sq (eval_expr sq e1) (eval_expr sq e2) in
+      Qmax (curv_struct sq B e1)
+           (Qmax (curv_struct sq B e2)
+                 (l1_norm (gp_comm sq B P)))
+  | Conv e1 e2 =>
+      let P := mv_conv (eval_expr sq e1) (eval_expr sq e2) in
+      Qmax (curv_struct sq B e1)
+           (Qmax (curv_struct sq B e2)
+                 (l1_norm (gp_comm sq B P)))
+  end.
+```
+
+Now you have a “curvature profile” of the computation, purely syntactically.
+
+If you later show a forcing lemma like:
+large `curv_struct` ⇒ large `exc_l1_struct`,
+that becomes a clean internal geometry theorem.
+
+---
+
+## 4) The key link you can prove immediately: “space bounds amplitude”
+
+You already essentially have:
+
+* `eval_l1_bound : |eval F s| ≤ l1_norm F`
+
+So you get for the whole expression:
+
+```coq
+Lemma eval_bound_by_exc_l1_struct :
+  forall n sq e s,
+    Qabs (eval (eval_expr sq e) s) <= exc_l1_struct sq e.
+```
+
+Proof is just induction on `e` + `Qmax` monotonicity.
+
+That’s a very “spacetime-like” statement: excursion is an envelope on all semantic amplitudes.
+
+---
+
+## 5) What you lose by not having a runtime trace (and how to recover it later)
+
+You lose *chronological* facts like:
+“at step t, F_t had property P”.
+
+But your `trace_boolish_k_le` already provides a substitute:
+it asserts P for every subexpression result and node result.
+
+If later you want true runtime order, you can define a trace *from syntax* (postorder list of subresults) — but you don’t need it for separation; structural max/accumulation often suffices.
+
+---
+
+## Recommendation
+
+Given your current infrastructure, I’d do:
+
+1. define `gp_nodes`, `exc_l1_struct`, `curv_struct`
+2. prove two lemmas:
+
+   * `trace_boolish_k_le` implies each node’s output is boolish (already trivial by `simpl`)
+   * `eval_bound_by_exc_l1_struct` (gives you a semantic envelope)
+3. then bring in your projector/commutator forcing to show:
+
+   * large curvature at some node ⇒ large ℓ₁ at that node ⇒ large `exc_l1_struct`
+
+---
+
+Lemma eval_expr_abs_le_max_l1_during :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) (s : Corner n),
+    Qabs (eval (eval_expr sq e) s) <= max_l1_during sq e.
+Proof.
+  intros n sq e s.
+  eapply Qle_trans.
+  - (* |eval| <= l1 *)
+    apply eval_l1_bound.
+  - (* l1 <= max_l1_during *)
+    apply l1_eval_le_max_l1_during.
+Qed.
+
+That’s exactly the “space bounds amplitude” statement, with max_l1_during playing the role of your structural excursion.
+
+"""
