@@ -1082,6 +1082,158 @@ Definition mv_conv {n : nat} (F G : MV n) : MV n :=
       ) (all_masks n))
     ) (all_masks n)).
 
+Local Opaque mask_eq_dec.
+
+Lemma sumQ_all_masks_pick :
+  forall n (f : Mask n -> Q) (U : Mask n),
+    sumQ (List.map (fun m => if mask_eq_dec m U then f m else 0%Q) (all_masks n))
+    == f U.
+Proof.
+  induction n as [|n IH]; intros f U.
+  (* n = 0 case *)
+  - dependent destruction U.
+  cbn [all_masks sumQ List.map].   (* IMPORTANT: includes List.map *)
+  (* goal is now: sumQ [if mask_eq_dec [] [] then f [] else 0] == f [] *)
+  cbn [sumQ].                      (* sumQ [x] = x + 0 *)
+  destruct (mask_eq_dec ([] : Mask 0) ([] : Mask 0)) as [Heq|Hneq].
+  + cbn.                           (* if left Heq then f[] else 0  ==> f[] *)
+    rewrite Qplus_0_r.
+    apply Qeq_refl.
+  + exfalso; apply Hneq; reflexivity.
+
+  (* n = S n case *)
+  - dependent destruction U.
+    rename h into Uh.
+    rename U into Ut.
+    cbn [all_masks].
+
+    rewrite map_app.
+    rewrite sumQ_app.
+
+    destruct Uh.
+
+    + (* Uh = true *)
+      (* left half = 0 *)
+
+
+      assert (Hleft :
+        sumQ
+          (List.map
+             (fun m => if mask_eq_dec m (true :: Ut) then f m else 0%Q)
+             (List.map (fun t => false :: t) (all_masks n)))
+        == 0%Q).
+      {
+        (* Turn RHS into a sumQ of zeros so sumQ_map_ext applies *)
+        eapply Qeq_trans.
+        2: {
+          apply (sumQ_map_const0
+                   (List.map (fun t => false :: t) (all_masks n))).
+        }
+
+        apply sumQ_map_ext; intros m Hm.
+        (* show each term equals 0 *)
+        apply (proj1 (in_map_iff' (fun t => false :: t) m (all_masks n))) in Hm.
+        destruct Hm as [t [Ht_in Ht_eq]]; subst m.
+
+        destruct (mask_eq_dec (false :: t) (true :: Ut)) as [Heq|Hneq].
+        - inversion Heq.
+        - cbn. apply Qeq_refl.
+      }
+
+
+      rewrite Hleft.
+      rewrite Qplus_0_l.
+
+      (* right half reduces to IH on tails *)
+      eapply Qeq_trans.
+      2: exact (IH (fun t => f (true :: t)) Ut).
+
+      (* rewrite the LHS so the list is exactly (all_masks n) *)
+      rewrite List.map_map.
+      cbn.
+
+      apply sumQ_map_ext; intros t Ht.
+      destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
+      * subst t.
+        destruct (mask_eq_dec (true :: Ut) (true :: Ut)) as [_|Hbad].
+        { cbn. apply Qeq_refl. }
+        { exfalso; apply Hbad; reflexivity. }
+      * destruct (mask_eq_dec (true :: t) (true :: Ut)) as [Heq|Hneq'].
+        { exfalso.
+          apply HtNeq.
+          dependent destruction Heq.
+          reflexivity.
+        }
+        { cbn. apply Qeq_refl. }
+
+    + (* Uh = false *)
+      (* right half = 0 *)
+      assert (Hright :
+        sumQ
+          (List.map
+             (fun m => if mask_eq_dec m (false :: Ut) then f m else 0%Q)
+             (List.map (fun t => true :: t) (all_masks n)))
+        == 0%Q).
+      {
+        eapply Qeq_trans.
+        2: {
+          apply (sumQ_map_const0
+                   (List.map (fun t => true :: t) (all_masks n))).
+        }
+
+        apply sumQ_map_ext; intros m Hm.
+        apply (proj1 (in_map_iff' (fun t => true :: t) m (all_masks n))) in Hm.
+        destruct Hm as [t [Ht_in Ht_eq]]; subst m.
+
+        destruct (mask_eq_dec (true :: t) (false :: Ut)) as [Heq|Hneq].
+        - inversion Heq.
+        - cbn. apply Qeq_refl.
+      }
+
+      rewrite Hright.
+      rewrite Qplus_0_r.
+
+      (* left half reduces to IH on tails *)
+      eapply Qeq_trans.
+      2: exact (IH (fun t => f (false :: t)) Ut).
+
+      rewrite List.map_map.
+      cbn.
+
+      apply sumQ_map_ext; intros t Ht.
+      destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
+      * subst t.
+        destruct (mask_eq_dec (false :: Ut) (false :: Ut)) as [_|Hbad].
+        { cbn. apply Qeq_refl. }
+        { exfalso; apply Hbad; reflexivity. }
+      * destruct (mask_eq_dec (false :: t) (false :: Ut)) as [Heq|Hneq'].
+        { exfalso.
+          apply HtNeq.
+          dependent destruction Heq.
+          reflexivity.
+        }
+        { cbn. apply Qeq_refl. }
+
+Qed.
+
+Lemma sumQ_all_masks_pick_eq :
+  forall n (f : Mask n -> Q) (U : Mask n),
+    sumQ (List.map (fun X => if mask_eq_dec X U then f X else 0%Q) (all_masks n))
+    == f U.
+Proof.
+  intros n f U.
+  apply sumQ_all_masks_pick.
+Qed.
+
+Lemma sumQ_all_masks_pick_eq_xor :
+  forall n (f : Mask n -> Q) (A B : Mask n),
+    sumQ (List.map (fun X => if mask_eq_dec X (mask_xor A B) then f X else 0%Q) (all_masks n))
+    == f (mask_xor A B).
+Proof.
+  intros n f A B.
+  apply sumQ_all_masks_pick_eq.
+Qed.
+
 (* Character multiplicativity — the key identity *)
 
 Lemma chi_mul :
@@ -1110,10 +1262,44 @@ Proof.
 Qed.
 
 (* Eval is multiplicative under convolution *)
-Lemma eval_conv : forall n (F G : MV n) (s : Corner n),
-  eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+
+(* General Fubini for eval over an arbitrary finite list (same pattern as eval_sum_over_corners) *)
+Lemma eval_sum_over_list :
+  forall n (A : Type) (xs : list A) (H : A -> MV n) (s : Corner n),
+    eval (fun m : Mask n => sumQ (List.map (fun a => H a m) xs)) s
+    ==
+    sumQ (List.map (fun a => eval (H a) s) xs).
 Proof.
-Admitted.
+  intros n A xs.
+  induction xs as [|a tl IH]; intros H s; simpl.
+  - (* xs = [] *)
+    unfold eval. simpl.
+    (* LHS: sum over masks of (0 * chi) *)
+    apply Qeq_trans with (sumQ (List.map (fun _ : Mask n => 0%Q) (all_masks n))).
+    + apply sumQ_map_ext; intros m Hm; simpl; ring.
+    + apply sumQ_map_zero.
+  - (* xs = a :: tl *)
+    unfold eval. simpl.
+    (* Distribute multiplication across pointwise sum *)
+    apply Qeq_trans with
+      (sumQ (List.map
+               (fun m : Mask n =>
+                  ((H a m + sumQ (List.map (fun a0 : A => H a0 m) tl)) * chi' m s)%Q)
+               (all_masks n))).
+    + reflexivity.
+    + (* Split into two sums *)
+      apply Qeq_trans with
+        (sumQ (List.map (fun m : Mask n => (H a m * chi' m s)%Q) (all_masks n)) +
+         sumQ (List.map (fun m : Mask n =>
+                           (sumQ (List.map (fun a0 : A => H a0 m) tl) * chi' m s)%Q)
+                        (all_masks n)))%Q.
+      * rewrite <- sumQ_map_add.
+        apply sumQ_map_ext; intros m Hm; simpl; ring.
+      * (* identify eval(H a) and use IH on tail *)
+        rewrite <- (IH H s).
+        unfold eval. ring.
+Qed.
+
 
 (* ============================================================ *)
 (* Swap parity: (-1)^(# { (i in A, j in B) | j < i })             *)
@@ -1528,143 +1714,6 @@ Proof.
   unfold sgnQ. simpl.
   rewrite metric_factor_empty_l.
   ring.
-Qed.
-
-(* --- “Kronecker delta sum” over all_masks ---
-   sum_{m in all_masks n} (if m=U then f m else 0) == f U
-*)
-Local Opaque mask_eq_dec.
-
-Lemma sumQ_all_masks_pick :
-  forall n (f : Mask n -> Q) (U : Mask n),
-    sumQ (List.map (fun m => if mask_eq_dec m U then f m else 0%Q) (all_masks n))
-    == f U.
-Proof.
-  induction n as [|n IH]; intros f U.
-  (* n = 0 case *)
-  - dependent destruction U.
-  cbn [all_masks sumQ List.map].   (* IMPORTANT: includes List.map *)
-  (* goal is now: sumQ [if mask_eq_dec [] [] then f [] else 0] == f [] *)
-  cbn [sumQ].                      (* sumQ [x] = x + 0 *)
-  destruct (mask_eq_dec ([] : Mask 0) ([] : Mask 0)) as [Heq|Hneq].
-  + cbn.                           (* if left Heq then f[] else 0  ==> f[] *)
-    rewrite Qplus_0_r.
-    apply Qeq_refl.
-  + exfalso; apply Hneq; reflexivity.
-
-  (* n = S n case *)
-  - dependent destruction U.
-    rename h into Uh.
-    rename U into Ut.
-    cbn [all_masks].
-
-    rewrite map_app.
-    rewrite sumQ_app.
-
-    destruct Uh.
-
-    + (* Uh = true *)
-      (* left half = 0 *)
-
-
-      assert (Hleft :
-        sumQ
-          (List.map
-             (fun m => if mask_eq_dec m (true :: Ut) then f m else 0%Q)
-             (List.map (fun t => false :: t) (all_masks n)))
-        == 0%Q).
-      {
-        (* Turn RHS into a sumQ of zeros so sumQ_map_ext applies *)
-        eapply Qeq_trans.
-        2: {
-          apply (sumQ_map_const0
-                   (List.map (fun t => false :: t) (all_masks n))).
-        }
-
-        apply sumQ_map_ext; intros m Hm.
-        (* show each term equals 0 *)
-        apply (proj1 (in_map_iff' (fun t => false :: t) m (all_masks n))) in Hm.
-        destruct Hm as [t [Ht_in Ht_eq]]; subst m.
-
-        destruct (mask_eq_dec (false :: t) (true :: Ut)) as [Heq|Hneq].
-        - inversion Heq.
-        - cbn. apply Qeq_refl.
-      }
-
-
-      rewrite Hleft.
-      rewrite Qplus_0_l.
-
-      (* right half reduces to IH on tails *)
-      eapply Qeq_trans.
-      2: exact (IH (fun t => f (true :: t)) Ut).
-
-      (* rewrite the LHS so the list is exactly (all_masks n) *)
-      rewrite List.map_map.
-      cbn.
-
-      apply sumQ_map_ext; intros t Ht.
-      destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
-      * subst t.
-        destruct (mask_eq_dec (true :: Ut) (true :: Ut)) as [_|Hbad].
-        { cbn. apply Qeq_refl. }
-        { exfalso; apply Hbad; reflexivity. }
-      * destruct (mask_eq_dec (true :: t) (true :: Ut)) as [Heq|Hneq'].
-        { exfalso.
-          apply HtNeq.
-          dependent destruction Heq.
-          reflexivity.
-        }
-        { cbn. apply Qeq_refl. }
-
-    + (* Uh = false *)
-      (* right half = 0 *)
-      assert (Hright :
-        sumQ
-          (List.map
-             (fun m => if mask_eq_dec m (false :: Ut) then f m else 0%Q)
-             (List.map (fun t => true :: t) (all_masks n)))
-        == 0%Q).
-      {
-        eapply Qeq_trans.
-        2: {
-          apply (sumQ_map_const0
-                   (List.map (fun t => true :: t) (all_masks n))).
-        }
-
-        apply sumQ_map_ext; intros m Hm.
-        apply (proj1 (in_map_iff' (fun t => true :: t) m (all_masks n))) in Hm.
-        destruct Hm as [t [Ht_in Ht_eq]]; subst m.
-
-        destruct (mask_eq_dec (true :: t) (false :: Ut)) as [Heq|Hneq].
-        - inversion Heq.
-        - cbn. apply Qeq_refl.
-      }
-
-      rewrite Hright.
-      rewrite Qplus_0_r.
-
-      (* left half reduces to IH on tails *)
-      eapply Qeq_trans.
-      2: exact (IH (fun t => f (false :: t)) Ut).
-
-      rewrite List.map_map.
-      cbn.
-
-      apply sumQ_map_ext; intros t Ht.
-      destruct (mask_eq_dec t Ut) as [HtEq|HtNeq].
-      * subst t.
-        destruct (mask_eq_dec (false :: Ut) (false :: Ut)) as [_|Hbad].
-        { cbn. apply Qeq_refl. }
-        { exfalso; apply Hbad; reflexivity. }
-      * destruct (mask_eq_dec (false :: t) (false :: Ut)) as [Heq|Hneq'].
-        { exfalso.
-          apply HtNeq.
-          dependent destruction Heq.
-          reflexivity.
-        }
-        { cbn. apply Qeq_refl. }
-
 Qed.
 
 Lemma mv_gp_one_l :
@@ -3439,24 +3488,6 @@ Proof.
     rewrite IH. ring.
 Qed.
 
-Lemma sumQ_all_masks_pick_eq :
-  forall n (f : Mask n -> Q) (U : Mask n),
-    sumQ (List.map (fun X => if mask_eq_dec X U then f X else 0%Q) (all_masks n))
-    == f U.
-Proof.
-  intros n f U.
-  apply sumQ_all_masks_pick.
-Qed.
-
-Lemma sumQ_all_masks_pick_eq_xor :
-  forall n (f : Mask n -> Q) (A B : Mask n),
-    sumQ (List.map (fun X => if mask_eq_dec X (mask_xor A B) then f X else 0%Q) (all_masks n))
-    == f (mask_xor A B).
-Proof.
-  intros n f A B.
-  apply sumQ_all_masks_pick_eq.
-Qed.
-
 Lemma mv_gp_assoc_LHS_quad :
   forall n (sq : Vector.t Q n) (F G H : MV n) (U : Mask n),
     mv_gp sq (mv_gp sq F G) H U
@@ -4079,4 +4110,104 @@ Proof.
     apply Qeq_trans with (y := (F A * G B * H C * (basis_mul_coeff sq B C * basis_mul_coeff sq A (mask_xor B C)))%Q).
     { apply Qmult_comp. reflexivity. exact Hc. }
     ring.
+Qed.
+
+(* Eval is multiplicative under convolution *)
+Lemma eval_conv :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+Proof.
+  intros n F G s.
+  unfold mv_conv, eval.
+
+  set (Ms := all_masks n).
+
+  (* --- Fubini over A --- *)
+  eapply Qeq_trans.
+  {
+    apply eval_sum_over_list.
+  }
+
+  (* --- Fubini over B --- *)
+  apply Qeq_trans with
+    (sumQ (List.map
+      (fun A =>
+        sumQ (List.map
+          (fun B =>
+            eval (fun U =>
+              if mask_eq_dec (mask_xor A B) U
+              then (F A * G B)%Q else 0%Q) s)
+          Ms))
+      Ms)).
+  {
+    apply sumQ_map_ext; intros A HA.
+    apply eval_sum_over_list.
+  }
+
+  (* --- Evaluate delta --- *)
+  apply Qeq_trans with
+    (sumQ (List.map
+      (fun A =>
+        sumQ (List.map
+          (fun B =>
+            (F A * G B * chi' (mask_xor A B) s)%Q)
+          Ms))
+      Ms)).
+  {
+    apply sumQ_map_ext; intros A HA.
+    apply sumQ_map_ext; intros B HB.
+    unfold eval; cbn.
+
+    set (f := fun U : Mask n => (F A * G B * chi' U s)%Q).
+  
+    eapply (Qeq_trans _ (sumQ (List.map (fun U : Mask n =>
+      if mask_eq_dec U (mask_xor A B) then f U else 0%Q) (all_masks n))) _).
+    - apply sumQ_map_ext; intros U HU.
+      rewrite if_mask_eq_dec_sym.
+      destruct (mask_eq_dec U (mask_xor A B)) as [Heq|Hneq].
+      + subst U; simpl; unfold f; ring.
+      + simpl; ring.
+
+    -
+      unfold f.
+      pose proof (@sumQ_all_masks_pick_eq_xor n
+        (fun U : Mask n => (F A * G B * chi' U s)%Q) A B) as Hpick.
+      exact Hpick.
+  }
+
+  apply Qeq_trans with
+    (sumQ (List.map (fun A =>
+       sumQ (List.map (fun B =>
+         ((F A * chi' A s)%Q * (G B * chi' B s)%Q)%Q) Ms)) Ms)).
+  {
+    apply sumQ_map_ext; intros A HA.
+    apply sumQ_map_ext; intros B HB.
+    rewrite <- (@chi_mul n A B s).
+    repeat rewrite Qmult_assoc.
+    ring.
+  }
+  
+  (* --- Factor B sum --- *)
+  set (EG := sumQ (List.map (fun B => (G B * chi' B s)%Q) Ms)).
+
+  change
+    (sumQ (List.map (fun A : Mask n =>
+       sumQ (List.map (fun B : Mask n => (F A * chi' A s * (G B * chi' B s))%Q) Ms)) Ms)
+     ==
+     (sumQ (List.map (fun m : Mask n => (F m * chi' m s)%Q) Ms) * EG)%Q).
+
+  apply Qeq_trans with
+    (sumQ (List.map (fun A : Mask n => ((F A * chi' A s)%Q * EG)%Q) Ms)).
+  {
+    apply sumQ_map_ext; intros A HA.
+    apply Qeq_trans with
+      (sumQ (List.map (fun B : Mask n => ((F A * chi' A s)%Q * (G B * chi' B s)%Q)%Q) Ms)).
+    - apply sumQ_map_ext; intros B HB; ring.
+    -
+      unfold EG.
+      apply sumQ_map_push_const.
+  }
+
+  rewrite <- sumQ_map_scale_r.
+  reflexivity.
 Qed.
