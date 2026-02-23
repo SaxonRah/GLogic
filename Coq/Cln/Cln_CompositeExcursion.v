@@ -1245,6 +1245,16 @@ Definition trace_boolish_exists_k {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
   exists k : nat, trace_boolish_k_le sq e k d.
 
+Lemma computes_l1_eq :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool),
+    computes sq e f ->
+    l1_norm (eval_expr sq e) = l1_norm (embed f).
+Proof.
+  intros n sq e f Hcomp.
+  apply l1_norm_ext. intro m.
+  exact (Hcomp m).
+Qed.
+
 Theorem hard_family_separates :
   forall d : Q,
   exists f : forall n, Corner n -> bool,
@@ -1253,6 +1263,17 @@ Theorem hard_family_separates :
       computes sq e (f n) ->
       trace_boolish_exists_k sq e d ->
       (Qpow2 (c * n) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
+Theorem hard_family_separates_div2 :
+  forall d : Q,
+  exists f : forall n, Corner n -> bool,
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      trace_boolish_exists_k sq e d ->
+      (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
 Proof.
 Admitted.
 
@@ -1454,32 +1475,25 @@ Lemma trace_boolish_k_le_subexpr_l :
   forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
     trace_boolish_k_le sq (Mul e1 e2) k d ->
     trace_boolish_k_le sq e1 k d.
-Proof.
-  intros n sq e1 e2 k d H.
-  (* unfold trace_boolish_k_le and use that trace(Mul e1 e2) contains trace(e1) *)
-Admitted.
+Proof. intros; simpl in *; tauto. Qed.
 
 Lemma trace_boolish_k_le_subexpr_r :
   forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
     trace_boolish_k_le sq (Mul e1 e2) k d ->
     trace_boolish_k_le sq e2 k d.
-Proof.
-  intros n sq e1 e2 k d H.
-Admitted.
+Proof. intros; simpl in *; tauto. Qed.
 
 Lemma trace_boolish_k_le_subexpr_conv_l :
   forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
     trace_boolish_k_le sq (Conv e1 e2) k d ->
     trace_boolish_k_le sq e1 k d.
-Proof.
-Admitted.
+Proof. intros; simpl in *; tauto. Qed.
 
 Lemma trace_boolish_k_le_subexpr_conv_r :
   forall n (sq : Vector.t Q n) (e1 e2 : GA_expr n) k d,
     trace_boolish_k_le sq (Conv e1 e2) k d ->
     trace_boolish_k_le sq e2 k d.
-Proof.
-Admitted.
+Proof. intros; simpl in *; tauto. Qed.
 
 Open Scope Q_scope.
 Lemma gp_boolish_witness_error_only :
@@ -1501,9 +1515,17 @@ Proof.
   exists LF, LG; repeat split; try assumption.
   eapply Qle_trans.
   - apply gp_error_bound_l1; auto.
-  - (* use HdF, HdG to rewrite ||F-LF|| and ||G-LG|| by d *)
-    (* plus algebra/mono; straightforward *)
-Admitted.
+  - apply Qplus_le_compat.
+    + (* ∥F∥₁ * ∥G - LG∥₁ <= ∥F∥₁ * d *)
+      apply Qmult_le_compat_r with (z := l1_norm F) in HdG.
+      * setoid_rewrite Qmult_comm in HdG at 1.
+        setoid_rewrite Qmult_comm in HdG at 2.
+        exact HdG.
+      * apply l1_norm_nonneg.
+    + (* ∥F - LF∥₁ * ∥LG∥₁ <= d * ∥LG∥₁ *)
+      apply Qmult_le_compat_r; [exact HdF | apply l1_norm_nonneg].
+Qed.
+
 (* Later do :
 
 Definition embed_gp_closed_up_to {n : nat} (sq : Vector.t Q n) (delta : Q) : Prop :=
