@@ -1,134 +1,3 @@
-(*
-
-Dependency Chain for the Separation Theorem
-
-The final theorem `IP_formula_size_lower_bound` needs:
-
-1. **`support_size_IP`**
-    — IP mod 2 on 2m variables has 2^m nonzero Fourier coefficients
-
-2. **`translate_support_size_bound`**
-    — formula of size s produces a GA expression with ≤ 2^s support
-
-3. A **support-preservation lemma** connecting `translate_correct`
-    to support size equality (i.e., if two multivectors agree pointwise, they have the same support)
-
-4. **`Nat.pow_le_mono_r`** or similar to conclude `m ≤ formula_size phi` from `2^m ≤ 2^(formula_size phi)`
-
--------------------------------------------------------------------------------
-
-### Block 1 — Basic support facts (straightforward)
-
-These are all direct from definitions and should go quickly:
-
-  **`support_size_zero`**:
-    Every coefficient of `mv_zero` is 0, so the filter returns `[]`.
-    Unfold `support_size`, `mv_zero`, show `Qeq_bool 0 0 = true` for each mask,
-    so `negb` gives `false`, filter keeps nothing.
-
-  **`support_size_mv_one`**:
-    `mv_one = basis mask_empty`. Only `mask_empty` has coefficient 1 (nonzero);
-    all others are 0. You basically need that `Qeq_bool 1 0 = false` and `Qeq_bool 0 0 = true`, then count the filter.
-
-  **`support_size_basis`**:
-    Same pattern — `basis (mask_single i)` has exactly one nonzero entry.
-
-  **`support_size_le_2n`**:
-    `support_size F` is the length of a filtered sublist of `all_masks n`,
-    which has length `2^n`. Use `filter_length_le` or similar.
-
-  **`support_size_scale`**:
-    For `c ≠ 0`, the mask `m` has `c * F(m) ≠ 0` iff `F(m) ≠ 0`.
-    The subtlety is that `Qeq_bool` works with Leibniz on `Q` but you need `==`-compatibility.
-    You may need a helper like `Qeq_bool_iff`.
-
--------------------------------------------------------------------------------
-
-### Block 2 — Algebraic support bounds
-
-**`support_size_add`**:
-  The support of `F + G` is contained in `supp(F) ∪ supp(G)`.
-  You already have `supp_add` proved in `Cln_BoolDist.v`.
-  The counting argument is: filter on a union is bounded by sum of filter lengths.
-  This needs a list-level lemma about filter lengths.
-
-**`support_size_conv`**:
-  This is the key multiplicative bound. Support of `F ⊙ G` is contained in `{A ⊕ B : A ∈ supp(F), B ∈ supp(G)}`.
-  You already have `support_conv_subset_xor`.
-  The counting bound `|S₁ ⊕ S₂| ≤ |S₁| × |S₂|` needs a combinatorial argument 
-    — the xor-sumset has at most that many distinct elements.
-
--------------------------------------------------------------------------------
-
-### Block 3 — Structural support bound
-
-**`eval_support_size_le`**:
-  Induction on `GA_expr`, using blocks 1 and 2 at each case.
-  The `Mul` case with the worst-case `2^n` fallback makes it easy — you just need `support_size_le_2n`.
-
--------------------------------------------------------------------------------
-
-### Block 4 — Translation bound
-
-**`support_size_bound_translate`**:
-  Induction on `BoolFormula`.
-  You need to check what `translate` produces for each case (AND → Conv, OR → combination, NOT → scalar ops)
-  and verify the bound tracks through. The `formula_size` definition with the `1 +` at each connective gives you room.
-
-**`translate_support_size_bound`**:
-  Immediate corollary combining `eval_support_size_le` and `support_size_bound_translate` via transitivity.
-
--------------------------------------------------------------------------------
-
-### Block 5 — The hard Fourier-analytic lemmas
-
-**`support_size_XOR`**:
-  XOR has exactly 1 nonzero coefficient (the pseudoscalar).
-  You already proved `embed_XOR_full_mask` and `xor_sum_nonzero` in `Cln_Grade.v`.
-  You need to additionally show all *other* coefficients are zero.
-  This requires the Fourier inversion argument — XOR is a single character, so its embedding lands on exactly one mask.
-
-**`support_size_IP`**:
-  This is the hardest standalone lemma.
-  IP mod 2 on 2m variables has exactly 2^m nonzero Fourier coefficients.
-  The key insight: IP decomposes as XOR of m independent AND pairs, and in the Fourier/Walsh basis,
-  each AND pair contributes coefficients at two levels, giving 2^m total nonzero terms via a tensor product structure.
-  You could prove this via induction on m using `IP_n_func_cons2`.
-
-
-### The Final Theorem
-
-**`IP_formula_size_lower_bound`**:
-  Once you have `support_size_IP` and `translate_support_size_bound`, you need one glue lemma:
-
-```coq
-Lemma support_size_eval_eq : forall n (F G : MV n),
-  (forall s, eval F s == eval G s) ->
-  support_size F = support_size G.
-```
-
-This follows from Walsh inversion / evaluation injectivity — if two multivectors agree on all corners, 
-they're equal coefficient-wise (by orthogonality of characters).
-
-You have `corner_walsh_sum_ortho` which gives you this. Then chain:
-
-```
-2^m = support_size(embed(IP))          [support_size_IP]
-    = support_size(eval_expr sq (translate phi))  [glue lemma + translate_correct]
-    ≤ 2^(formula_size phi)              [translate_support_size_bound]
-```
-
-Therefore `m ≤ formula_size phi`.
-
----------------------------------------------------------------------------------
-
-The cleanest path is blocks 1 -> ... -> 5 -> final theorem.
-Blocks 1–3 are mostly mechanical.
-Block 4 depends on `translate`'s definition.
-Block 5 (especially `support_size_IP`) is where the real math lives.
-
-*)
-
 Require Import Cln_Full.
 Require Import Cln_Grade.
 Require Import Cln_BoolDist.
@@ -1776,35 +1645,140 @@ Proof.
 Qed.
 
 (* Step 9: embed(IP)(M) ≠ 0 for all M *)
+
+Lemma pow2_injectZ : forall n,
+  pow2 n == inject_Z (2 ^ Z.of_nat n).
+Proof.
+  induction n as [|n IH].
+  - simpl. reflexivity.
+  -
+    cbn [pow2].
+    rewrite IH.
+    rewrite Nat2Z.inj_succ.
+    rewrite Z.pow_succ_r by lia.
+    rewrite inject_Z_mult.
+    change (inject_Z 2) with (2%Q).
+    change (QArith_base.inject_Z 2) with (2%Q).
+    reflexivity.
+Qed.
+
+Lemma Zpow2_nat_eq_1 : forall n,
+  Z.pow 2 (Z.of_nat n) = 1%Z -> n = 0%nat.
+Proof.
+  induction n as [|n IH]; intro H; [reflexivity|].
+  rewrite Nat2Z.inj_succ in H.
+  rewrite Z.pow_succ_r in H by lia.
+  assert (Hdiv : (2 | 1)%Z).
+  { exists (Z.pow 2 (Z.of_nat n)). lia. }
+  now destruct Hdiv as [k Hk]; lia.
+Qed.
+
 Lemma embed_IP_all_nonzero : forall m (M : Mask (m + m)),
   (m > 0)%nat ->
   ~ (embed (@IP_n_func (m + m)) M == 0).
 Proof.
   intros m M Hm Habs.
-  rewrite embed_via_signed_walsh in Habs.
   destruct (signed_walsh_IP_magnitude m M Hm) as [s Hs].
-  rewrite Hs in Habs.
-  (* Now Habs : (1/2^{2m}) * ((1#2)*δ_{M,∅}*2^{2m} - (1#2)*signed(s)*2^m) == 0 *)
-  (* Since 1/2^{2m} ≠ 0, the inner expression must be 0 *)
-  assert (Hpow_nz : ~(1 / pow2 (m + m) == 0)).
-  { apply Qdiv1_nonzero. apply pow2_nonzero. }
-  (* Factor out the nonzero scalar *)
-  apply Hpow_nz.
-  (* ... or work directly: multiply both sides by pow2(m+m), 
-     derive contradiction from the resulting equation *)
-  (* Case split on M = ∅ vs M ≠ ∅ *)
-  destruct (mask_eq_dec M mask_empty) as [Hempty|Hnotempty].
-  - (* M = ∅: embed = (1/2) - (±1)/(2^{m+1}), show ≠ 0 *)
+  assert (Hembed := embed_via_signed_walsh (m+m) (@IP_n_func (m+m)) M).
+  
+  (* signed_walsh ≠ 0 *)
+  assert (Hsw_nz : ~ (signed_walsh (@IP_n_func (m+m)) M == 0)).
+  { intro Hsw0.
+
+    (* from Hs and Hsw0 *)
+    assert (Hc : signed s * inject_Z (2 ^ Z.of_nat m) == 0)
+      by (eapply Qeq_trans; [symmetry; exact Hs | exact Hsw0]).
+
+    (* signed s ≠ 0 *)
+    assert (Hsigned_nz : ~ (signed s == 0)).
+    { destruct s; cbv [signed]; unfold Qeq; simpl; discriminate. }
+
+    (* inject_Z (2^m) ≠ 0 *)
+    assert (Hinj_nz : ~ (inject_Z (2 ^ Z.of_nat m) == 0)).
+    { intro Hin0.
+      (* turn inject_Z _ == 0 into Z equality *)
+      assert (Hz0 : (2 ^ Z.of_nat m)%Z = 0%Z).
+      {
+        apply (QArith_base.inject_Z_injective (2 ^ Z.of_nat m) 0%Z).
+        (* Goal: inject_Z (2^m) == inject_Z 0 *)
+        (* But 0 : Q reduces to inject_Z 0 *)
+        change (inject_Z (2 ^ Z.of_nat m) == inject_Z 0%Z).
+        exact Hin0.
+      }
+      (* but Z.pow is never 0 when base ≠ 0 *)
+      apply (Z.pow_nonzero 2 (Z.of_nat m)) in Hz0; try lia.
+    }
+
+    (* now split the product *)
+    apply Qmult_integral in Hc as [Hbad | Hbad].
+    - exact (Hsigned_nz Hbad).
+    - exact (Hinj_nz Hbad).
+  }
+  
+ (* From Hembed and Habs: the inner expression == 0 *)
+  assert (H0 : (1 / pow2 (m + m) *
+    ((1 # 2) * (if mask_eq_dec M mask_empty then pow2 (m + m) else 0) -
+     (1 # 2) * signed_walsh (@IP_n_func (m + m)) M)) == 0).
+  { eapply Qeq_trans; [symmetry; exact Hembed | exact Habs]. }
+
+ (* 1/pow2 ≠ 0 *)
+  assert (Hdiv_nz : ~ (1 / pow2 (m + m) == 0)).
+  { intro Hk.
+    assert (Hp : pow2 (m+m) * (1 / pow2 (m+m)) == 1)
+      by (field; apply pow2_nonzero).
+    setoid_rewrite Hk in Hp.
+    assert (Hbad : (1 == 0)%Q) by (eapply Qeq_trans; [symmetry; exact Hp|]; ring).
+    unfold Qeq in Hbad; simpl in Hbad; discriminate.
+  }
+  apply Qmult_integral in H0 as [H0 | H0].
+  { exact (Hdiv_nz H0). }
+
+  destruct (mask_eq_dec M mask_empty) as [Meq | Mneq].
+  
+  - (* M = empty: (1#2)*pow2(m+m) - (1#2)*sw == 0, so pow2(m+m) == sw *)
     subst M.
-    (* The value is (1/2)(1 ∓ 1/2^m), nonzero for m ≥ 1 *)
-    (* This requires showing 1/2^m < 1 for m ≥ 1, 
-       i.e., 2^m > 1, which follows from m > 0 *)
-    admit. (* arithmetic: derive contradiction from Habs *)
-  - (* M ≠ ∅: embed = -(1/2) * (1/2^{2m}) * (±2^m) = ∓1/2^{m+1} ≠ 0 *)
-    (* The δ term is 0, so embed = -(1#2)*(1/2^{2m})*signed(s)*2^m *)
-    (* = ∓1/2^{m+1}, which is clearly nonzero *)
-    admit. (* arithmetic: derive contradiction from Habs *)
-Admitted.
+    assert (Hsw_eq : signed_walsh (@IP_n_func (m+m)) mask_empty == pow2 (m+m)).
+    { assert (H' : (1#2) * (pow2 (m+m) - signed_walsh (@IP_n_func (m+m)) mask_empty) == 0)
+        by (setoid_rewrite <- H0; ring).
+      apply Qmult_integral in H' as [H'|H'].
+      - unfold Qeq in H'; simpl in H'; discriminate.
+      - setoid_replace (signed_walsh (@IP_n_func (m+m)) mask_empty)
+          with (pow2 (m+m) - (pow2 (m+m) - signed_walsh (@IP_n_func (m+m)) mask_empty))%Q
+          by ring.
+        setoid_rewrite H'. ring. }
+    (* So signed s * 2^m == 2^(m+m) *)
+    assert (Hz : signed s * inject_Z (2 ^ Z.of_nat m) == pow2 (m+m)).
+    { eapply Qeq_trans; [symmetry; exact Hs | exact Hsw_eq]. }
+    setoid_rewrite pow2_injectZ in Hz.
+    destruct s; unfold signed in Hz.
+    
+    + (* s = true: -1 * 2^m == 2^(m+m), impossible *)
+      assert (Hbad : inject_Z (2 ^ Z.of_nat (m+m)) == -1 * inject_Z (2 ^ Z.of_nat m))
+        by (eapply Qeq_trans; [symmetry; exact Hz |]; ring).
+      unfold inject_Z, Qeq in Hbad; simpl in Hbad.
+      rewrite !Z.mul_1_r in Hbad.
+      pose proof (Z.pow_pos_nonneg 2 (Z.of_nat (m+m)) ltac:(lia) ltac:(lia)) as Hpos1.
+      pose proof (Z.pow_pos_nonneg 2 (Z.of_nat m) ltac:(lia) ltac:(lia)) as Hpos2.
+      destruct (2 ^ Z.of_nat m)%Z eqn:Em; lia.
+
+    + (* s = false: 1 * 2^m == 2^(m+m), so 2^m == 2^(m+m), impossible for m>0 *)
+      assert (Hbad : inject_Z (2 ^ Z.of_nat (m+m)) == inject_Z (2 ^ Z.of_nat m)).
+      { eapply Qeq_trans; [symmetry; exact Hz |]; ring. }
+      unfold inject_Z, Qeq in Hbad; simpl in Hbad.
+      rewrite !Z.mul_1_r in Hbad.
+      rewrite Nat2Z.inj_add, Z.pow_add_r in Hbad by lia.
+      pose proof (Z.pow_pos_nonneg 2 (Z.of_nat m) ltac:(lia) ltac:(lia)).
+      assert (H2m1 : (2 ^ Z.of_nat m = 1)%Z) by nia.
+      apply Zpow2_nat_eq_1 in H2m1; lia.
+
+  - (* M ≠ empty: -(1#2)*sw == 0, so sw == 0, contradiction *)
+    apply Hsw_nz.
+    assert (H' : (-(1#2)) * signed_walsh (@IP_n_func (m+m)) M == 0).
+    { setoid_rewrite <- H0; ring. }
+    apply Qmult_integral in H' as [H'|H'].
+    + unfold Qeq in H'; simpl in H'; discriminate.
+    + exact H'.
+Qed.
 
 (* Step 10: Full support follows *)
 Lemma support_size_IP : forall m,
