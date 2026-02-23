@@ -1411,89 +1411,48 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma signed_walsh_tensor2 :
-  forall n (g : Corner 2 -> bool) (h : Corner n -> bool)
-         (b1 b2 : bool) (m : Mask n),
-    signed_walsh
-      (fun a : Corner (S (S n)) =>
-         xorb (g (Vector.cons _ (Vector.hd a) _
-                  (Vector.cons _ (Vector.hd (Vector.tl a)) _ (Vector.nil _))))
-              (h (Vector.tl (Vector.tl a))))
-      (Vector.cons _ b1 _ (Vector.cons _ b2 _ m))
+Lemma sumQ_flat_map :
+  forall (A B : Type) (l : list A) (g : A -> list B) (f : B -> Q),
+    sumQ (map f (flat_map g l))
     ==
-    (signed_walsh_2 g b1 b2 * signed_walsh h m)%Q.
+    sumQ (map (fun a => sumQ (map f (g a))) l).
 Proof.
-  intros n g h b1 b2 m.
-
-  (* Expand signed_walsh over all_corners (S (S n)) into 4 quadrants *)
-  unfold signed_walsh.
-  rewrite all_corners_SS.
-  rewrite !map_app, !sumQ_app, !map_map.
-
-  (* Make hd/tl/cons definitional inside each quadrant *)
-  repeat (cbn [Vector.hd Vector.tl]).
-
-  (* IMPORTANT: make chi' disappear so both sides use the same chi *)
-  cbn [chi'].
-
-  (* Kill the (if b1 then 1 else 1) clutter etc *)
-  destruct b1, b2; cbn.
-
-  (* From here we have 4 goals; solve them uniformly. *)
-  all: cbn [chi'].
-
-  (* Split signed(xorb ...) everywhere *)
-  all: repeat rewrite signed_xorb.
-
-  (* Clean up trivial 1-multipliers that appear after cbn *)
-  all: repeat (rewrite Qmult_1_l || rewrite Qmult_1_r).
-
-  (* Put each summand into the shape: (CONST) * (signed(h x) * chi m x) *)
-  all: repeat rewrite Qmult_assoc.
-  all: repeat match goal with
-  | |- context [ (signed ?A * signed ?B) * (?k * chi ?m ?x) ] =>
-      (* (signed A * signed B) * (k * chi)  ->  (signed A * k) * (signed B * chi) *)
-      rewrite <- Qmult_assoc;
-      (* signed A * (signed B * (k * chi)) *)
-      rewrite (Qmult_assoc (signed B) k (chi m x));
-      (* signed A * (signed B * k * chi) *)
-      rewrite (Qmult_comm (signed B) k);
-      (* signed A * (k * signed B * chi) *)
-      repeat rewrite Qmult_assoc
-  end.
-
-  (* Now pull out the CONST from each of the four quadrant sums *)
-  all: repeat (rewrite sumQ_map_mul_l).
-
-  (* Make chi' disappear on the RHS too *)
-  all: cbn [chi'].
-  (* Define/fold the common inner Walsh sum, WITHOUT mentioning n *)
-  all: match goal with
-       | |- context [sumQ (map (fun a => signed (h a) * chi m a) (all_corners _))] =>
-           set (SW := sumQ (map (fun a => signed (h a) * chi m a) (all_corners _)));
-           (* fold it everywhere it appears *)
-           repeat match goal with
-           | |- context [sumQ (map (fun a => signed (h a) * chi m a) (all_corners _))] =>
-               fold SW
-           end
-       end.
-
-
-  (* Factor SW on the right across the 4-term sum *)
-  all: repeat rewrite <- Qmult_plus_distr_r.
-
-  (* Expand the RHS Walsh(h) and eliminate chi' there too *)
-  all: unfold signed_walsh; cbn [chi'].
-  all: fold SW.
-
-  (* At this point, the only remaining work is simplifying the 4 constants. *)
-  all: cbn.
-  all: repeat (rewrite Qmult_1_l || rewrite Qmult_1_r).
-  all: repeat (rewrite Qplus_0_l || rewrite Qplus_0_r).
-
-  reflexivity.
+  intros A B l; induction l as [|a l IH]; intros g f; cbn.
+  - reflexivity.
+  - rewrite !map_app, !sumQ_app. cbn.
+    rewrite IH. reflexivity.
 Qed.
 
+Lemma map_flat_map :
+  forall (A B C : Type) (l : list A) (g : A -> list B) (f : B -> C),
+    map f (flat_map g l) = flat_map (fun a => map f (g a)) l.
+Proof.
+  intros A B C l; induction l as [|a l IH]; intros g f; cbn.
+  - reflexivity.
+  - rewrite map_app, IH. reflexivity.
+Qed.
+
+Definition cons2 {n} (c2 : Corner 2) (x : Corner n) : Corner (S (S n)) :=
+  Vector.cons Sign (Vector.hd c2) (S n)
+    (Vector.cons Sign (Vector.hd (Vector.tl c2)) n x).
+
+Lemma all_corners_SS_flatmap :
+  forall n,
+    all_corners (S (S n)) =
+      flat_map
+        (fun c2 : Corner 2 =>
+           map (fun x : Corner n => cons2 c2 x) (all_corners n))
+        (all_corners 2).
+Proof.
+  intro n.
+  rewrite all_corners_SS.
+  rewrite all_corners_2. cbn [flat_map].
+  unfold cons2.
+  (* now just normalize *)
+  cbn.
+  rewrite app_nil_r.
+  reflexivity.
+Qed.
 
 Lemma signed_walsh_tensor2 :
   forall n (g : Corner 2 -> bool) (h : Corner n -> bool)
@@ -1509,128 +1468,151 @@ Lemma signed_walsh_tensor2 :
 Proof.
   intros n g h b1 b2 m.
   unfold signed_walsh at 1.
-  rewrite all_corners_SS, !map_app, !sumQ_app, !map_map.
-  set (L := all_corners n).
-
-  (* At this point your goal is the big 4-sum you pasted. *)
-
-  (* 1) Simplify the Vector.hd/tl inside each quadrant. *)
-  (* Each quadrant has either Pos/Neg for the first two coords, and tail = x *)
-  (* You can just brute-force with simpl; it works because cons/hd/tl are definitional. *)
-  repeat (simpl (Vector.hd (Vector.cons _ _ _ _))).
-  repeat (simpl (Vector.tl (Vector.cons _ _ _ _))).
-  repeat (simpl (Vector.hd (Vector.tl (Vector.cons _ _ _ _)))).
-  repeat (simpl (Vector.tl (Vector.tl (Vector.cons _ _ _ _)))).
-
-  (* After the simpls, each map term should look like:
-       fun x => signed (xorb (g cornerXY) (h x)) * chi' (...) (cornerXY::x)
-     with cornerXY one of (Pos,Pos), (Pos,Neg), (Neg,Pos), (Neg,Neg).
-  *)
-
-  (* 2) Use signed_xorb to split the xorb inside signed. *)
-  repeat (rewrite signed_xorb).
-
-  (* 3) Use chi'_cons2_factor to factor the character into the first two coords + tail. *)
-  repeat (rewrite chi'_cons2_factor).
-
-  (* 4) Now each quadrant is a constant (depends only on Pos/Neg and b1 b2)
-        times sumQ(map(fun x => signed(h x) * chi' m x) L). Pull constants out. *)
-
-  (* First, rewrite each quadrant’s sum by pulling the constant out of map+sumQ.
-     You may need to reassociate multiplications so the constant is on the left. *)
-  repeat (
-    (* reassociate so it matches sumQ_map_mul_l’s shape k * ( ... x ... ) *)
-    repeat rewrite Qmult_assoc;
-    (* then pull out *)
-    rewrite sumQ_map_mul_l
-  ).
-
-  (* 5) Recognize the common inner sum as signed_walsh h m. *)
-  unfold signed_walsh.
-  (* signed_walsh h m = sumQ(map(fun c => signed(h c) * chi' m c) (all_corners n)) *)
-  (* but L was set to all_corners n *)
-  subst L.
-
-  (* 6) The remaining front factor should be exactly signed_walsh_2 g b1 b2,
-        up to associativity/commutativity of + and associativity of *. *)
-  (* Usually this is just unfolding signed_walsh_2 and simplifying. *)
-  unfold signed_walsh_2.
-  (* If signed_walsh_2 is defined as a 4-term expression, simpl/reflexivity finishes.
-     Otherwise, keep rewriting with all_corners for 2. *)
-
-    (* Make hd/tl disappear under the maps *)
-  repeat (cbn [Vector.hd Vector.tl]).
-
-  repeat rewrite signed_xorb.
-  repeat rewrite chi'_cons2_factor.
-
-  repeat rewrite Qmult_assoc.
-  repeat (rewrite sumQ_map_mul_l).
-
-  (* Identify the shared Walsh sum for h *)
-  set (SW := sumQ (map (fun a : Corner n => signed (h a) * chi m a) (all_corners n))).
-  (* rewrite SW back to signed_walsh h m if you want *)
-  (* unfold signed_walsh; ... *)
-
-  (* factor SW on the right *)
-  repeat rewrite <- Qmult_plus_distr_r.
-
-  (* Expand signed_walsh g at n=2 and match the 4 constants *)
-  unfold signed_walsh.
-  rewrite (all_corners_SS 0).
+  rewrite all_corners_SS_flatmap.
   
-  (* Finish the LHS factoring into constants * SW *)
-  repeat (cbn [Vector.hd Vector.tl]).
-  repeat rewrite signed_xorb.
-  repeat rewrite chi'_cons2_factor.
-  repeat rewrite Qmult_assoc.
-  repeat (rewrite sumQ_map_mul_l).
-  repeat rewrite <- Qmult_plus_distr_r.
+  (* name the integrand to keep rewriting manageable *)
+  set (F :=
+    fun a : Corner (S (S n)) =>
+      signed
+        (xorb
+           (g (Vector.cons Sign (Vector.hd a) 1
+                 (Vector.cons Sign (Vector.hd (Vector.tl a)) 0 (Vector.nil Sign))))
+           (h (Vector.tl (Vector.tl a))))
+      * chi' (Vector.cons bool b1 (S n) (Vector.cons bool b2 n m)) a).
 
-  (* Now expand the RHS sum over all_corners 2 (currently expressed via all_corners_SS 0) *)
-  repeat rewrite map_app.
-  repeat rewrite sumQ_app.
+  (* push map F through flat_map *)
+  rewrite (map_flat_map
+            (Corner 2) (Corner (S (S n))) Q
+            (all_corners 2)
+            (fun c2 : Corner 2 => map (fun x : Corner n => cons2 c2 x) (all_corners n))
+            F).
+  
+  eapply Qeq_trans.
+  {
+    rewrite <- (map_id (flat_map
+      (fun a : Corner 2 => map F (map (fun x : Corner n => cons2 a x) (all_corners n)))
+      (all_corners 2))).
+
+    rewrite (sumQ_flat_map
+      (Corner 2) Q
+      (all_corners 2)
+      (fun a : Corner 2 => map F (map (fun x : Corner n => cons2 a x) (all_corners n)))
+      (fun q : Q => q)).
+    
+    reflexivity.
+  }
+  cbn.
+  
+  (* --- cleanup: remove map (fun q => q) and fuse map-map --- *)
+  repeat (change (fun q : Q => q) with (@id Q); rewrite map_id).
   repeat rewrite map_map.
 
-  (* Evaluate all_corners 0 and simplify the resulting singleton maps *)
-  cbn [all_corners].  (* or simpl if that works better *)
-  cbn.
+  (* name the 4 explicit 2-corners *)
+  set (cPP := Vector.cons Sign Pos 1 (Vector.cons Sign Pos 0 (Vector.nil Sign))).
+  set (cPN := Vector.cons Sign Pos 1 (Vector.cons Sign Neg 0 (Vector.nil Sign))).
+  set (cNP := Vector.cons Sign Neg 1 (Vector.cons Sign Pos 0 (Vector.nil Sign))).
+  set (cNN := Vector.cons Sign Neg 1 (Vector.cons Sign Neg 0 (Vector.nil Sign))).
 
-  (* After this, both sides should match up to associativity of + / * *)
-  repeat rewrite Qplus_assoc.
-  repeat rewrite <- Qplus_assoc.
-  repeat rewrite Qmult_assoc.
-  repeat rewrite <- Qmult_assoc.
+  (* name the common Walsh sum for h *)
+  set (SW := signed_walsh h m).
 
-  (* redefine SW to match chi, not chi' *)
-  
-  subst SW.
+  (* also name the four quadrant sums (now in the fused form) *)
+  set (SPP := sumQ (map (fun x : Corner n => F (cons2 cPP x)) (all_corners n))).
+  set (SPN := sumQ (map (fun x : Corner n => F (cons2 cPN x)) (all_corners n))).
+  set (SNP := sumQ (map (fun x : Corner n => F (cons2 cNP x)) (all_corners n))).
+  set (SNN := sumQ (map (fun x : Corner n => F (cons2 cNN x)) (all_corners n))).
 
-  (* rewrite signed(xorb ...) into product *)
+  assert (SPP ==
+          (signed (g cPP) *
+           ((if b1 then 1 else 1) * ((if b2 then 1 else 1) * 1)) *
+           SW)%Q) as SPP_eq.
+  {
+    unfold SPP, SW, F, signed_walsh.
 
-  repeat match goal with
-  | |- context [ signed (xorb ?p ?q) ] => rewrite (signed_xorb p q)
-  end.
+    set (K :=
+      (signed (g cPP) *
+       ((if b1 then 1 else 1) * ((if b2 then 1 else 1) * 1)))%Q).
 
-  (* reassociate so constant is on the left *)
-  repeat rewrite Qmult_assoc.
+    eapply Qeq_trans.
+    2: {
+      apply sumQ_map_mul_l.
+    }
+    
+    apply sumQ_map_ext; intros x Hx.
+    unfold K.
+    unfold cPP.
+    cbn [cons2 Vector.hd Vector.tl].
+    rewrite signed_xorb.
+    rewrite (chi'_cons2_factor n b1 b2 m Pos Pos x).
+    destruct b1, b2; cbn; ring.
+  }
 
-  (* now each quadrant sum is k * SW *)
-  repeat (rewrite sumQ_map_mul_l).
+  assert (SPN ==
+          (signed (g cPN) *
+           ((if b1 then 1 else 1) * ((if b2 then -1 else 1) * 1)) *
+           SW)%Q) as SPN_eq.
+  {
+    unfold SPN, SW, F, signed_walsh.
+    set (K :=
+      (signed (g cPN) *
+       ((if b1 then 1 else 1) * ((if b2 then -1 else 1) * 1)))%Q).
+    eapply Qeq_trans.
+    2: { apply sumQ_map_mul_l. }
+    apply sumQ_map_ext; intros x Hx.
+    unfold K.
+    unfold cPN.
+    cbn [cons2 Vector.hd Vector.tl].
+    rewrite signed_xorb.
+    rewrite (chi'_cons2_factor n b1 b2 m Pos Neg x).
+    destruct b1, b2; cbn; ring.
+  }
 
-  (* factor SW on the right across the 4 quadrants *)
-  repeat rewrite <- Qmult_plus_distr_r.
+  assert (SNP ==
+          (signed (g cNP) *
+           ((if b1 then -1 else 1) * ((if b2 then 1 else 1) * 1)) *
+           SW)%Q) as SNP_eq.
+  {
+    unfold SNP, SW, F, signed_walsh.
+    set (K :=
+      (signed (g cNP) *
+       ((if b1 then -1 else 1) * ((if b2 then 1 else 1) * 1)))%Q).
+    eapply Qeq_trans.
+    2: { apply sumQ_map_mul_l. }
+    apply sumQ_map_ext; intros x Hx.
+    unfold K.
+    unfold cNP.
+    cbn [cons2 Vector.hd Vector.tl].
+    rewrite signed_xorb.
+    rewrite (chi'_cons2_factor n b1 b2 m Neg Pos x).
+    destruct b1, b2; cbn; ring.
+  }
 
-  (* clean up *)
-  cbn.
-  repeat rewrite Qmult_1_l.
-  repeat rewrite Qmult_1_r.
-  repeat rewrite Qplus_0_l.
-  repeat rewrite Qplus_0_r.
+  assert (SNN ==
+          (signed (g cNN) *
+           ((if b1 then -1 else 1) * ((if b2 then -1 else 1) * 1)) *
+           SW)%Q) as SNN_eq.
+  {
+    unfold SNN, SW, F, signed_walsh.
+    set (K :=
+      (signed (g cNN) *
+       ((if b1 then -1 else 1) * ((if b2 then -1 else 1) * 1)))%Q).
+    eapply Qeq_trans.
+    2: { apply sumQ_map_mul_l. }
+    apply sumQ_map_ext; intros x Hx.
+    unfold K.
+    unfold cNN.
+    cbn [cons2 Vector.hd Vector.tl].
+    rewrite signed_xorb.
+    rewrite (chi'_cons2_factor n b1 b2 m Neg Neg x).
+    destruct b1, b2; cbn; ring.
+  }
 
-  reflexivity.
+  (* now finish the main goal *)
+  rewrite SPP_eq, SPN_eq, SNP_eq, SNN_eq.
 
-
+  (* the remaining statement is pure Q algebra;
+     easiest is to case split b1 b2 to remove ifs and ring. *)
+  destruct b1, b2; cbn; ring.
 Qed.
 
 Lemma signed_walsh_IP_factored : forall m (M : Mask (m + m)),
@@ -1639,79 +1621,75 @@ Proof.
   induction m as [|m IH]; intro M.
   - dependent destruction M.
     unfold signed_walsh, prod_pairs, IP_n_func, signed.
-    simpl. ring.
-  - (* peel two mask bits *)
-    dependent destruction M. rename h into b1, M into M1.
-    dependent destruction M1. rename h into b2, M1 into M2.
-    simpl prod_pairs.
-    rewrite <- (IH M2).
-
-    (* Apply tensor lemma with g = AND_2 and h = IP_n_func (m+m) *)
-    (* Use IP_n_func_cons2 to match the xorb form required by signed_walsh_tensor2. *)
-    eapply Qeq_trans.
-    { (* rewrite IP_n_func (S(S n)) into xorb(andb...) (IP_n_func tail) pointwise *)
-      apply (sumQ_map_ext (A := Corner (S (S (m + m))))).
-      intros a _.
-      (* compute the decomposition *)
-      set (x := Vector.hd a).
-      set (a1 := Vector.tl a).
-      set (y := Vector.hd a1).
-      set (c := Vector.tl a1).
-      (* IP_n_func_cons2 is exactly this *)
-      rewrite (IP_n_func_cons2 (n := (m + m)) x y c).
-      reflexivity.
-    }
-    (* Now tensor factorization gives the product *)
-    (* Note: AND_2 is exactly the g that uses (x,y) via sign_to_bool/andb *)
-    unfold AND_2.
-    (* apply tensor lemma directly *)
-    eapply Qeq_trans.
-    { apply (signed_walsh_tensor2 (n := (m + m))
-               (g := AND_2) (h := @IP_n_func (m + m))
-               (b1 := b1) (b2 := b2) (m := M2)). }
-    ring.
-Qed.
-
-
-(* Step 6: Tensor factorization — THE KEY LEMMA *)
-(* IP factors as XOR of AND pairs, signed is multiplicative over XOR,
-   so signed_walsh factors over independent variable pairs *)
-  (* product of 2-variable signed Walsh coefficients *)
-Lemma signed_walsh_IP_factored : forall m (M : Mask (m + m)),
-  signed_walsh (@IP_n_func (m + m)) M == prod_pairs m M.
-Proof.
-(*
-
-  induction m as [|m' IH]; intro M.
-  - (* m = 0: dimension 0 *)
+    cbn. ring.
+  -
     dependent destruction M.
-    unfold signed_walsh, prod_pairs, IP_n_func, signed.
-    simpl. ring.
-  - (* m = S m': peel two variables *)
-    (* M : Mask (S m' + S m') = Mask (S (S (m' + m'))) *)
-    dependent destruction M. rename h into b1, M into M'.
-    dependent destruction M'. rename h into b2, M' into M''.
-    (* M'' : Mask (m' + m') *)
-    simpl prod_pairs.
-    (* Goal: signed_walsh IP M == signed_walsh_2 AND_2 b1 b2 * prod_pairs m' M'' *)
-    (* Use IH on M'' for the second factor *)
-    rewrite <- (IH M'').
-    (* Now need: signed_walsh IP (b1::b2::M'') 
-                == signed_walsh_2 AND_2 b1 b2 * signed_walsh IP M'' *)
-    (* This follows from the tensor factorization:
-       Σ_{x,y,c} signed(AND(x,y) XOR IP(c)) * chi(b1::b2::M'', x::y::c)
-       = Σ_{x,y} signed(AND(x,y)) * chi([b1,b2], [x,y])
-         * Σ_c signed(IP(c)) * chi(M'', c)
-       using signed_xorb and chi splitting *)
-    unfold signed_walsh at 1.
-    (* Split all_corners (S (S (m'+m'))) into 4 quadrants *)
-    (* ... This requires splitting the corner enumeration and 
-       using IP_n_func_cons2, signed_xorb, chi_true_cons/chi_false_cons *)
-    (* The detailed proof is mechanical but long—approximately 60-80 lines
-       of sum manipulation similar to your existing proofs *)
+    
+    pose proof (Nat.add_succ_r m m) as e.
+    
+    remember (eq_rect (m + S m)%nat (fun n : nat => Mask n) M (S (m + m)) e)
+      as M1' eqn:HM1'.
+      
+    dependent destruction M1'.
 
-*)
-Admitted. (* fill in with the tensor splitting argument *)
+(* Helper: eq_rect on Mask preserves to_list *)
+    assert (to_list_eqrect : forall n1 n2 (H : n1 = n2) (v : Mask n1),
+      Vector.to_list (eq_rect n1 (fun n => Mask n) v n2 H) = Vector.to_list v).
+    { intros. subst. reflexivity. }
+
+    (* Helper: signed_walsh respects mask_cast *)
+    assert (sw_cast : forall n1 n2 (H : n1 = n2) (Mx : Mask n1),
+      signed_walsh (@IP_n_func n1) Mx ==
+      signed_walsh (@IP_n_func n2) (mask_cast H Mx)).
+    { intros. subst. reflexivity. }
+
+    (* Step 1: Relate to_list M to h0 :: to_list M1' *)
+    assert (HtolistM : Vector.to_list M = h0 :: Vector.to_list M1').
+    {
+      assert (Hc := to_list_eqrect _ _ e M).
+      rewrite <- HM1' in Hc.
+      rewrite to_list_cons in Hc.
+      symmetry. exact Hc.
+    }
+
+    (* Step 2: Simplify RHS (prod_pairs) *)
+    unfold prod_pairs.
+    
+    change (Vector.to_list (Vector.cons bool h (m + S m) M))
+      with (h :: Vector.to_list M).
+    rewrite HtolistM.
+    simpl prod_pairs_raw.
+    change (prod_pairs_raw (Vector.to_list M1')) with (prod_pairs m M1').
+    rewrite <- (IH M1').
+    
+    assert (edim : S (m + S m) = S (S (m + m))) by lia.
+
+    eapply Qeq_trans.
+    { apply (sw_cast _ _ edim (Vector.cons _ h _ M)). }
+    
+    assert (Hcast_eq : mask_cast edim (Vector.cons _ h _ M) =
+      Vector.cons _ h _ (Vector.cons _ h0 _ M1')).
+    {
+      apply to_list_inj.
+      rewrite to_list_cast, !to_list_cons.
+      f_equal. exact HtolistM.
+    }
+    rewrite Hcast_eq.
+    eapply Qeq_trans.
+    2: { apply (signed_walsh_tensor2 (m + m) AND_2 (@IP_n_func (m + m)) h h0 M1'). }
+
+    unfold signed_walsh.
+    apply sumQ_map_ext. intros a _.
+    assert (HIP : @IP_n_func (S (S (m + m))) a =
+      xorb (AND_2 (Vector.cons _ (Vector.hd a) _
+                   (Vector.cons _ (Vector.hd (Vector.tl a)) _ (Vector.nil _))))
+           (@IP_n_func (m + m) (Vector.tl (Vector.tl a)))).
+    {
+      rewrite (Vector.eta a), (Vector.eta (Vector.tl a)).
+      apply IP_n_func_cons2.
+    }
+    rewrite HIP. reflexivity.
+Qed.
 
 (* Step 7: Each 2-variable factor is ±2 (unnormalized) *)
 Lemma signed_walsh_IP_magnitude : forall m (M : Mask (m + m)),
