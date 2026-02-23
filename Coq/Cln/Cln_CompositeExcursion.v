@@ -1266,6 +1266,16 @@ Theorem hard_family_separates :
 Proof.
 Admitted.
 
+Lemma l1_norm_embed_IP_ge_pow2 :
+  forall m,
+    (m >= 2)%nat ->
+    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
+Proof.
+(*
+Then in hard_family_separates_div2, choose f n := IP_n_func n and c := 1, and use Nat.div2 (m+m) = m.
+*)
+Admitted.
+
 Theorem hard_family_separates_div2 :
   forall d : Q,
   exists f : forall n, Corner n -> bool,
