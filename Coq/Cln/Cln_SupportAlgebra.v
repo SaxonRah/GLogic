@@ -1691,39 +1691,88 @@ Proof.
     rewrite HIP. reflexivity.
 Qed.
 
-(* Step 7: Each 2-variable factor is ±2 (unnormalized) *)
 Lemma signed_walsh_IP_magnitude : forall m (M : Mask (m + m)),
   (m > 0)%nat ->
   exists s : bool, signed_walsh (@IP_n_func (m + m)) M 
                     == signed s * inject_Z (Z.pow 2 (Z.of_nat m)).
 Proof.
   intros m M Hm.
-  rewrite signed_walsh_IP_factored.
-  (* Now show prod_pairs m M = ±2^m by induction *)
-  induction m as [|m' IH']; [lia|].
-  dependent destruction M. rename h into b1, M into M'.
-  dependent destruction M'. rename h into b2, M' into M''.
-  simpl prod_pairs.
+  assert (Hfact := signed_walsh_IP_factored m M).
+  enough (H : exists s : bool,
+    prod_pairs m M == signed s * inject_Z (2 ^ Z.of_nat m)).
+  { destruct H as [s Hs]. exists s. eapply Qeq_trans; eassumption. }
+  clear Hfact. revert M Hm.
+  induction m as [|m' IH']; intros M Hm; [lia|].
+  destruct (mask_decompose2 m' M) as [b1 [b2 [M'' Hlist]]].
+  rewrite (prod_pairs_unfold m' M b1 b2 M'' Hlist).
   destruct m' as [|m''].
   - (* m = 1: single factor *)
-    rewrite signed_walsh_AND_2var.
-    destruct b1, b2; simpl.
-    + exists true. unfold signed, inject_Z. simpl. ring.
-    + exists true. unfold signed, inject_Z. simpl. ring.
-    + exists true. unfold signed, inject_Z. simpl. ring.
-    + exists false. unfold signed, inject_Z. simpl. ring.
+    dependent destruction M''.
+    unfold prod_pairs. simpl.
+    assert (Haw := signed_walsh_AND_2var b1 b2).
+    destruct b1, b2;    
+    [ exists true | exists true | exists true | exists false ];
+    (setoid_rewrite Haw;
+     unfold signed, inject_Z; simpl; ring).
+
   - (* m = S (S m''): use IH *)
     assert (Hm'' : (S m'' > 0)%nat) by lia.
-    specialize (IH' M'' Hm'').
-    destruct IH' as [s' Hs'].
-    rewrite Hs'.
-    rewrite signed_walsh_AND_2var.
-    destruct b1, b2; simpl;
-    (destruct s';
-     [ exists true; unfold signed, inject_Z; simpl;
-       rewrite Pos2Z.inj_mul; simpl; ring
-     | exists false; unfold signed, inject_Z; simpl;
-       rewrite Pos2Z.inj_mul; simpl; ring ]).
+    destruct (IH' M'' Hm'') as [s' Hs'].
+    assert (Haw := signed_walsh_AND_2var b1 b2).
+    assert (Hprod : signed_walsh_2 AND_2 b1 b2 * prod_pairs (S m'') M'' ==
+      (if b1 then if b2 then -2 else -2 else if b2 then -2 else 2) *
+      (signed s' * inject_Z (2 ^ Z.of_nat (S m'')))).
+    { eapply Qeq_trans.
+      - apply Qmult_eq_compat_l'. exact Hs'.
+      - apply Qmult_eq_compat_r'. exact Haw. }
+    set (K := inject_Z (2 ^ Z.of_nat (S m''))) in *.
+    
+    assert (Hpow : inject_Z (2 ^ Z.of_nat (S (S m''))) == (inject_Z 2) * K).
+    {
+      subst K.
+      (* rewrite the exponent: Z.of_nat (S (S m'')) = Z.succ (Z.of_nat (S m'')) *)
+      rewrite Nat2Z.inj_succ.
+      (* turn 2^(succ e) into 2^e * 2 in Z *)
+      rewrite Z.pow_succ_r by lia.
+      (* move the Z-multiplication out through inject_Z *)
+      rewrite inject_Z_mult.
+      
+      change inject_Z with QArith_base.inject_Z.
+      reflexivity.
+    }
+    
+    destruct b1, b2; simpl in Hprod.
+    + (* true,true : factor = -2 *)
+      exists (negb s').
+      eapply Qeq_trans; [ exact Hprod | ].
+      rewrite Hpow.
+      clearbody K.
+      change (inject_Z 2) with (2%Q).
+      destruct s'; unfold signed; simpl; ring.
+
+    + (* b1=true, b2=false : factor = -2 *)
+      exists (negb s').
+      eapply Qeq_trans; [ exact Hprod | ].
+      rewrite Hpow.
+      clearbody K.
+      change (inject_Z 2) with (2%Q).
+      destruct s'; unfold signed; simpl; ring.
+
+    + (* b1=false, b2=true : factor = -2 *)
+      exists (negb s').
+      eapply Qeq_trans; [ exact Hprod | ].
+      rewrite Hpow.
+      clearbody K.
+      change (inject_Z 2) with (2%Q).
+      destruct s'; unfold signed; simpl; ring.
+
+    + (* b1=false, b2=false : factor = +2 *)
+      exists s'.
+      eapply Qeq_trans; [ exact Hprod | ].
+      rewrite Hpow.
+      clearbody K.
+      change (inject_Z 2) with (2%Q).
+      destruct s'; unfold signed; simpl; ring.
 Qed.
 
 (* Step 9: embed(IP)(M) ≠ 0 for all M *)
@@ -1755,7 +1804,7 @@ Proof.
     (* The δ term is 0, so embed = -(1#2)*(1/2^{2m})*signed(s)*2^m *)
     (* = ∓1/2^{m+1}, which is clearly nonzero *)
     admit. (* arithmetic: derive contradiction from Habs *)
-Qed.
+Admitted.
 
 (* Step 10: Full support follows *)
 Lemma support_size_IP : forall m,
