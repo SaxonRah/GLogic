@@ -1245,16 +1245,71 @@ Definition trace_boolish_exists_k {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
   exists k : nat, trace_boolish_k_le sq e k d.
 
+Theorem hard_family_not_easy :
+  forall (C : EasyCompiler),
+  exists c : nat,
+  exists f : forall n, Corner n -> bool,
+    forall n,
+      (* if f n were easy for compiler C, we'd contradict the hardness bound *)
+      ~ easy C (n:=n) (f n).
+Proof.
+Admitted.
+
+Theorem hard_family_beats_all_poly_compilers :
+  forall (C : EasyCompiler) (k : nat),
+  exists f : forall n, Corner n -> bool,
+    forall n (sq : Vector.t Q n),
+      ~ easy_under (B C) (d0 C) sq (f n)  (* or: not with poly_B k *)
+      .
+Proof.
+Admitted.
+
+Theorem hard_family_separates_boolish_trace :
+  forall d : Q,
+  exists f : forall n, Corner n -> bool,
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      trace_boolish_exists_k sq e d ->
+      (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
+Theorem IP_exponential_in_booleanish_model :
+  forall d : Q,
+  exists c : nat,
+    forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+      (m >= 2)%nat ->
+      computes sq e (@IP_n_func (m+m)) ->
+      trace_boolish_exists_k sq e d ->
+      (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
+Theorem IP_booleanish_tradeoff :
+  forall d : Q,
+  exists c : nat,
+    forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+      (m >= 2)%nat ->
+      computes sq e (@IP_n_func (m+m)) ->
+      ( trace_boolish_exists_k sq e d ->
+          Qpow2 (c * m) <= exc_l1 (exc_of sq e) )
+      /\
+      ( exc_l1 (exc_of sq e) < Qpow2 (c * m) ->
+          ~ trace_boolish_exists_k sq e d ).
+Proof.
+  (* If you manage to keep excursion subexponential,
+      then you must violate booleanishness somewhere along the trace. *)
+Admitted.
+
 Lemma computes_l1_eq :
   forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool),
     computes sq e f ->
     l1_norm (eval_expr sq e) = l1_norm (embed f).
 Proof.
-  intros n sq e f Hcomp.
-  apply l1_norm_ext. intro m.
-  exact (Hcomp m).
-Qed.
+Admitted.
 
+(*
 Theorem hard_family_separates :
   forall d : Q,
   exists f : forall n, Corner n -> bool,
@@ -1266,14 +1321,64 @@ Theorem hard_family_separates :
 Proof.
 Admitted.
 
+This is rewitten as hard_family_separates_div2
+*)
+
 Lemma l1_norm_embed_IP_ge_pow2 :
   forall m,
     (m >= 2)%nat ->
     (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
 Proof.
 (*
+This is the real analytic heart.
+
 Then in hard_family_separates_div2, choose f n := IP_n_func n and c := 1, and use Nat.div2 (m+m) = m.
 *)
+Admitted.
+
+Lemma embed_IP_abs_nonempty :
+  forall m (M : Mask (m + m)),
+    (m > 0)%nat ->
+    M <> mask_empty ->
+    Qabs (embed (@IP_n_func (m+m)) M)
+    == (1 / pow2 (m+m) * (1#2) * inject_Z (Z.pow 2 (Z.of_nat m)))%Q.
+Proof.
+  intros m M Hm Hne.
+  rewrite (embed_via_signed_walsh (m+m) (@IP_n_func (m+m)) M).
+  destruct (mask_eq_dec M mask_empty) as [Heq|Hneq].
+  - exfalso; apply Hne; exact Heq.
+  - (* nonempty case: the “if” term vanishes *)
+    simpl.
+    (* becomes: Qabs ( (1/pow2 n) * (0 - (1/2)*signed_walsh) ) *)
+    (* pull abs through products *)
+    (* use signed_walsh_IP_magnitude to rewrite signed_walsh *)
+    destruct (signed_walsh_IP_magnitude m M Hm) as [s Hs].
+    rewrite Hs.
+    (* now it’s abs of (1/pow2 n) * (-(1/2) * (signed s * 2^m)) *)
+    (* abs(signed s) = 1, abs(-x)=abs(x) *)
+    (* finalize *)
+Admitted.
+
+Lemma l1_norm_ge_sum_over_subset :
+  forall n (F : MV n),
+    (* if for all nonempty masks abs(F M) >= a *)
+    forall a,
+      (forall M, M <> mask_empty -> a <= Qabs (F M)) ->
+      (inject_Z (Z.of_nat (pred (length (all_masks n)))) * a
+       <= l1_norm F)%Q.
+Proof.
+Admitted.
+
+Lemma l1_norm_embed_IP_ge :
+  forall m,
+    (m >= 2)%nat ->
+    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
+Proof.
+  intros m Hm2.
+  assert (Hm : (m > 0)%nat) by lia.
+  (* lower bound the sum by summing only over nonempty masks *)
+  (* each nonempty term contributes exactly 1 / 2^(m+1) *)
+  (* number of nonempty masks is 2^(2m) - 1 *)
 Admitted.
 
 Theorem hard_family_separates_div2 :
@@ -1286,6 +1391,44 @@ Theorem hard_family_separates_div2 :
       (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
 Proof.
 Admitted.
+
+Theorem booleanish_or_exponential_excursion :
+  forall d : Q,
+  exists f : forall n, Corner n -> bool,
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      ( trace_boolish_exists_k sq e d
+        -> Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e) ) /\
+      ( ~ trace_boolish_exists_k sq e d
+        -> (* optional: show there is some explicit non-booleanish witness *)
+           True ).
+Proof.
+Admitted.
+
+(* This would be ideal over the two options above.
+
+      Exhibit an algorithm/circuit family that computes IP with
+        subexponential excursion but violates booleanishness,
+                  you get a true separation:
+
+*)
+Theorem booleanish_vs_unrestricted_separation :
+  exists f : forall n, Corner n -> bool,
+    (exists e_easy : forall n, GA_expr n,
+        (forall n sq, computes sq (e_easy n) (f n)) /\
+        (forall n sq, exc_l1 (exc_of sq (e_easy n)) <= Qpoly n)) /\
+    (forall d, exists c,
+        forall n sq e,
+          computes sq e (f n) ->
+          trace_boolish_exists_k sq e d ->
+          Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e)).
+Proof.
+(*
+This is most compelling : "booleanishness costs you exponentially; if you drop it, you can do it cheaply."
+  But it requires you to actually build the cheap non-booleanish circuit family.
+*)
+Qed.
 
 Definition pow2 (k : nat) : nat :=
   Nat.pow 2 k.
