@@ -8,6 +8,7 @@ Require Import Cln_Full.
 Require Import Cln_Grade.
 Require Import Cln_finite_l1_submultiplicativity.
 Require Import Cln_BoolDist.
+Require Import Cln_SupportAlgebra.
 
 From Coq Require Import FunctionalExtensionality.
 From Coq Require Import List Lia Arith.
@@ -1240,6 +1241,323 @@ Definition mul_coeffs (cs1 cs2 : list Q) : list Q :=
 (*
 ===============================================================================
 *)
+
+
+(* Helper: |signed s| = 1 *)
+Open Scope Q_scope.
+
+Lemma Qabs_signed : forall s : bool,
+  Qabs (signed s) == 1.
+Proof.
+  destruct s; unfold signed; simpl.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma pow2_add : forall a b, pow2 (a + b) == pow2 a * pow2 b.
+Proof.
+  induction a as [|a IHa]; intro b; simpl.
+  - ring.
+  - rewrite IHa. ring.
+Qed.
+
+Lemma pow2_pos_Q : forall n, 0 < pow2 n.
+Proof.
+  induction n as [|n IH]; simpl.
+  - reflexivity.
+  - apply Qmult_lt_0_compat.
+    + unfold Qlt; simpl; lia.
+    + exact IH.
+Qed.
+
+Lemma pow2_S_eq : forall n, pow2 (S n) == 2 * pow2 n.
+Proof. intro n. simpl pow2. ring. Qed.
+
+Lemma pow2_ge_1 : forall n, 1 <= pow2 n.
+Proof.
+  induction n as [|n IH]; simpl.
+  - apply Qle_refl.
+  - apply (Qle_trans _ (pow2 n)).
+    + exact IH.
+    +
+      assert (H12 : (1:Q) <= 2).
+      { unfold Qle; simpl; lia. }
+      assert (H0 : 0 <= pow2 n).
+      { apply Qlt_le_weak. exact (pow2_pos_Q n). }
+      pose proof (Qmult_le_compat_r (1:Q) 2 (pow2 n) H12 H0) as H.
+      rewrite Qmult_1_l in H.
+      exact H.
+Qed.
+
+Lemma pow2_le_mono : forall a b, (a <= b)%nat -> pow2 a <= pow2 b.
+Proof.
+  intros a b Hab.
+  replace b with (a + (b - a))%nat by lia.
+  rewrite pow2_add.
+  rewrite <- (Qmult_1_r (pow2 a)) at 1.
+  apply Qmult_le_l.
+  - apply pow2_pos_Q.
+  - apply pow2_ge_1.
+Qed.
+
+(* ============================================================ *)
+(* The pointwise lower bound                                     *)
+(* ============================================================ *)
+
+Lemma embed_IP_abs_lower : forall m (M : Mask (m + m)),
+  (m >= 1)%nat ->
+  1 / pow2 (m + 1) <= Qabs (embed (@IP_n_func (m + m)) M).
+Proof.
+  intros m M Hm.
+  assert (Hm' : (m > 0)%nat) by lia.
+  destruct (signed_walsh_IP_magnitude m M Hm') as [s Hs].
+  assert (Hembed := embed_via_signed_walsh (m+m) (@IP_n_func (m+m)) M).
+
+  set (p := pow2 m) in *.
+  assert (Hpmm : pow2 (m + m) == p * p)
+    by (subst p; rewrite <- pow2_add; reflexivity).
+  assert (Hpm1 : pow2 (m + 1) == 2 * p)
+    by (subst p; replace (m+1)%nat with (S m) by lia; apply pow2_S_eq).
+  assert (Hp_pos : 0 < p) by (subst p; apply pow2_pos_Q).
+  assert (Hp_nz : ~ p == 0) by (subst p; apply pow2_nonzero).
+
+  assert (Hp_ge2 : 2 <= p).
+    { subst p.
+      destruct m as [|m']; [lia|].
+      simpl.
+      
+      pose proof (pow2_ge_1 m') as Hpow1.
+      setoid_replace ((1 + 1) * pow2 m') with (pow2 m' + pow2 m') by ring.
+      setoid_replace 2 with (1 + 1)%Q by ring.
+      apply Qplus_le_compat; exact Hpow1.
+    }
+
+  assert (H2p_pos : 0 < 2 * p)
+    by (apply Qmult_lt_0_compat; [reflexivity | exact Hp_pos]).
+
+  (* Replace inject_Z(2^m) by p in Hembed *)
+  setoid_rewrite Hs in Hembed.
+  setoid_rewrite <- pow2_injectZ in Hembed.
+  (* NOTE: do NOT rewrite Hpmm in Hembed here —
+     it won't penetrate the if-then-else *)
+
+  destruct (mask_eq_dec M mask_empty) as [Meq | Mneq].
+
+  - (* ═══════════ M = ∅ ═══════════ *)
+    subst M.
+    (* The if resolved, exposing pow2(m+m). We rewrite in each Hval. *)
+
+    destruct s.
+
+    + (* ── s = true: signed true = -1 ── *)
+      (* embed = 1/(p²)·((1/2)·p² - (1/2)·(-1·p)) = 1/2 + 1/(2p) *)
+        
+        
+      assert (Hval : embed (@IP_n_func (m+m)) mask_empty == (1#2) + 1/(2*p)).
+      {
+        eapply Qeq_trans; [exact Hembed|].
+        setoid_rewrite Hpmm.
+        change (pow2 m) with p.
+        unfold signed.
+        ring_simplify.
+        setoid_replace (1/(2*p) + (1#2)) with ((1#2) + 1/(2*p)) by ring.
+        change (p ^ 2) with (p * p).
+
+        (* prove p*p nonzero in the right (setoid) sense *)
+        assert (Hpp_nz : ~ (p * p) == 0).
+        { intro Hpp.
+          destruct (Qmult_integral p p) as [Hp0|Hp0]; try exact Hpp;
+          apply Hp_nz; exact Hp0.
+        }
+        ring_simplify.
+        change (p ^ 2) with (p * p).
+        setoid_replace ((1#2) * (1 / (p*p)) * (p*p))
+          with ((1#2) * ((1 / (p*p)) * (p*p))) by ring.
+        ring_simplify.
+        field. exact Hp_nz.
+
+      }
+
+      (* embed > 0 *)
+      assert (Hpos : 0 < (1#2) + 1/(2*p)).
+      { apply Qlt_le_trans with (1#2); [reflexivity|].
+        rewrite <- (Qplus_0_r (1#2)) at 1.
+        apply Qplus_le_compat; [apply Qle_refl|].
+        apply Qlt_le_weak.
+        apply Qlt_shift_div_l; [exact H2p_pos|].
+        ring_simplify. reflexivity. }
+
+      setoid_rewrite Hval.
+      setoid_rewrite (Qabs_pos _ (Qlt_le_weak _ _ Hpos)).
+      setoid_rewrite Hpm1.
+      (* Goal: 1/(2*p) ≤ (1#2) + 1/(2*p) *)
+      rewrite <- (Qplus_0_l (1/(2*p))) at 1.
+      apply Qplus_le_compat; [discriminate | apply Qle_refl].
+
+    + (* ── s = false: signed false = 1 ── *)
+      (* embed = 1/(p²)·((1/2)·p² - (1/2)·(1·p)) = 1/2 - 1/(2p) *)
+      assert (Hval : embed (@IP_n_func (m+m)) mask_empty == (1#2) - 1/(2*p)).
+      { eapply Qeq_trans; [exact Hembed|].
+        setoid_rewrite Hpmm.
+        unfold signed.
+        change (pow2 m) with p.
+        field. exact Hp_nz. }
+
+      (* ── Key arithmetic chain ── *)
+
+      (* Step A: 1 ≤ (1#2) * p, since p ≥ 2 *)
+      assert (Hhalf_p : 1 <= (1#2) * p).
+      { eapply Qle_trans with ((1#2) * 2).
+        - unfold Qle; simpl; lia.   (* 1 ≤ 1 *)
+        - apply Qmult_le_l; [reflexivity | exact Hp_ge2]. }
+
+      (* Step B: 1/p ≤ 1/2 *)
+      assert (H1p : 1/p <= (1#2)).
+      {
+        (* multiply both sides by (2*p) > 0 *)
+        apply (Qmult_le_l _ _ (2*p)); [ exact H2p_pos | ].
+
+        (* goal is now: (2*p) * (1/p) <= (2*p) * (1#2) *)
+        (* simplify; this should reduce to 2 <= p *)
+        field_simplify; try exact Hp_nz; try discriminate.
+        (* after field_simplify, the goal should be 2 <= p *)
+        exact Hp_ge2.
+      }
+
+      assert (Hfrac_le1 : 1/(2*p) <= 1/p).
+      {
+        (* multiply both sides by p > 0 *)
+        apply (Qmult_le_l _ _ p); [ exact Hp_pos | ].
+        (* p*(1/(2*p)) <= p*(1/p) *)
+        field_simplify; try exact Hp_nz; try discriminate.
+      }
+      assert (Hfrac_le : 1/(2*p) <= (1#2)).
+      { eapply Qle_trans; [ exact Hfrac_le1 | exact H1p ]. }
+      
+      (* Step D: embed ≥ 0, since 1/(2p) ≤ 1/2 *)
+      assert (Hpos : 0 <= (1#2) - 1/(2*p)).
+      { apply -> Qle_minus_iff. exact Hfrac_le. }
+
+      setoid_rewrite Hval.
+      setoid_rewrite (Qabs_pos _ Hpos).
+      setoid_rewrite Hpm1.
+
+      (* Goal: 1/(2*p) ≤ (1#2) - 1/(2*p) *)
+      (* ↔ 0 ≤ (1#2) - 1/(2p) - 1/(2p) == (1#2) - 1/p *)
+      apply Qle_minus_iff.
+      (* Goal: 0 ≤ (1#2) - 1/(2*p) + - (1/(2*p)) *)
+      (* Simplify the RHS to (1#2) - 1/p *)
+      assert (Hdiff : (1#2) - 1/(2*p) + -(1/(2*p)) == (1#2) - 1/p).
+      { field. exact Hp_nz. }
+      setoid_rewrite Hdiff.
+      (* Goal: 0 ≤ (1#2) - 1/p *)
+      apply -> Qle_minus_iff.
+      (* Goal: 1/p ≤ (1#2) *)
+      exact H1p.
+
+  - (* ═══════════ M ≠ ∅ ═══════════ *)
+    (* The if gave 0, so embed = 1/(p²)·(0 - (1/2)·(signed s · p)) *)
+    destruct s.
+
+    + (* ── s = true: signed true = -1, so embed = 1/(2p) ── *)
+      assert (Hval : embed (@IP_n_func (m+m)) M == 1/(2*p)).
+      { eapply Qeq_trans; [exact Hembed|].
+        setoid_rewrite Hpmm.
+        change (pow2 m) with p.
+        unfold signed.
+        field. exact Hp_nz.
+      }
+      
+      assert (Hpos : 0 < 1/(2*p)).
+      { apply Qlt_shift_div_l; [exact H2p_pos|].
+        ring_simplify. reflexivity.
+      }
+
+      setoid_rewrite Hval.
+      setoid_rewrite (Qabs_pos _ (Qlt_le_weak _ _ Hpos)).
+      setoid_rewrite Hpm1.
+      apply Qle_refl.
+
+    + (* ── s = false: signed false = 1, so embed = -1/(2p) ── *)
+      assert (Hval : embed (@IP_n_func (m+m)) M == -(1/(2*p))).
+      { eapply Qeq_trans; [exact Hembed|].
+        setoid_rewrite Hpmm.
+        change (pow2 m) with p.
+        unfold signed.
+        field. exact Hp_nz.
+      }
+
+      assert (Hfrac_pos : 0 < 1/(2*p)).
+      { apply Qlt_shift_div_l; [exact H2p_pos|].
+        ring_simplify. reflexivity.
+      }
+
+      assert (Hneg : -(1/(2*p)) <= 0).
+      { setoid_replace 0 with (-(0)) by ring.
+        apply Qopp_le_compat.
+        apply Qlt_le_weak. exact Hfrac_pos.
+      }
+
+      setoid_rewrite Hval.
+      setoid_rewrite (Qabs_neg _ Hneg).
+      setoid_replace (-(-(1/(2*p)))) with (1/(2*p)) by ring.
+      setoid_rewrite Hpm1.
+      apply Qle_refl.
+Qed.
+
+Lemma sumQ_map_lower_bound :
+  forall (A : Type) (f : A -> Q) (l : list A) (c : Q),
+    (forall x, List.In x l -> c <= f x) ->
+    (inject_Z (Z.of_nat (length l)) * c <= sumQ (List.map f l))%Q.
+Proof.
+  intros A f l c Hbound.
+  induction l as [|a tl IH]; simpl.  
+Admitted.
+
+Theorem l1_norm_embed_IP_lower_bound : forall m,
+  (m >= 2)%nat ->
+  (pow2 (m - 1) <= l1_norm (embed (@IP_n_func (m + m))))%Q.
+Proof.
+  intros m Hm.
+  unfold l1_norm.
+  
+  (* Step 1: Each |embed(IP)(M)| ≥ 1/pow2(m+1) *)
+  assert (Hpointwise : forall M, List.In M (all_masks (m+m)) ->
+    1 / pow2 (m + 1) <= Qabs (embed (@IP_n_func (m + m)) M)).
+  { intros M _. apply embed_IP_abs_lower. lia. }
+  
+  (* Step 2: Sum ≥ |masks| * (1/pow2(m+1)) *)
+  assert (Hsum : inject_Z (Z.of_nat (length (all_masks (m+m)))) * (1 / pow2 (m+1))
+                 <= sumQ (List.map (fun M => Qabs (embed (@IP_n_func (m+m)) M))
+                                   (all_masks (m+m)))).
+  { apply sumQ_map_lower_bound. exact Hpointwise. }
+  
+  (* Step 3: |all_masks(2m)| = 2^(2m) *)
+  rewrite all_masks_length_pow2 in Hsum.
+  
+  (* Step 4: 2^(2m) / 2^(m+1) = 2^(m-1) *)
+  (* 2^(2m) * (1/2^(m+1)) = 2^(2m) / 2^(m+1) = 2^(2m - m - 1) = 2^(m-1) *)
+  eapply Qle_trans; [|exact Hsum].
+  
+  (* Arithmetic: pow2(m-1) ≤ inject_Z(2^(2m)) * (1/pow2(m+1)) *)
+  (* i.e., pow2(m-1) * pow2(m+1) ≤ pow2(2m) *)
+  (* i.e., 2^(m-1) * 2^(m+1) = 2^(2m) ✓ *)
+  assert (Hpow_split : pow2 (m - 1) * pow2 (m + 1) == pow2 (m + m)).
+  { (* pow2(m-1) * pow2(m+1) = pow2((m-1)+(m+1)) = pow2(2m) *)
+    rewrite <- pow2_add.
+    f_equiv. (* or: replace (m-1+(m+1)) with (m+m) by lia *)
+    admit.
+  }
+  
+  (* Now: pow2(m-1) = pow2(2m) * (1/pow2(m+1)) via Hpow_split *)
+  assert (Hrewrite : pow2 (m - 1) == inject_Z (Z.of_nat (Nat.pow 2 (m+m))) * (1 / pow2 (m+1))).
+  { (* pow2(m-1) = pow2(2m) / pow2(m+1) = pow2(2m) * (1/pow2(m+1)) *)
+    (* and inject_Z(Nat.pow 2 (m+m)) == pow2(m+m) *)
+    admit.
+  }
+  
+  apply Qle_of_Qeq. exact Hrewrite.
+Admitted.
 
 Definition trace_boolish_exists_k {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
