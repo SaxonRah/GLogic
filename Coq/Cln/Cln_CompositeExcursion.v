@@ -1511,8 +1511,20 @@ Lemma sumQ_map_lower_bound :
     (inject_Z (Z.of_nat (length l)) * c <= sumQ (List.map f l))%Q.
 Proof.
   intros A f l c Hbound.
-  induction l as [|a tl IH]; simpl.  
-Admitted.
+  induction l as [|a tl IH]; simpl.
+  - (* base: inject_Z 0 * c <= 0 *)
+    ring_simplify. apply Qle_refl.
+  - (* step: (1 + length tl) * c <= f a + sumQ (map f tl) *)
+    rewrite Zpos_P_of_succ_nat.
+    change (Z.succ (Z.of_nat (length tl))) with (Z.of_nat (length tl) + 1)%Z.
+    setoid_rewrite inject_Z_plus.
+    change (inject_Z 1) with 1.
+    setoid_replace ((inject_Z (Z.of_nat (length tl)) + 1) * c)
+      with (c + inject_Z (Z.of_nat (length tl)) * c) by ring.
+    apply Qplus_le_compat.
+    + apply Hbound. left. reflexivity.
+    + apply IH. intros x Hx. apply Hbound. right. exact Hx.
+Qed.
 
 Theorem l1_norm_embed_IP_lower_bound : forall m,
   (m >= 2)%nat ->
@@ -1539,25 +1551,25 @@ Proof.
   (* 2^(2m) * (1/2^(m+1)) = 2^(2m) / 2^(m+1) = 2^(2m - m - 1) = 2^(m-1) *)
   eapply Qle_trans; [|exact Hsum].
   
-  (* Arithmetic: pow2(m-1) ≤ inject_Z(2^(2m)) * (1/pow2(m+1)) *)
-  (* i.e., pow2(m-1) * pow2(m+1) ≤ pow2(2m) *)
-  (* i.e., 2^(m-1) * 2^(m+1) = 2^(2m) ✓ *)
   assert (Hpow_split : pow2 (m - 1) * pow2 (m + 1) == pow2 (m + m)).
-  { (* pow2(m-1) * pow2(m+1) = pow2((m-1)+(m+1)) = pow2(2m) *)
-    rewrite <- pow2_add.
-    f_equiv. (* or: replace (m-1+(m+1)) with (m+m) by lia *)
-    admit.
-  }
-  
-  (* Now: pow2(m-1) = pow2(2m) * (1/pow2(m+1)) via Hpow_split *)
+  { rewrite <- pow2_add. f_equiv. lia. }
+
   assert (Hrewrite : pow2 (m - 1) == inject_Z (Z.of_nat (Nat.pow 2 (m+m))) * (1 / pow2 (m+1))).
-  { (* pow2(m-1) = pow2(2m) / pow2(m+1) = pow2(2m) * (1/pow2(m+1)) *)
-    (* and inject_Z(Nat.pow 2 (m+m)) == pow2(m+m) *)
-    admit.
-  }
-  
+  {
+    assert (Hconv : inject_Z (Z.of_nat (Nat.pow 2 (m+m))) == pow2 (m+m)).
+    { rewrite Nat2Z.inj_pow. simpl (Z.of_nat 2).
+      symmetry. rewrite pow2_injectZ.
+      change Cln_SupportAlgebra.inject_Z with QArith_base.inject_Z.
+      reflexivity. }
+    assert (Hpm1_nz : ~ pow2 (m + 1) == 0) by apply pow2_nonzero.
+    setoid_rewrite Hconv.
+    (* Goal: pow2 (m - 1) == pow2 (m + m) * (1 / pow2 (m + 1)) *)
+    setoid_rewrite <- Hpow_split.
+    (* Goal: pow2 (m - 1) == pow2 (m - 1) * pow2 (m + 1) * (1 / pow2 (m + 1)) *)
+    field. exact Hpm1_nz.
+  }  
   apply Qle_of_Qeq. exact Hrewrite.
-Admitted.
+Qed.
 
 Definition trace_boolish_exists_k {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
