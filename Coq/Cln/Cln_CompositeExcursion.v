@@ -1571,9 +1571,15 @@ Proof.
   apply Qle_of_Qeq. exact Hrewrite.
 Qed.
 
-Definition trace_boolish_exists_k {n}
-  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
-  exists k : nat, trace_boolish_k_le sq e k d. (* Might be too weak *)
+(* 
+Might be too weak
+
+      Definition trace_boolish_exists_k {n}
+        (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+        exists k : nat, trace_boolish_k_le sq e k d.
+
+Might be too weak
+*)
 
 (* Definition trace_boolish_poly {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
@@ -1603,14 +1609,48 @@ Lemma trace_boolish_poly_size_implies_exists_k :
     trace_boolish_poly_size sq e d ->
     trace_boolish_exists_k sq e d.
 Proof.
-Admitted.
+  intros n sq e d [k [_ Hk]].
+  exists k. exact Hk.
+Qed.
 
-Lemma trace_boolish_poly_size_normalize :
+Lemma trace_boolish_k_le_mono :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) k1 k2 d,
+    (k1 <= k2)%nat ->
+    trace_boolish_k_le sq e k1 d ->
+    trace_boolish_k_le sq e k2 d.
+Proof.
+  intros n sq e.
+  induction e; intros k1 k2 d Hle Htr; simpl in *.
+  - (* Basis *) eapply boolish_k_le_mono; eauto.
+  - (* Scalar *) eapply boolish_k_le_mono; eauto.
+  - (* Add *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+  - (* Mul *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+  - (* Conv *)
+    destruct Htr as [H1 [H2 H3]].
+    repeat split.
+    + eapply IHe1; eauto.
+    + eapply IHe2; eauto.
+    + eapply boolish_k_le_mono; eauto.
+Qed.
+
+Lemma trace_boolish_poly_size_to_k_le :
   forall n (sq : Vector.t Q n) (e : GA_expr n) d,
     trace_boolish_poly_size sq e d ->
-    trace_boolish_k_le sq e (poly (size_expr e)) d.
+    trace_boolish_k_le sq e (Nat.pow (size_expr e) 3) d.
 Proof.
-Admitted.
+  intros n sq e d [k [Hk Htr]].
+  eapply trace_boolish_k_le_mono; eauto.
+Qed.
 
 Theorem IP_exponential_in_booleanish_model :
   forall d : Q,
@@ -1658,6 +1698,8 @@ Theorem hard_family_not_easy :
 Proof.
 Admitted.
 
+(*              This can be deleted. 
+
 Theorem hard_family_separates_boolish_trace :
   forall d : Q,
   exists f : forall n, Corner n -> bool,
@@ -1669,6 +1711,30 @@ Theorem hard_family_separates_boolish_trace :
 Proof.
 Admitted.
 
+                Replace with a thin even-n corollary if you ever need the "for all even n" form
+
+Corollary IP_exponential_even_n :
+    forall d : Q,
+    exists c : nat,
+      forall n (sq : Vector.t Q n) (e : GA_expr n),
+        Nat.Even n ->
+        (Nat.div2 n >= 2)%nat ->
+        computes sq e (@IP_n_func n) ->
+        trace_boolish_poly_size sq e d ->
+        (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
+  Proof.
+    intros d.
+    destruct (IP_exponential_in_booleanish_model d) as [c Hc].
+    exists c.
+    intros n sq e Heven Hge Hcomp Hbool.
+    destruct Heven as [m Hm]. subst n.
+    (* now n = 2*m, and Nat.div2 (2*m) = m *)
+    (* rewrite 2*m as m+m, apply Hc *)
+    ...
+  Qed.
+
+*)
+
 
 Lemma computes_l1_eq :
   forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool),
@@ -1676,21 +1742,6 @@ Lemma computes_l1_eq :
     l1_norm (eval_expr sq e) = l1_norm (embed f).
 Proof.
 Admitted.
-
-(*
-Theorem hard_family_separates :
-  forall d : Q,
-  exists f : forall n, Corner n -> bool,
-  exists c : nat,
-    forall n (sq : Vector.t Q n) (e : GA_expr n),
-      computes sq e (f n) ->
-      trace_boolish_exists_k sq e d ->
-      (Qpow2 (c * n) <= exc_l1 (exc_of sq e))%Q.
-Proof.
-Admitted.
-
-This is rewitten as hard_family_separates_div2
-*)
 
 Lemma l1_norm_embed_IP_ge_pow2 :
   forall m,
@@ -1814,35 +1865,6 @@ Definition trace_boolish_poly {n}
     (k <= poly_k n (expr_size e))%nat /\
     trace_boolish_k_le sq e k d.
 
-Lemma trace_boolish_k_le_mono :
-  forall n (sq : Vector.t Q n) (e : GA_expr n) k1 k2 d,
-    (k1 <= k2)%nat ->
-    trace_boolish_k_le sq e k1 d ->
-    trace_boolish_k_le sq e k2 d.
-Proof.
-  intros n sq e.
-  induction e; intros k1 k2 d Hle Htr; simpl in *.
-  - (* Basis *) eapply boolish_k_le_mono; eauto.
-  - (* Scalar *) eapply boolish_k_le_mono; eauto.
-  - (* Add *)
-    destruct Htr as [H1 [H2 H3]].
-    repeat split.
-    + eapply IHe1; eauto.
-    + eapply IHe2; eauto.
-    + eapply boolish_k_le_mono; eauto.
-  - (* Mul *)
-    destruct Htr as [H1 [H2 H3]].
-    repeat split.
-    + eapply IHe1; eauto.
-    + eapply IHe2; eauto.
-    + eapply boolish_k_le_mono; eauto.
-  - (* Conv *)
-    destruct Htr as [H1 [H2 H3]].
-    repeat split.
-    + eapply IHe1; eauto.
-    + eapply IHe2; eauto.
-    + eapply boolish_k_le_mono; eauto.
-Qed.
 
 Lemma trace_boolish_k_le_to_poly_k :
   forall n (sq : Vector.t Q n) (e : GA_expr n) k d,
