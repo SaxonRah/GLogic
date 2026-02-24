@@ -1573,35 +1573,42 @@ Qed.
 
 Definition trace_boolish_exists_k {n}
   (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
-  exists k : nat, trace_boolish_k_le sq e k d.
+  exists k : nat, trace_boolish_k_le sq e k d. (* Might be too weak *)
 
-Theorem hard_family_not_easy :
-  forall (C : EasyCompiler),
-  exists c : nat,
-  exists f : forall n, Corner n -> bool,
-    forall n,
-      (* if f n were easy for compiler C, we'd contradict the hardness bound *)
-      ~ easy C (n:=n) (f n).
+(* Definition trace_boolish_poly {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  exists k, (k <= poly n)%nat /\ trace_boolish_k_le sq e k d. *)
+
+(* This trace_boolish_poly_size needs a size_expr, if we go by expr size *)
+Fixpoint size_expr {n} (e : GA_expr n) : nat :=
+  match e with
+  | Basis _ | Scalar _ => 1
+  | Cln_Grade.Add e1 e2 => 1 + size_expr e1 + size_expr e2
+  | Mul e1 e2 => 1 + size_expr e1 + size_expr e2
+  | Conv e1 e2 => 1 + size_expr e1 + size_expr e2
+  end.
+
+Definition trace_boolish_poly_size {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  exists k, (k <= Nat.pow (size_expr e) 3)%nat /\ trace_boolish_k_le sq e k d.
+(* Use any polynomial. ^3 is just a placeholder. *)
+
+Definition trace_boolish_poly_n {n}
+  (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
+  exists k, (k <= Nat.pow n 3)%nat /\ trace_boolish_k_le sq e k d.
+(* This is bound by n (dimension) *)
+
+Lemma trace_boolish_poly_size_implies_exists_k :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) d,
+    trace_boolish_poly_size sq e d ->
+    trace_boolish_exists_k sq e d.
 Proof.
 Admitted.
 
-Theorem hard_family_beats_all_poly_compilers :
-  forall (C : EasyCompiler) (k : nat),
-  exists f : forall n, Corner n -> bool,
-    forall n (sq : Vector.t Q n),
-      ~ easy_under (B C) (d0 C) sq (f n)  (* or: not with poly_B k *)
-      .
-Proof.
-Admitted.
-
-Theorem hard_family_separates_boolish_trace :
-  forall d : Q,
-  exists f : forall n, Corner n -> bool,
-  exists c : nat,
-    forall n (sq : Vector.t Q n) (e : GA_expr n),
-      computes sq e (f n) ->
-      trace_boolish_exists_k sq e d ->
-      (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
+Lemma trace_boolish_poly_size_normalize :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) d,
+    trace_boolish_poly_size sq e d ->
+    trace_boolish_k_le sq e (poly (size_expr e)) d.
 Proof.
 Admitted.
 
@@ -1611,7 +1618,7 @@ Theorem IP_exponential_in_booleanish_model :
     forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
       (m >= 2)%nat ->
       computes sq e (@IP_n_func (m+m)) ->
-      trace_boolish_exists_k sq e d ->
+      trace_boolish_poly_size sq e d ->
       (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
 Proof.
 Admitted.
@@ -1631,6 +1638,37 @@ Proof.
   (* If you manage to keep excursion subexponential,
       then you must violate booleanishness somewhere along the trace. *)
 Admitted.
+
+Theorem hard_family_beats_all_poly_compilers :
+  forall (C : EasyCompiler) (k : nat),
+  exists f : forall n, Corner n -> bool,
+    forall n (sq : Vector.t Q n),
+      ~ easy_under (B C) (d0 C) sq (f n)  (* or: not with poly_B k *)
+      .
+Proof.
+Admitted.
+
+Theorem hard_family_not_easy :
+  forall (C : EasyCompiler),
+  exists c : nat,
+  exists f : forall n, Corner n -> bool,
+    forall n,
+      (* if f n were easy for compiler C, we'd contradict the hardness bound *)
+      ~ easy C (n:=n) (f n).
+Proof.
+Admitted.
+
+Theorem hard_family_separates_boolish_trace :
+  forall d : Q,
+  exists f : forall n, Corner n -> bool,
+  exists c : nat,
+    forall n (sq : Vector.t Q n) (e : GA_expr n),
+      computes sq e (f n) ->
+      trace_boolish_exists_k sq e d ->
+      (Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
 
 Lemma computes_l1_eq :
   forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool),
@@ -1683,7 +1721,7 @@ Proof.
     (* pull abs through products *)
     (* use signed_walsh_IP_magnitude to rewrite signed_walsh *)
     destruct (signed_walsh_IP_magnitude m M Hm) as [s Hs].
-    rewrite Hs.
+    admit.
     (* now it’s abs of (1/pow2 n) * (-(1/2) * (signed s * 2^m)) *)
     (* abs(signed s) = 1, abs(-x)=abs(x) *)
     (* finalize *)
