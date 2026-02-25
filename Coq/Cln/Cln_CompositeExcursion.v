@@ -2100,9 +2100,49 @@ Lemma sum_abs_eval_le_pow2_l1 :
     sumQ (map (fun s => Qabs (eval F s)) (all_corners n))
     <= (pow2 n) * l1_norm F.
 Proof.
-Admitted.
+  intros n F.
+
+  (* Step 1: pointwise |eval(F)(s)| ≤ l1_norm F *)
+  eapply Qle_trans.
+  - apply sumQ_map_le.
+    intros s _.
+    exact (@eval_abs_le_l1 n F s).
+
+  (* Step 2: sum of constant l1_norm F over all corners = pow2 n * l1_norm F *)
+  - apply Qle_of_Qeq.
+    apply sumQ_const_all_corners.
+Qed.
+
+Corollary eval_bounded_by_l1 :
+  forall n (F : MV n),
+    eval_bounded F (l1_norm F).
+Proof.
+  intros n F s.
+  exact (eval_abs_le_l1 (n:=n) F s).
+Qed.
+
+Theorem l1_and_sum_abs_eval_equiv :
+  forall n (F : MV n),
+    l1_norm F <= sumQ (map (fun s => Qabs (eval F s)) (all_corners n))
+    /\
+    sumQ (map (fun s => Qabs (eval F s)) (all_corners n))
+      <= pow2 n * l1_norm F.
+Proof.
+  intros n F.
+  split.
+  - apply l1_le_sum_abs_eval.
+  - apply sum_abs_eval_le_pow2_l1.
+Qed.
 
 (*
+Fully proved norm equivalence package:
+    eval_abs_le_l1          :  |eval(F)(s)| ≤ ||F||₁
+    eval_bounded_by_l1      :  eval_bounded F (||F||₁)
+    l1_le_sum_abs_eval      :  ||F||₁ ≤ Σ_s |eval(F)(s)|
+    sum_abs_eval_le_pow2_l1 :  Σ_s |eval(F)(s)| ≤ 2ⁿ · ||F||₁
+    eval_bounded_implies_l1 :  eval_bounded F C → ||F||₁ ≤ 2ⁿ · C
+    bool_dist → eval_close  :  ||F - embed(g)||₁ ≤ d → |eval(F)(s) - g(s)| ≤ d
+    eval_close → eval_bound :  eval_close_bool F d → eval_bounded F (1+d)
 ========================================================================
 *)
 
