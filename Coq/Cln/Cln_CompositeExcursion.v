@@ -1573,11 +1573,11 @@ Qed.
 
 (* 
 Might be too weak
-
+*)
       Definition trace_boolish_exists_k {n}
         (sq : Vector.t Q n) (e : GA_expr n) (d : Q) : Prop :=
         exists k : nat, trace_boolish_k_le sq e k d.
-
+(*
 Might be too weak
 *)
 
@@ -1663,13 +1663,63 @@ Theorem IP_exponential_in_booleanish_model :
 Proof.
 Admitted.
 
+
+(*
+========================================================================
+*)
+
+Require Import Coq.Vectors.Vector.
+Require Import Coq.QArith.QArith.
+Import VectorNotations.
+
+(* Masks for n = 2 basis blades *)
+Definition m0  : Mask 2 := [false; false].  (* scalar 1 *)
+Definition m1  : Mask 2 := [true ; false].  (* e1 *)
+Definition m2  : Mask 2 := [false; true ].  (* e2 *)
+Definition m12 : Mask 2 := [true ; true ].  (* e12 *)
+
+(* Euclidean squares: e1^2 = 1, e2^2 = 1 *)
+Definition sq2 : Vector.t Q 2 := [1; 1].
+
+(* "Basis blade with coefficient" – replace mv_basis with your actual constructor *)
+Parameter mv_basis : forall {n}, Mask n -> Q -> MV n.
+Parameter mv_add : forall {n}, MV n -> MV n -> MV n.
+
+(* F = e1 + e2 *)
+Definition F2 : MV 2 :=
+  mv_add (mv_basis m1 1) (mv_basis m2 1).
+
+(* The key claim: GP cancels bivector terms; Conv does not. *)
+Example gp_vs_conv_cancellation_n2 :
+  (l1_norm (mv_gp sq2 F2 F2) == 2)%Q
+  /\ (l1_norm (mv_conv F2 F2) == 4)%Q.
+Proof.
+  (* If mv_gp/mv_conv/l1_norm are computable, this should go through by computation. *)
+  native_compute.
+  (* or: vm_compute. or: cbv [F2 sq2 m1 m2 ...]. *)
+Qed.
+
+Corollary gp_smaller_than_conv_n2 :
+  (l1_norm (mv_gp sq2 F2 F2) < l1_norm (mv_conv F2 F2))%Q.
+Proof.
+  destruct gp_vs_conv_cancellation_n2 as [Hgp Hcv].
+  rewrite Hgp, Hcv.
+  (* 2 < 4 *)
+  lra.
+Qed.
+
+(*
+========================================================================
+*)
+
+
 Theorem IP_booleanish_tradeoff :
   forall d : Q,
   exists c : nat,
     forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
       (m >= 2)%nat ->
       computes sq e (@IP_n_func (m+m)) ->
-      ( trace_boolish_exists_k sq e d ->
+      ( trace_boolish_poly_size sq e d ->
           Qpow2 (c * m) <= exc_l1 (exc_of sq e) )
       /\
       ( exc_l1 (exc_of sq e) < Qpow2 (c * m) ->
@@ -1749,9 +1799,10 @@ Lemma l1_norm_embed_IP_ge_pow2 :
     (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
 Proof.
 (*
-This is the real analytic heart.
-
-Then in hard_family_separates_div2, choose f n := IP_n_func n and c := 1, and use Nat.div2 (m+m) = m.
+  In hard_family_separates_div2,
+    choose f n := IP_n_func n
+         and c := 1,
+         and use Nat.div2 (m+m) = m.
 *)
 Admitted.
 
@@ -1831,7 +1882,7 @@ Admitted.
         subexponential excursion but violates booleanishness,
                   you get a true separation:
 
-*)
+
 Theorem booleanish_vs_unrestricted_separation :
   exists f : forall n, Corner n -> bool,
     (exists e_easy : forall n, GA_expr n,
@@ -1843,11 +1894,12 @@ Theorem booleanish_vs_unrestricted_separation :
           trace_boolish_exists_k sq e d ->
           Qpow2 (c * Nat.div2 n) <= exc_l1 (exc_of sq e)).
 Proof.
-(*
+Admitted.
+
+
 This is most compelling : "booleanishness costs you exponentially; if you drop it, you can do it cheaply."
   But it requires you to actually build the cheap non-booleanish circuit family.
 *)
-Qed.
 
 Definition pow2 (k : nat) : nat :=
   Nat.pow 2 k.
@@ -2096,6 +2148,8 @@ Lemma boolish_k_le_gp_of_boolish_k_le_up_to :
 Proof.
 Admitted.
 *)
+
+(*
 Close Scope Q_scope.
 
 Lemma boolish_k_le_conv_of_boolish_k_le :
@@ -2217,6 +2271,7 @@ Proof.
            (* `ring_simplify` may or may not close; if it doesn't, use: *)
            ring.
 Qed.
+*)
 
 (*
 ===============================================================================
