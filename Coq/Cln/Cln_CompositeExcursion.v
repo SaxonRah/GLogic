@@ -1668,45 +1668,439 @@ Admitted.
 ========================================================================
 *)
 
-Require Import Coq.Vectors.Vector.
-Require Import Coq.QArith.QArith.
-Import VectorNotations.
+Require Import Coq.Program.Equality.
+Require Import Coq.QArith.Qabs.
 
-(* Masks for n = 2 basis blades *)
-Definition m0  : Mask 2 := [false; false].  (* scalar 1 *)
-Definition m1  : Mask 2 := [true ; false].  (* e1 *)
-Definition m2  : Mask 2 := [false; true ].  (* e2 *)
-Definition m12 : Mask 2 := [true ; true ].  (* e12 *)
+Definition eval_bounded {n} (F : MV n) (C : Q) : Prop :=
+  forall s : Corner n, Qabs (eval F s) <= C.
 
-(* Euclidean squares: e1^2 = 1, e2^2 = 1 *)
-Definition sq2 : Vector.t Q 2 := [1; 1].
+Definition eval_close_bool {n} (F : MV n) (d : Q) : Prop :=
+  exists g : Corner n -> bool,
+    forall s : Corner n, Qabs (eval F s - bQ (g s)) <= d.
 
-(* "Basis blade with coefficient" – replace mv_basis with your actual constructor *)
-Parameter mv_basis : forall {n}, Mask n -> Q -> MV n.
-Parameter mv_add : forall {n}, MV n -> MV n -> MV n.
 
-(* F = e1 + e2 *)
-Definition F2 : MV 2 :=
-  mv_add (mv_basis m1 1) (mv_basis m2 1).
+Lemma Qabs_sQ_1 : forall h : Sign, Qabs (sQ h) == 1.
+Proof. destruct h; simpl; reflexivity. Qed.
 
-(* The key claim: GP cancels bivector terms; Conv does not. *)
-Example gp_vs_conv_cancellation_n2 :
-  (l1_norm (mv_gp sq2 F2 F2) == 2)%Q
-  /\ (l1_norm (mv_conv F2 F2) == 4)%Q.
+Lemma Qabs_chi'_1 :
+  forall n (m : Mask n) (s : Corner n),
+    Qabs (chi' m s) == 1.
 Proof.
-  (* If mv_gp/mv_conv/l1_norm are computable, this should go through by computation. *)
-  native_compute.
-  (* or: vm_compute. or: cbv [F2 sq2 m1 m2 ...]. *)
+  induction n as [|n IH]; intros m s.
+  - dependent destruction m. dependent destruction s. simpl. reflexivity.
+  - dependent destruction m. dependent destruction s.
+    cbn [chi' chi].
+    destruct h; simpl.
+    + (* mh = true *)
+      change (Qabs ((sQ h0) * (chi m s)) == 1).
+      rewrite Qabs_Qmult.
+      rewrite Qabs_sQ_1.
+      rewrite IH.
+      ring.
+    + (* mh = false *)
+      (* factor is 1 *)
+      change (Qabs (1 * (chi m s)) == 1).
+      rewrite Qabs_Qmult.
+      simpl. rewrite IH. ring.
 Qed.
 
-Corollary gp_smaller_than_conv_n2 :
-  (l1_norm (mv_gp sq2 F2 F2) < l1_norm (mv_conv F2 F2))%Q.
+Lemma eval_abs_le_l1 :
+  forall n (F : MV n) (s : Corner n),
+    Qabs (eval F s) <= l1_norm F.
 Proof.
-  destruct gp_vs_conv_cancellation_n2 as [Hgp Hcv].
-  rewrite Hgp, Hcv.
-  (* 2 < 4 *)
-  lra.
+  intros n F s.
+  unfold eval, l1_norm.
+
+  eapply Qle_trans.
+  - exact (Qabs_sumQ_map_le (A := Mask n) (all_masks n)
+            (fun m => (F m * chi' m s)%Q)).
+  -
+    apply Qle_of_Qeq.
+    apply sumQ_map_ext; intros m _.
+    rewrite Qabs_Qmult.
+    rewrite (@Qabs_chi'_1 n m s).
+    ring.
 Qed.
+
+Lemma bool_dist_le_implies_eval_close :
+  forall n (F : MV n) (d : Q),
+    bool_dist_le F d -> eval_close_bool F d.
+Proof.
+  intros n F d [g Hg].
+  exists g.
+  intro s.
+
+  rewrite <- (@embed_correct n g s).
+  assert (Hlin :
+  (eval F s - eval (embed g) s)%Q
+  ==
+  eval (mv_sub F (embed g)) s).
+  {
+    unfold mv_sub.
+    unfold eval.
+    rewrite <- (@sumQ_map_sub
+              (Mask n)
+              (fun m => (F m * chi' m s)%Q)
+              (fun m => (embed g m * chi' m s)%Q)
+              (all_masks n)).
+    f_equal.
+    change (Qeq
+    (sumQ (map (fun x : Mask n => (F x * chi' x s - embed g x * chi' x s)%Q) (all_masks n)))
+    (sumQ (map (fun m : Mask n => ((F m - embed g m) * chi' m s)%Q) (all_masks n)))).
+    apply sumQ_map_ext; intros m Hm.
+    ring.
+  }
+  setoid_rewrite Hlin.
+  eapply Qle_trans.
+  - apply eval_abs_le_l1.
+  - exact Hg.
+Qed.
+
+Require Import Coq.micromega.Lra.
+
+Lemma Qabs_bQ_le_1 : forall b : bool, Qabs (bQ b) <= 1.
+Proof.
+  intro b; destruct b; simpl.
+  - (* goal: 1 <= 1 *)
+    apply Qle_refl.
+  - (* goal: 0 <= 1 *)
+    unfold Qle; simpl; lia.
+Qed.
+
+Lemma eval_close_bool_implies_eval_bounded_1pd :
+  forall n (F : MV n) (d : Q),
+    eval_close_bool F d ->
+    eval_bounded F (1 + d).
+Proof.
+  intros n F d [g Hg] s.
+  specialize (Hg s).
+
+  (* triangle inequality: |(x) + (y)| <= |x| + |y| *)
+  assert (Htri :
+    Qabs ((eval F s - bQ (g s)) + bQ (g s))
+      <= Qabs (eval F s - bQ (g s)) + Qabs (bQ (g s))).
+  { exact (Qabs_triangle (eval F s - bQ (g s)) (bQ (g s))). }
+
+  (* simplify the LHS: (eval - bQ) + bQ = eval *)
+  setoid_replace (eval F s - bQ (g s) + bQ (g s)) with (eval F s) in Htri by ring.
+
+  eapply Qle_trans.
+  - exact Htri.
+  - eapply Qle_trans.
+    + (* pin the RHS to d + 1 so we don't get an evar ?t *)
+      apply (Qplus_le_compat
+               (Qabs (eval F s - bQ (g s))) d
+               (Qabs (bQ (g s))) 1).
+      * exact Hg.
+      * apply Qabs_bQ_le_1.
+    + (* d + 1 == 1 + d *)
+      apply Qle_of_Qeq.
+      ring.
+Qed.
+
+Lemma sumQ_mul_r :
+  forall (A : Type) (f : A -> Q) (k : Q) (l : list A),
+    (sumQ (List.map f l) * k)%Q == sumQ (List.map (fun x => (f x * k)%Q) l).
+Proof.
+  intros A f k l. induction l as [|a tl IH]; simpl.
+  - ring.
+  - rewrite <- IH. ring.
+Qed.
+
+Lemma coeff_via_eval :
+  forall n (F : MV n) (m : Mask n),
+    F m ==
+    (1 / pow2 n) *
+      sumQ (List.map (fun s => (eval F s * chi' m s)%Q) (all_corners n)).
+Proof.
+  intros n F m.
+  unfold eval.
+
+  (* Work on RHS via symmetry *)
+  symmetry.
+
+  (* Step 1: distribute χ(m,s) into inner sum
+     (Σ_{m0} F(m0)·χ(m0,s)) · χ(m,s)  =  Σ_{m0} F(m0)·χ(m0,s)·χ(m,s) *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply sumQ_map_ext; intros s _.
+    apply sumQ_mul_r. }
+
+  (* Step 2: reassociate each term
+     F(m0)·χ(m0,s)·χ(m,s)  =  F(m0) · (χ(m0,s) · χ(m,s)) *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply sumQ_map_ext; intros s _.
+    apply sumQ_map_ext; intros m0 _.
+    (* (F m0 * chi' m0 s) * chi' m s = F m0 * (chi' m0 s * chi' m s) *)
+    rewrite Qmult_assoc.
+    reflexivity. }
+
+  (* Step 3: swap sums  Σ_s Σ_{m0} ... = Σ_{m0} Σ_s ... *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply (@sumQ_swap (Corner n) (Mask n)
+            (fun s m0 => (F m0 * (chi' m0 s * chi' m s))%Q)
+            (all_corners n) (all_masks n)). }
+
+  (* Step 4: factor out F(m0) *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply sumQ_map_ext; intros m0 _.
+    (* rewrite the inner function as c * h a, then apply scale lemma *)
+    (* here c = F m0, h a = (chi' m0 a * chi' m a) *)
+    exact (@sumQ_map_scale_l (Corner n)
+         (F m0)
+         (fun a => (chi' m0 a * chi' m a)%Q)
+         (all_corners n)). }
+
+  (* Step 5: apply corner-Walsh orthogonality
+     Σ_s χ(m0,s)·χ(m,s) = if m0=m then pow2 n else 0 *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply sumQ_map_ext; intros m0 _.
+    apply Qmult_comp; [reflexivity|].
+    apply corner_walsh_sum_ortho. }
+
+  (* Step 6: push the "if" outside the product *)
+  assert (Hinner :
+    sumQ (map (fun m0 : Mask n =>
+                 (F m0 * (if mask_eq_dec m0 m then pow2 n else 0))%Q)
+              (all_masks n))
+    ==
+    sumQ (map (fun m0 : Mask n =>
+                 if mask_eq_dec m0 m then (F m0 * pow2 n)%Q else 0)
+              (all_masks n))).
+  {
+    apply sumQ_map_ext; intros m0 _.
+    destruct (mask_eq_dec m0 m) as [Heq|Hneq].
+    - subst m0. simpl. reflexivity.
+    - simpl. rewrite Qmult_0_r. reflexivity.
+  }
+  setoid_rewrite Hinner.
+
+  (* Step 7: collapse sum via pick lemma
+     Σ_{m0} if m0=m then F(m0)·pow2 n else 0  ==  F(m)·pow2 n *)
+  eapply Qeq_trans.
+  { apply Qmult_comp; [reflexivity|].
+    apply (@sumQ_all_masks_pick n (fun m0 => (F m0 * pow2 n)%Q) m). }
+
+  (* Step 8: cancel  (1/pow2 n) · (F(m) · pow2 n) == F(m) *)
+  (* pow2 n > 0 so division is valid *)
+  unfold pow2. (* exposes inject_Z (2^n) *)
+  field.
+  (* remaining obligation: pow2 n ≠ 0, which follows from 2^n > 0 *)
+  apply pow2_nonzero. (* you may need to prove this if you don't have it *)
+Qed.
+
+Lemma Qlt_0_1' : (0 < 1)%Q.
+Proof. unfold Qlt; simpl; lia. Qed.
+
+Lemma Qlt_0_2' : (0 < 2)%Q.
+Proof. unfold Qlt; simpl; lia. Qed.
+
+Lemma Qle_0_1' : (0 <= 1)%Q.
+Proof. unfold Qle; simpl; lia. Qed.
+
+Lemma pow2_Qpos : forall n, (0 < pow2 n)%Q.
+Proof.
+  induction n; simpl.
+  - exact Qlt_0_1'.
+  - apply Qmult_lt_0_compat.
+    + exact Qlt_0_2'.
+    + exact IHn.
+Qed.
+
+Lemma Qmult_le_compat_l' : forall c a b : Q,
+  0 <= c ->
+  a <= b ->
+  c * a <= c * b.
+Proof.
+  intros c a b Hc Hab.
+  (* use: x <= y  <->  0 <= y - x *)
+  apply (Qle_minus_iff (c*a) (c*b)).
+  (* goal becomes: 0 <= c*b - c*a *)
+  (* factor the difference *)
+  ring_simplify.
+  assert (Hfact : (c * b + -1 * c * a == c * (b - a))%Q).
+  { ring. }
+  setoid_rewrite Hfact.
+  (* now: 0 <= c * (b - a) *)
+  apply Qmult_le_0_compat.
+  - exact Hc.
+  - (* 0 <= b - a *)
+    apply (Qle_minus_iff a b). exact Hab.
+Qed.
+
+Lemma abs_coeff_le_avg_abs_eval :
+  forall n (F : MV n) (m : Mask n),
+    Qabs (F m) <=
+      (1 / pow2 n) *
+        sumQ (List.map (fun s => Qabs (eval F s)) (all_corners n)).
+Proof.
+  intros n F m.
+  rewrite (@coeff_via_eval n F m).
+
+  (* Step 1: |c · X| = |c| · |X| *)
+  rewrite Qabs_Qmult.
+
+  (* Step 2: |1/pow2 n| = 1/pow2 n since 1/pow2 n ≥ 0 *)
+  assert (Hcpos : 0 <= 1 / pow2 n).
+  {
+    apply Qlt_le_weak.
+    unfold Qdiv.
+    apply Qmult_lt_0_compat.
+    - exact Qlt_0_1'.
+    - apply Qinv_lt_0_compat.
+      apply pow2_Qpos.
+  }
+  rewrite (Qabs_pos _ Hcpos).
+
+  (* Step 3: c · |X| ≤ c · Y, reduce to |X| ≤ Y by monotone mult *)
+  apply (@Qmult_le_compat_l' (1 / pow2 n));
+    [ exact Hcpos | ].
+
+  (* Step 4: triangle inequality on the sum
+     |Σ_s eval(F)(s) · χ(m,s)| ≤ Σ_s |eval(F)(s) · χ(m,s)| *)
+  eapply Qle_trans.
+  - exact (Qabs_sumQ_map_le (A := Corner n) (all_corners n)
+             (fun s => (eval F s * chi' m s)%Q)).
+
+  (* Step 5: pointwise |f(s) · χ(m,s)| = |f(s)| since |χ| = 1 *)
+  - apply Qle_of_Qeq.
+    apply sumQ_map_ext; intros s _.
+    rewrite Qabs_Qmult.
+    rewrite Qabs_chi'_1.
+    ring.
+Qed.
+
+Lemma sumQ_const_all_masks :
+  forall n (k : Q),
+    sumQ (List.map (fun _ : Mask n => k) (all_masks n)) == pow2 n * k.
+Proof.
+  induction n as [|n IH]; intro k; simpl.
+  - (* all_masks 0 = [[]],  pow2 0 = 1 *)
+    ring.
+  - (* all_masks (S n) = map (false::·) ++ map (true::·) *)
+    rewrite map_app.
+    rewrite sumQ_app.
+    (* map (fun _ => k) (map (false::·) ms) has same length as ms *)
+    rewrite List.map_map.
+    rewrite List.map_map.
+    (* both inner maps collapse to (fun _ => k) *)
+    (* so each half equals sumQ (map (fun _ => k) (all_masks n)) == pow2 n * k *)
+    setoid_rewrite IH.
+    (* pow2 n * k + pow2 n * k == 2 * pow2 n * k *)
+    ring.
+Qed.
+
+Lemma Qdiv_mul_cancel_l :
+  forall (q r : Q),
+    ~ q == 0 ->
+    (1 / q) * (q * r) == r.
+Proof.
+  intros q r Hq.
+  (* field works because goal is Qeq (==) *)
+  field.
+  exact Hq.
+Qed.
+
+Lemma l1_le_sum_abs_eval :
+  forall n (F : MV n),
+    l1_norm F <=
+      sumQ (List.map (fun s => Qabs (eval F s)) (all_corners n)).
+Proof.
+  intros n F.
+  unfold l1_norm.
+
+  set (S := sumQ (List.map (fun s => Qabs (eval F s)) (all_corners n))).
+
+  (* Step 1: pointwise bound |F(m)| ≤ (1/pow2 n) * S *)
+  eapply Qle_trans.
+  { apply sumQ_map_le.
+    intros m _. apply (@abs_coeff_le_avg_abs_eval n F m). }
+
+  (* Goal: sumQ (map (fun _ => (1/pow2 n) * S) (all_masks n)) <= S *)
+
+  (* Step 2: factor out constant *)
+  eapply Qle_trans.
+  { apply Qle_of_Qeq.
+    (* current goal is: sumQ (map (fun _ => (1/pow2 n) * BIG) ms) == ?y
+       so we want to rewrite it to: (1/pow2 n) * sumQ (map (fun _ => BIG) ms) *)
+    (* Use the scale lemma in the forward direction *)
+    exact (@sumQ_map_scale_l (Mask n) (1 / pow2 n)
+             (fun _ : Mask n =>
+                sumQ (map (fun s : Corner n => Qabs (eval F s)) (all_corners n)))
+             (all_masks n)).
+  }
+  
+  (* Step 3: sum of constant over all masks = pow2 n * S *)
+  eapply Qle_trans.
+  { apply Qle_of_Qeq.
+    apply Qmult_comp; [reflexivity|].
+    apply sumQ_const_all_masks. }
+
+  (* Step 4: cancel (1/pow2 n) * (pow2 n * S) == S *)
+  apply Qle_of_Qeq.
+  unfold S.
+  apply (@Qdiv_mul_cancel_l
+         (pow2 n)
+         (sumQ (map (fun s : Corner n => Qabs (eval F s)) (all_corners n)))).
+  apply pow2_nonzero.
+Qed.
+
+Lemma sumQ_const_all_corners :
+  forall n (k : Q),
+    sumQ (List.map (fun _ : Corner n => k) (all_corners n)) == pow2 n * k.
+Proof.
+  (* identical structure to sumQ_const_all_masks, but with all_corners *)
+  induction n as [|n IH]; intro k; simpl.
+  - ring.
+  - rewrite map_app.
+    rewrite sumQ_app.
+    rewrite List.map_map.
+    rewrite List.map_map.
+    setoid_rewrite IH.
+    ring.
+Qed.
+
+Lemma sum_abs_eval_le_pow2C :
+  forall n (F : MV n) (C : Q),
+    eval_bounded F C ->
+    sumQ (List.map (fun s => Qabs (eval F s)) (all_corners n)) <= (pow2 n) * C.
+Proof.
+  intros n F C Hb.
+
+  (* Step 1: pointwise -> sum inequality *)
+  eapply Qle_trans.
+  - apply sumQ_map_le.
+    intros s _.  (* s ranges over all_corners n *)
+    (* get the bound from Hb *)
+    exact (Hb s).   (* or: specialize (Hb s); exact Hb *)
+  - (* Step 2: collapse sum of constant C over all corners *)
+    apply Qle_of_Qeq.
+    (* sumQ (map (fun _ => C) (all_corners n)) == pow2 n * C *)
+    rewrite (sumQ_const_all_corners n C).
+    reflexivity.
+Qed.
+
+Theorem eval_bounded_implies_l1_bound :
+  forall n (F : MV n) (C : Q),
+    eval_bounded F C ->
+    l1_norm F <= (pow2 n) * C.
+Proof.
+  intros n F C Hb.
+  eapply Qle_trans.
+  - apply l1_le_sum_abs_eval.
+  - apply sum_abs_eval_le_pow2C; exact Hb.
+Qed.
+
+Lemma sum_abs_eval_le_pow2_l1 :
+  forall n (F : MV n),
+    sumQ (map (fun s => Qabs (eval F s)) (all_corners n))
+    <= (pow2 n) * l1_norm F.
+Proof.
+Admitted.
 
 (*
 ========================================================================
