@@ -2136,13 +2136,43 @@ Qed.
 
 (*
 Fully proved norm equivalence package:
+
     eval_abs_le_l1          :  |eval(F)(s)| ≤ ||F||₁
+
     eval_bounded_by_l1      :  eval_bounded F (||F||₁)
+
     l1_le_sum_abs_eval      :  ||F||₁ ≤ Σ_s |eval(F)(s)|
+
     sum_abs_eval_le_pow2_l1 :  Σ_s |eval(F)(s)| ≤ 2ⁿ · ||F||₁
+
     eval_bounded_implies_l1 :  eval_bounded F C → ||F||₁ ≤ 2ⁿ · C
+
     bool_dist → eval_close  :  ||F - embed(g)||₁ ≤ d → |eval(F)(s) - g(s)| ≤ d
+
     eval_close → eval_bound :  eval_close_bool F d → eval_bounded F (1+d)
+
+========================================================================
+*)
+
+Lemma eval_conv_pointwise :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_conv F G) s == (eval F s * eval G s)%Q.
+Proof.
+Admitted.
+
+Lemma eval_abs_le_bound :
+  forall n (F:MV n) (C:Q) s, eval_bounded F C -> Qabs (eval F s) <= C.
+Proof.
+Admitted.
+
+Lemma eval_bounded_conv :
+  forall n (F G : MV n) (CF CG : Q),
+    eval_bounded F CF -> eval_bounded G CG ->
+    eval_bounded (mv_conv F G) (CF * CG).
+Proof.
+Admitted.
+
+(*
 ========================================================================
 *)
 
