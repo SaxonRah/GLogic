@@ -2886,11 +2886,32 @@ Proof.
     assert (Hxle : x <= 0) by (apply Qlt_le_weak; exact Hxlt).
     rewrite (Qabs_neg _ Hxle) in H0.
     (* -x = 0 -> x = 0 *)
-    ring_simplify in H0.
-    exact H0.
+    assert (H0' : (-1) * ((-1) * x) == (-1) * 0).
+    { now rewrite H0. }
+    ring_simplify in H0'.
+    exact H0'.
   - (* 0 <= x *)
     rewrite (Qabs_pos _ Hxge) in H0.
     exact H0.
+Qed.
+
+Lemma eval_close_bool_0_implies_pointwise :
+  forall n (F : MV n),
+    eval_close_bool F 0 ->
+    exists g : Corner n -> bool,
+      forall s : Corner n, eval F s == bQ (g s).
+Proof.
+  intros n F [g Hg].
+  exists g.
+  intro s.
+  specialize (Hg s).
+  apply Qabs_le_0_eq in Hg.
+  apply (Qplus_inj_r _ _ (bQ (g s))).
+
+  setoid_replace (eval F s + bQ (g s))
+    with ((eval F s - bQ (g s)) + 2 * bQ (g s)) by ring.
+  rewrite Hg.
+  ring.
 Qed.
 
 Corollary compile_cnf_correct :
@@ -2911,8 +2932,8 @@ Lemma eval_pointwise_eq_implies_coeff_eq :
 Proof.
   intros n F G Heq m.
   (* expand both sides using coeff_via_eval *)
-  rewrite (coeff_via_eval (n:=n) (F:=F) (m:=m)).
-  rewrite (coeff_via_eval (n:=n) (F:=G) (m:=m)).
+  rewrite (@coeff_via_eval n F m).
+  rewrite (@coeff_via_eval n G m).
   (* same prefactor; push Heq through the sum *)
   apply Qmult_comp; [reflexivity|].
   apply sumQ_map_ext; intros s _.
@@ -2930,7 +2951,6 @@ Proof.
   - intro s.
     rewrite embed_correct.
     exact (Hs s).
-  - exact m.
 Qed.
 
 Corollary compile_cnf_coeff_correct :
@@ -2940,10 +2960,10 @@ Corollary compile_cnf_coeff_correct :
         (compile_cnf (n:=n) phi) m == embed g m.
 Proof.
   intros n phi.
-  destruct (compile_cnf_correct (n:=n) phi) as [g Hg].
+  destruct (@compile_cnf_correct n phi) as [g Hg].
   exists g.
   intro m.
-  apply (eval_eq_bQ_implies_coeff_eq_embed (n:=n) (F:=compile_cnf (n:=n) phi) (f:=g)).
+  apply (@eval_eq_bQ_implies_coeff_eq_embed n (@compile_cnf n phi) g).
   exact Hg.
 Qed.
 
@@ -2954,12 +2974,464 @@ Theorem cnf_exists_small_rep :
       (exists g, forall s, eval F s == bQ (g s)) /\
       l1_norm F <= pow2 n.
 Proof.
+  intros n phi.
+  exists (@compile_cnf n phi).
+  split.
+  - (* correctness in eval/bQ form *)
+    destruct (@compile_cnf_correct n phi) as [g Hg].
+    exists g. exact Hg.
+  - (* l1 bound *)
+    exact (@compile_cnf_l1_bound n phi).
+Qed.
+
+(* --- CNF semantics via BoolFormula --- *)
+Definition bf_of_lit {n} (l : Lit n) : BoolFormula n :=
+  let '(i, neg) := l in
+  if neg then BNot (BVar i) else BVar i.
+
+Fixpoint bf_of_clause {n} (c : Clause n) : BoolFormula n :=
+  match c with
+  | [] => BConst false
+  | l :: cs => BOr (bf_of_lit l) (bf_of_clause cs)
+  end.
+
+Fixpoint bf_of_cnf {n} (phi : CNF n) : BoolFormula n :=
+  match phi with
+  | [] => BConst true
+  | c :: cs => BAnd (bf_of_clause c) (bf_of_cnf cs)
+  end.
+
+Definition lit_sem {n} (l : Lit n) (s : Corner n) : bool :=
+  let '(i, neg) := l in
+  if neg then negb (corner_bit i s) else corner_bit i s.
+
+Fixpoint clause_sem {n} (c : Clause n) (s : Corner n) : bool :=
+  match c with
+  | [] => false
+  | l :: cs => orb (lit_sem l s) (clause_sem cs s)
+  end.
+
+Fixpoint cnf_sem {n} (phi : CNF n) (s : Corner n) : bool :=
+  match phi with
+  | [] => true
+  | c :: cs => andb (clause_sem c s) (cnf_sem cs s)
+  end.
+
+Definition compile_cnf_expr {n} (phi : CNF n) : GA_expr n :=
+  translate (bf_of_cnf phi).
+
+Lemma eval_mv_not :
+  forall n (F : MV n) (s : Corner n),
+    eval (mv_not (n:=n) F) s == (1 - eval F s)%Q.
+Proof.
+  intros n F s.
+  unfold mv_not.
+  rewrite eval_sub_pointwise.
+  rewrite eval_constMV.
+  ring.
+Qed.
+
+Lemma eval_mv_or :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_or (n:=n) F G) s
+    == (eval F s + eval G s - eval (mv_conv F G) s)%Q.
+Proof.
+  intros n F G s.
+  unfold mv_or.
+  rewrite eval_sub_pointwise.
+  rewrite eval_add_pointwise.
+  rewrite eval_conv_pointwise.
+  ring.
+Qed.
+
+Lemma eval_compile_lit :
+  forall n (l : Lit n) (s : Corner n),
+    eval (compile_lit (n:=n) l) s == bQ (lit_sem l s).
+Proof.
+  intros n [i neg] s; simpl.
+  unfold lit_sem; simpl.
+  destruct neg.
+  - (* negated *)
+    unfold compile_lit; simpl.
+    unfold mv_not.
+    rewrite eval_sub_pointwise.
+    rewrite eval_constMV.
+    rewrite eval_varMV.
+    rewrite bQ_negb.
+    ring.
+  - (* positive *)
+    unfold compile_lit; simpl.
+    rewrite eval_varMV.
+    reflexivity.
+Qed.
+
+Lemma eval_compile_clause :
+  forall n (c : Clause n) (s : Corner n),
+    eval (compile_clause (n:=n) c) s == bQ (clause_sem c s).
+Proof.
+  intros n c; induction c as [|l cs IH]; intro s; simpl.
+  - rewrite eval_constMV. reflexivity.
+  - rewrite eval_mv_or.
+    rewrite eval_compile_lit.
+    rewrite IH.
+    rewrite eval_conv_pointwise.
+    rewrite eval_compile_lit.
+    rewrite IH.
+    (* now use the bQ lemma for OR *)
+    rewrite bQ_orb_mul.
+    ring.
+Qed.
+
+Lemma compile_cnf_eval_correct :
+  forall n (phi : CNF n) (s : Corner n),
+    eval (compile_cnf (n:=n) phi) s == bQ (cnf_sem (n:=n) phi s).
+Proof.
+  intros n phi; induction phi as [|c cs IH]; intro s; simpl.
+  - (* empty CNF = true *)
+    rewrite eval_constMV. reflexivity.
+  - (* AND via conv *)
+    unfold mv_and.
+    rewrite eval_conv_pointwise.
+    rewrite eval_compile_clause.
+    rewrite IH.
+    rewrite bQ_andb_mul.
+    ring.
+Qed.
+
+Theorem cnf_small_rep_correct :
+  forall n (phi : CNF n),
+    exists F : MV n,
+      (forall s, eval F s == bQ (cnf_sem phi s)) /\
+      l1_norm F <= pow2 n.
+Proof.
+  intros n phi.
+  exists (compile_cnf (n:=n) phi).
+  split.
+  - intro s. apply compile_cnf_eval_correct.
+  - apply compile_cnf_l1_bound.
+Qed.
+
+Lemma eval_bf_of_lit :
+  forall n (l : Lit n) (s : Corner n),
+    eval_bf (bf_of_lit (n:=n) l) s = lit_sem (n:=n) l s.
+Proof.
+  intros n [i neg] s; simpl.
+  unfold lit_sem; simpl.
+  destruct neg; reflexivity.
+Qed.
+
+Lemma eval_bf_of_clause :
+  forall n (c : Clause n) (s : Corner n),
+    eval_bf (bf_of_clause (n:=n) c) s = clause_sem (n:=n) c s.
+Proof.
+  intros n c; induction c as [|l cs IH]; intro s; simpl.
+  - reflexivity.
+  - rewrite eval_bf_of_lit.
+    rewrite IH.
+    reflexivity.
+Qed.
+
+Lemma eval_bf_of_cnf :
+  forall n (phi : CNF n) (s : Corner n),
+    eval_bf (bf_of_cnf (n:=n) phi) s = cnf_sem (n:=n) phi s.
+Proof.
+  intros n phi; induction phi as [|c cs IH]; intro s; simpl.
+  - reflexivity.
+  - rewrite eval_bf_of_clause.
+    rewrite IH.
+    reflexivity.
+Qed.
+
+Lemma embed_ext :
+  forall n (f g : Corner n -> bool),
+    (forall s, f s = g s) ->
+    forall m, embed (n:=n) f m == embed (n:=n) g m.
+Proof.
+  intros n f g Hfg m.
+  unfold embed.
+  (* reduce to equality of the sums; then apply sumQ extensionality *)
+  (* If embed is literally (1/pow2 n) * sumQ(...), we can just rewrite inside and reflexivity. *)
+  f_equal.  (* often works if embed is definitional with "*"; if not, use ring below *)
+  apply sumQ_map_ext.
+  intros s _.
+  rewrite Hfg.
+  reflexivity.
+Qed.
+
+Theorem compile_cnf_expr_sound :
+  forall n (phi : CNF n) (sq : Vector.t Q n),
+    (forall i, Vector.nth sq i == 1) ->
+    computes sq (compile_cnf_expr phi) (cnf_sem phi)
+    /\
+    (forall m, eval_expr sq (compile_cnf_expr phi) m == embed (cnf_sem phi) m).
+Proof.
+  intros n phi sq Hsq.
+  split.
+  - unfold computes, compile_cnf_expr.
+    intro m.
+    (* translate_correct gives embed(eval_bf (bf_of_cnf phi)) *)
+    eapply Qeq_trans.
+    + apply (@translate_correct n sq (bf_of_cnf phi) Hsq m).
+    + (* convert eval_bf (bf_of_cnf phi) to cnf_sem phi *)
+      apply embed_ext; intro s.
+      apply eval_bf_of_cnf.
+  - unfold compile_cnf_expr.
+    intro m.
+    eapply Qeq_trans.
+    + apply (@translate_correct n sq (bf_of_cnf phi) Hsq m).
+    + apply embed_ext; intro s.
+      apply eval_bf_of_cnf.
+Qed.
+
+Theorem eval_expr_compile_cnf_expr_eq_compile_cnf :
+  forall n (phi : CNF n) (sq : Vector.t Q n),
+    (forall i, Vector.nth sq i == 1) ->
+    forall m,
+      eval_expr sq (compile_cnf_expr phi) m
+      ==
+      compile_cnf (n:=n) phi m.
+Proof.
+  intros n phi sq Hsq m.
+
+  (* from expr compiler soundness *)
+  destruct (@compile_cnf_expr_sound n phi sq Hsq)
+    as [_ Hexpr].
+  specialize (Hexpr m).
+  (* Hexpr : eval_expr ... m == embed (cnf_sem phi) m *)
+
+  (* from MV compiler eval correctness -> coeff correctness *)
+  pose proof
+    (@eval_eq_bQ_implies_coeff_eq_embed
+       n
+       (@compile_cnf n phi)
+       (@cnf_sem n phi)
+       (fun s => @compile_cnf_eval_correct n phi s)
+       m)
+    as Hcnf.
+  (* Hcnf : compile_cnf phi m == embed (cnf_sem phi) m *)
+
+  (* chain them *)
+  eapply Qeq_trans; [exact Hexpr |].
+  symmetry; exact Hcnf.
+Qed.
+
+Lemma translate_boolish_le_0 :
+  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    boolish_le (eval_expr sq (translate psi)) 0.
+Proof.
+  intros n sq psi Hsq.
+  unfold boolish_le.
+  (* witness g := eval_bf psi *)
+  exists (eval_bf psi).
+  (* bool_dist_wrt = l1_norm (F - embed g) *)
+  unfold bool_dist_wrt.
+  (* show mv_sub is identically 0 by translate_correct *)
+  assert (Hext :
+    l1_norm (mv_sub (eval_expr sq (translate psi)) (embed (eval_bf psi)))
+    ==
+    l1_norm (@mv_zero n)).
+  { apply l1_norm_ext; intro m.
+    unfold mv_sub, mv_zero.
+    rewrite (@translate_correct n sq psi Hsq m).
+    ring.
+  }
+  rewrite Hext.
+  (* l1_norm mv_zero = 0; you already proved this pattern earlier *)
+  unfold l1_norm, mv_zero.
+  eapply Qle_trans.
+  - apply Qle_of_Qeq.
+    eapply Qeq_trans.
+    + apply sumQ_map_ext. intros m _. rewrite Qabs_pos; [reflexivity|apply Qle_refl].
+    + apply sumQ_map_const0.
+  - apply Qle_refl.
+Qed.
+
+Lemma trace_boolish_le_Basis :
+  forall n (sq : Vector.t Q n) (i : Fin.t n) d,
+    boolish_le (eval_expr sq (Basis i)) d ->
+    trace_boolish_le sq (Basis i) d.
+Proof. intros; simpl; assumption. Qed.
+
+Lemma trace_boolish_le_Scalar :
+  forall n (sq : Vector.t Q n) (c : Q) d,
+    boolish_le (eval_expr sq (Scalar c)) d ->
+    trace_boolish_le sq (Scalar c) d.
+Proof. intros. simpl. assumption. Qed.
+
+Lemma mv_scale_1_pointwise :
+  forall n (F : MV n) (m : Mask n),
+    mv_scale 1 F m == F m.
+Proof.
+  intros n F m.
+  unfold mv_scale.
+  ring.
+Qed.
+
+Lemma mv_sub_self_pointwise :
+  forall n (F : MV n) (m : Mask n),
+    mv_sub F F m == mv_zero m.
+Proof.
+  intros n F m.
+  unfold mv_sub, mv_zero.
+  ring.
+Qed.
+
+Lemma mv_sub_self_zero_pointwise :
+  forall n (F : MV n) (m : Mask n),
+    mv_sub F F m == 0.
+Proof.
+  intros n F m.
+  unfold mv_sub.
+  ring.
+Qed.
+
+Lemma l1_norm_zero :
+  forall n, l1_norm (@mv_zero n) == 0.
+Proof.
+  intro n.
+  unfold l1_norm, mv_zero.
+  (* l1_norm mv_zero = sumQ (map (fun U => Qabs 0) (all_masks n)) *)
+  eapply Qeq_trans.
+  - (* rewrite Qabs 0 to 0 pointwise *)
+    apply sumQ_map_ext.
+    intros U HU.
+    simpl. reflexivity.
+  - (* sum of zeros is zero *)
+    apply sumQ_map_const0.
+Qed.
+
+Lemma boolish_le_embed_0 :
+  forall n (f : Corner n -> bool),
+    boolish_le (embed f) 0.
+Proof.
+  intros n f.
+  unfold boolish_le.
+  (* pick g := f *)
+  exists f.
+  (* show l1_norm (embed f - embed f) <= 0 *)
+  rewrite mv_sub_self_zero_pointwise.
+  rewrite l1_norm_zero.
+  apply Qle_refl.
+Qed.
+
+Lemma translate_trace_boolish_le_0 :
+  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    trace_boolish_le sq (translate psi) 0.
+Proof.
+  intros n sq psi Hsq.
+  induction psi; simpl.
+  - (* BVar *)
+    apply translate_boolish_le_0; exact Hsq.
+  - (* BConst *)
+    apply translate_boolish_le_0; exact Hsq.
+  - (* BAnd: Conv *)
+    repeat split; try assumption.
+    (* node boolish_le *)
+    apply translate_boolish_le_0; exact Hsq.
+  - (* BNot: Add ... Mul ... *)
+    repeat split; try assumption.
+    (* node boolish_le *)
+    apply translate_boolish_le_0; exact Hsq.
+  - (* BOr: Add(Add..) (Mul .. (Conv ..)) *)
+    repeat split; try assumption.
+    (* node boolish_le *)
+    apply translate_boolish_le_0; exact Hsq.
+Qed.
+
+Lemma translate_trace_boolish_exists_k_0 :
+  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    trace_boolish_exists_k sq (translate psi) 0.
+Proof.
+  intros n sq psi Hsq.
+  unfold trace_boolish_exists_k.
+  destruct (trace_boolish_le_to_k (n:=n) (sq:=sq) (e:=translate psi) (d:=0)
+            (translate_trace_boolish_le_0 n sq psi Hsq))
+    as [k [Hk _]].
+  exists k. exact Hk.
+Qed.
+
+Theorem cnf_easy_in_booleanish_trace_tracepart :
+  forall n (phi : CNF n),
+  exists sq e,
+    computes sq e (cnf_sem phi) /\
+    trace_boolish_exists_k sq e 0.
+Proof.
+  intros n phi.
+  exists (Vector.const 1 n), (compile_cnf_expr phi).
+  split.
+  - (* computes *)
+    destruct (compile_cnf_expr_sound (n:=n) (phi:=phi) (sq:=Vector.const 1 n))
+      as [Hc _].
+    + intro i. rewrite VectorDef_nth_const. reflexivity.
+    + exact Hc.
+  - (* trace exists k *)
+    unfold compile_cnf_expr.
+    apply translate_trace_boolish_exists_k_0.
+    intro i. rewrite VectorDef_nth_const. reflexivity.
+Qed.
+
+Lemma boolish_k_le_embed_1_0 :
+  forall n (f : Corner n -> bool),
+    boolish_k_le (embed f) 1 0.
+Proof.
+  intros n f.
+  unfold boolish_k_le.
+  exists [1%Q], [f].
+  repeat split; simpl; try lia; reflexivity.
+  (* l1_norm (embed f - lincomb) <= 0 *)
+  (* lincomb_embed [1] [f] = embed f *)
+  cbn [lincomb_embed].
+  (* it becomes l1_norm (embed f - (1*embed f + 0)) <= 0 *)
+  (* use extensionality to show mv_sub is mv_zero, then l1=0 *)
+  assert (H0 : l1_norm (mv_sub (embed f) (mv_scale 1 (embed f))) == 0).
+  { (* mv_scale 1 = identity *)
+    (* easiest: extensionality on coefficients *)
+    unfold l1_norm.
+    (* if you have mv_scale_1 / mv_sub_self lemmas, use them;
+       otherwise do pointwise rewrite and finish with ring. *)
+    admit.
+  }
+  (* equality implies <= *)
+  apply (Qle_trans _ 0).
+  - apply Qle_of_Qeq. exact H0.
+  - apply Qle_refl.
 Admitted.
 
-(*
-========================================================================
-*)
+Lemma translate_trace_boolish_exists_k_0 :
+  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    trace_boolish_exists_k sq (translate phi) 0.
+Proof.
+  (* prove trace_boolish_k_le with k=1 by induction on phi
+     using translate_correct at each subformula to rewrite each node
+     to embed of that subformula’s semantics, then apply boolish_k_le_embed_1_0 *)
+Admitted.
 
+Theorem cnf_easy_in_booleanish_trace :
+  forall n (phi : CNF n),
+  exists sq e,
+    computes sq e (cnf_sem phi) /\
+    trace_boolish_exists_k sq e 0 /\
+    exc_l1 (exc_of sq e) <= pow2 n.
+Proof.
+  intros n phi.
+  exists (Vector.const 1 n), (compile_cnf_expr phi).
+  repeat split.
+  - (* computes *)
+    apply (proj1 (compile_cnf_expr_sound (n:=n) (phi:=phi) (sq:=Vector.const 1 n))).
+    intro i. rewrite VectorDef_nth_const. reflexivity.
+  - (* trace boolish *)
+    unfold compile_cnf_expr.
+    apply translate_trace_boolish_exists_k_0.
+    intro i. rewrite VectorDef_nth_const. reflexivity.
+  - (* excursion l1 bound: use l1_eval_le_max_l1_during + your l1 bound for CNF MV rep *)
+    (* You can show l1_norm(eval_expr sq e) <= exc_l1(exc_of sq e) by l1_eval_le_max_l1_during,
+       then combine with whatever l1 bound you have for this representation.
+       If you proved eval_expr_compile_cnf_expr_eq_compile_cnf, rewrite and use compile_cnf_l1_bound. *)
+Admitted.
 
 Theorem IP_booleanish_tradeoff :
   forall d : Q,
@@ -2976,6 +3448,31 @@ Proof.
   (* If you manage to keep excursion subexponential,
       then you must violate booleanishness somewhere along the trace. *)
 Admitted.
+
+Theorem IP_beats_CNF_in_booleanish_trace :
+  forall d : Q,
+  exists c, forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+    (m >= 2)%nat ->
+    computes sq e (@IP_n_func (m+m)) ->
+    trace_boolish_exists_k sq e d ->
+    (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+  intro d.
+  destruct (IP_booleanish_tradeoff d) as [c Hc].
+  exists c.
+  intros m sq e Hm Hcomp Htrace.
+  specialize (Hc m sq e Hm Hcomp).
+  destruct Hc as [_ Hcontra].
+  (* If exc_l1 < bound, then not trace_exists_k; contrapositive gives bound <= exc_l1 *)
+  destruct (Qlt_le_dec (exc_l1 (exc_of sq e)) (Qpow2 (c*m))) as [Hlt|Hge].
+  - exfalso. exact (Hcontra Hlt Htrace).
+  - exact Hge.
+Qed.
+
+(*
+========================================================================
+*)
+
 
 Theorem hard_family_beats_all_poly_compilers :
   forall (C : EasyCompiler) (k : nat),

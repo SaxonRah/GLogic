@@ -1,9 +1,0 @@
--Q . TraceGeometry
-
-TraceGeometryCore.v
-TraceGeometryToyNat.v
-TraceGeometryMachine.v
-TraceGeometryExplosion.v
-TraceGeometryStep5Strong.v
-TraceGeometryPipeline.v
-TraceGeometryStep7Assemble.v
