@@ -3332,33 +3332,6 @@ Proof.
   - apply Qle_refl.
 Qed.
 
-(*
-Lemma translate_trace_boolish_le_0 :
-  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    trace_boolish_le sq (translate psi) 0.
-Proof.
-  intros n sq psi Hsq.
-  induction psi; simpl.
-  - (* BVar *)
-    apply translate_boolish_le_0; exact Hsq.
-  - (* BConst *)
-    apply translate_boolish_le_0; exact Hsq.
-  - (* BAnd: Conv *)
-    repeat split; try assumption.
-    (* node boolish_le *)
-    apply translate_boolish_le_0; exact Hsq.
-  - (* BNot: Add ... Mul ... *)
-    repeat split; try assumption.
-    (* node boolish_le *)
-    apply translate_boolish_le_0; exact Hsq.
-  - (* BOr: Add(Add..) (Mul .. (Conv ..)) *)
-    repeat split; try assumption.
-    (* node boolish_le *)
-    apply translate_boolish_le_0; exact Hsq.
-Qed.
-*)
-
 Lemma boolish_k_le_of_eq :
   forall n (F G : MV n) k d,
     (forall m, F m == G m) ->
