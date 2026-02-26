@@ -3340,21 +3340,22 @@ Lemma boolish_k_le_of_eq :
 Proof.
   intros n F G k d Heq Hb.
   unfold boolish_k_le in *.
-  destruct Hb as [cs [gs [Hlen [Hlen2 [Hlin Hdist]]]]].
+  destruct Hb as [cs [gs [Hwf [Hlen Hdist]]]].
   exists cs, gs.
   repeat split; try assumption.
-  (* distance goal: l1_norm (F - lincomb cs gs) <= d *)
-  (* use l1_norm_ext to replace F by G *)
+
+  (* distance goal *)
   eapply Qle_trans.
-  - (* rewrite l1_norm using extensionality *)
-    apply Qle_of_Qeq.
-    apply l1_norm_ext.
+  - apply Qle_of_Qeq.
+    (* IMPORTANT: pin down both arguments of l1_norm_ext *)
+    refine (@l1_norm_ext n
+              (mv_sub F (lincomb_embed cs gs))
+              (mv_sub G (lincomb_embed cs gs)) _).
     intro m.
-    specialize (Heq m).
-    (* mv_sub F (lincomb ...) m == mv_sub G (lincomb ...) m *)
     unfold mv_sub.
-    (* use Heq and ring *)
-    ring_simplify. (* may work; if not, do: rewrite Heq; ring *)
+    (* goal: F m - L m == G m - L m *)
+    setoid_rewrite (Heq m).
+    reflexivity.
   - exact Hdist.
 Qed.
 
@@ -3506,6 +3507,7 @@ Proof.
        If you proved eval_expr_compile_cnf_expr_eq_compile_cnf, rewrite and use compile_cnf_l1_bound. *)
 Admitted.
 
+(*
 Theorem IP_booleanish_tradeoff :
   forall d : Q,
   exists c : nat,
@@ -3521,6 +3523,7 @@ Proof.
   (* If you manage to keep excursion subexponential,
       then you must violate booleanishness somewhere along the trace. *)
 Admitted.
+*)
 
 Theorem IP_beats_CNF_in_booleanish_trace :
   forall d : Q,
