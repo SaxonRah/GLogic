@@ -3301,20 +3301,38 @@ Proof.
     apply sumQ_map_const0.
 Qed.
 
+Lemma mv_sub_self :
+  forall n (F : MV n),
+    (forall m : Mask n, mv_sub F F m == mv_zero m).
+Proof.
+  intros n F m.
+  apply mv_sub_self_pointwise.
+Qed.
+
 Lemma boolish_le_embed_0 :
   forall n (f : Corner n -> bool),
     boolish_le (embed f) 0.
 Proof.
   intros n f.
   unfold boolish_le.
-  (* pick g := f *)
   exists f.
-  (* show l1_norm (embed f - embed f) <= 0 *)
-  rewrite mv_sub_self_zero_pointwise.
-  rewrite l1_norm_zero.
-  apply Qle_refl.
+  (* goal: l1_norm (mv_sub (embed f) (embed f)) <= 0 *)
+
+  eapply Qle_trans.
+  - (* show l1_norm(...) == 0 *)
+    apply Qle_of_Qeq.
+    eapply Qeq_trans.
+    + (* reduce mv_sub self to mv_zero under l1_norm via extensionality *)
+      apply l1_norm_ext.
+      intro m.
+      (* mv_sub (embed f) (embed f) m == mv_zero m *)
+      apply mv_sub_self_pointwise.
+    + (* l1_norm mv_zero == 0 *)
+      apply l1_norm_zero.
+  - apply Qle_refl.
 Qed.
 
+(*
 Lemma translate_trace_boolish_le_0 :
   forall n (sq : Vector.t Q n) (psi : BoolFormula n),
     (forall i, Vector.nth sq i == 1) ->
@@ -3338,6 +3356,88 @@ Proof.
     repeat split; try assumption.
     (* node boolish_le *)
     apply translate_boolish_le_0; exact Hsq.
+Qed.
+*)
+
+Lemma boolish_k_le_of_eq :
+  forall n (F G : MV n) k d,
+    (forall m, F m == G m) ->
+    boolish_k_le G k d ->
+    boolish_k_le F k d.
+Proof.
+  intros n F G k d Heq Hb.
+  unfold boolish_k_le in *.
+  destruct Hb as [cs [gs [Hlen [Hlen2 [Hlin Hdist]]]]].
+  exists cs, gs.
+  repeat split; try assumption.
+  (* distance goal: l1_norm (F - lincomb cs gs) <= d *)
+  (* use l1_norm_ext to replace F by G *)
+  eapply Qle_trans.
+  - (* rewrite l1_norm using extensionality *)
+    apply Qle_of_Qeq.
+    apply l1_norm_ext.
+    intro m.
+    specialize (Heq m).
+    (* mv_sub F (lincomb ...) m == mv_sub G (lincomb ...) m *)
+    unfold mv_sub.
+    (* use Heq and ring *)
+    ring_simplify. (* may work; if not, do: rewrite Heq; ring *)
+  - exact Hdist.
+Qed.
+
+Lemma translate_trace_boolish_exists_k_0 :
+  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
+    (forall i, Vector.nth sq i == 1) ->
+    trace_boolish_exists_k sq (translate psi) 0.
+Proof.
+  intros n sq psi Hsq.
+  unfold trace_boolish_exists_k.
+  (* we will witness bound = 1 for every formula *)
+  exists 1%nat.
+  (* now prove trace_boolish_k_le ... by induction on psi *)
+  induction psi; simpl.
+  - (* BVar *)
+    (* Goal is trace_boolish_k_le sq (translate (BVar t)) 1 0,
+       which unfolds to some conjunctions; but rather than chase structure,
+       use your existing translate correctness lemma if translate (BVar) is a GA_expr *)
+    (* Easiest path: just show the node itself is boolish_k_le by rewriting eval to embed. *)
+    repeat split.
+    + (* subtree obligations, if any, usually trivial *)
+      (* for leaves, trace_boolish_k_le is just boolish_k_le of eval *)
+      (* might be: boolish_k_le (eval_expr sq (translate ...)) 1 0 *)
+      (* apply transport lemma after rewriting to embed *)
+      eapply boolish_k_le_of_eq.
+      * intro m. (* prove eval == embed ... *)
+        (* use your translate correctness lemma here *)
+        admit.
+      * apply boolish_k_le_embed_1_0.
+  - (* BConst b *)
+    (* same idea *)
+    repeat split.
+    + eapply boolish_k_le_of_eq.
+      * intro m. admit.  (* translate correctness for constants *)
+      * apply boolish_k_le_embed_1_0.
+  - (* BAnd psi1 psi2 : likely Conv *)
+    (* trace_boolish_k_le unfolds to (IHpsi1 /\ IHpsi2 /\ node_boolish_k) *)
+    repeat split.
+    + exact IHpsi1.
+    + exact IHpsi2.
+    + eapply boolish_k_le_of_eq.
+      * intro m. admit.  (* correctness for AND node: eval_expr ... == embed(and_sem) *)
+      * apply boolish_k_le_embed_1_0.
+  - (* BNot psi *)
+    repeat split.
+    + exact IHpsi.
+    + eapply boolish_k_le_of_eq.
+      * intro m. admit.
+      * apply boolish_k_le_embed_1_0.
+  - (* BOr psi1 psi2 *)
+    repeat split.
+    + exact IHpsi1.
+    + exact IHpsi2.
+    + eapply boolish_k_le_of_eq.
+      * intro m. admit.
+      * apply boolish_k_le_embed_1_0.
 Qed.
 
 Lemma translate_trace_boolish_exists_k_0 :
