@@ -3359,6 +3359,12 @@ Proof.
   - exact Hdist.
 Qed.
 
+Lemma boolish_k_le_embed_1_0 :
+  forall n (f : Corner n -> bool),
+    boolish_k_le (embed f) 1 0.
+Proof.
+Admitted.
+
 Lemma translate_trace_boolish_exists_k_0 :
   forall n (sq : Vector.t Q n) (psi : BoolFormula n),
     (forall i, Vector.nth sq i == 1) ->
@@ -3446,33 +3452,6 @@ Proof.
     apply translate_trace_boolish_exists_k_0.
     intro i. rewrite VectorDef_nth_const. reflexivity.
 Qed.
-
-Lemma boolish_k_le_embed_1_0 :
-  forall n (f : Corner n -> bool),
-    boolish_k_le (embed f) 1 0.
-Proof.
-  intros n f.
-  unfold boolish_k_le.
-  exists [1%Q], [f].
-  repeat split; simpl; try lia; reflexivity.
-  (* l1_norm (embed f - lincomb) <= 0 *)
-  (* lincomb_embed [1] [f] = embed f *)
-  cbn [lincomb_embed].
-  (* it becomes l1_norm (embed f - (1*embed f + 0)) <= 0 *)
-  (* use extensionality to show mv_sub is mv_zero, then l1=0 *)
-  assert (H0 : l1_norm (mv_sub (embed f) (mv_scale 1 (embed f))) == 0).
-  { (* mv_scale 1 = identity *)
-    (* easiest: extensionality on coefficients *)
-    unfold l1_norm.
-    (* if you have mv_scale_1 / mv_sub_self lemmas, use them;
-       otherwise do pointwise rewrite and finish with ring. *)
-    admit.
-  }
-  (* equality implies <= *)
-  apply (Qle_trans _ 0).
-  - apply Qle_of_Qeq. exact H0.
-  - apply Qle_refl.
-Admitted.
 
 Lemma translate_trace_boolish_exists_k_0 :
   forall n (sq : Vector.t Q n) (phi : BoolFormula n),
