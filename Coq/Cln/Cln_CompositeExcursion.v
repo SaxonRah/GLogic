@@ -3386,19 +3386,6 @@ Proof.
   unfold trace_boolish_exists_k.
 Qed.
 
-Lemma translate_trace_boolish_exists_k_0 :
-  forall n (sq : Vector.t Q n) (psi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    trace_boolish_exists_k sq (translate psi) 0.
-Proof.
-  intros n sq psi Hsq.
-  unfold trace_boolish_exists_k.
-  destruct (trace_boolish_le_to_k (n:=n) (sq:=sq) (e:=translate psi) (d:=0)
-            (translate_trace_boolish_le_0 n sq psi Hsq))
-    as [k [Hk _]].
-  exists k. exact Hk.
-Qed.
-
 Theorem cnf_easy_in_booleanish_trace_tracepart :
   forall n (phi : CNF n),
   exists sq e,
@@ -3418,16 +3405,6 @@ Proof.
     apply translate_trace_boolish_exists_k_0.
     intro i. rewrite VectorDef_nth_const. reflexivity.
 Qed.
-
-Lemma translate_trace_boolish_exists_k_0 :
-  forall n (sq : Vector.t Q n) (phi : BoolFormula n),
-    (forall i, Vector.nth sq i == 1) ->
-    trace_boolish_exists_k sq (translate phi) 0.
-Proof.
-  (* prove trace_boolish_k_le with k=1 by induction on phi
-     using translate_correct at each subformula to rewrite each node
-     to embed of that subformula’s semantics, then apply boolish_k_le_embed_1_0 *)
-Admitted.
 
 Theorem cnf_easy_in_booleanish_trace :
   forall n (phi : CNF n),
