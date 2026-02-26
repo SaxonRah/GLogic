@@ -2154,21 +2154,805 @@ Fully proved norm equivalence package:
 ========================================================================
 *)
 
+Lemma chi_xor_mul :
+  forall n (A B : Mask n) (s : Corner n),
+    chi' (mask_xor A B) s == (chi' A s * chi' B s)%Q.
+Proof.
+  induction n as [|n IH]; intros A B s.
+  - dependent destruction A. dependent destruction B0.
+    dependent destruction s. simpl. ring.
+  - dependent destruction A. dependent destruction B0.
+    dependent destruction s.
+    unfold mask_xor. simpl.
+    cbn [chi' chi].
+    destruct h, h0, h1; simpl; rewrite IH; ring.
+Qed.
+
+Lemma if_dec_0_mul :
+  forall (P : Prop) (d : {P}+{~P}) (a b : Q),
+    (if d then a else 0) * b == if d then a * b else 0.
+Proof. intros; destruct d; ring. Qed.
+
+Lemma if_mask_eq_dec_subst :
+  forall n (X U : Mask n) (f : Mask n -> Q) (b : Q),
+    (if mask_eq_dec X U then f U else b)
+    == (if mask_eq_dec X U then f X else b).
+Proof. intros; destruct (mask_eq_dec X U); [subst; reflexivity | reflexivity]. Qed.
+
+Lemma sumQ_all_masks_pick' :
+  forall n (f : Mask n -> Q) (tgt : Mask n),
+    sumQ (map (fun m => if mask_eq_dec m tgt then f m else 0) (all_masks n))
+    == f tgt.
+Proof.
+  intros.
+  enough (H : sumQ (map (fun m => if mask_eq_dec m tgt then f m else 0) (all_masks n))
+          == sumQ (map (fun m => if mask_eq_dec m tgt then f tgt else 0) (all_masks n))).
+    { eapply Qeq_trans. exact H. apply (@sumQ_all_masks_pick n (fun _ => f tgt) tgt). }
+  apply sumQ_map_ext; intros m _.
+  destruct (mask_eq_dec m tgt) as [Heq|Hneq].
+  - subst. reflexivity.
+  - reflexivity.
+Qed.
+
 Lemma eval_conv_pointwise :
   forall n (F G : MV n) (s : Corner n),
     eval (mv_conv F G) s == (eval F s * eval G s)%Q.
 Proof.
-Admitted.
+  intros n F G s.
+  unfold eval at 1. unfold mv_conv.
+
+  (* Step 1: distribute χ(U,s) into inner sums *)
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros U _. apply sumQ_mul_r. }
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros U _.
+    apply sumQ_map_ext; intros A _. apply sumQ_mul_r. }
+
+  (* Step 2a: distribute χ(U,s) into the conditional *)
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros U _.
+    apply sumQ_map_ext; intros A _.
+    apply sumQ_map_ext; intros B _.
+    apply if_dec_0_mul. }
+
+  (* Step 3: swap Σ_U and Σ_A *)
+  eapply Qeq_trans.
+  { apply sumQ_swap. }
+
+  (* Step 4: swap Σ_U and Σ_B inside each A *)
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros A _.
+    apply sumQ_swap. }
+
+  (* Step 5: flip mask_eq_dec to match pick lemma *)
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros A _.
+    apply sumQ_map_ext; intros B _.
+    apply sumQ_map_ext; intros U _.
+    apply if_mask_eq_dec_sym. }
+
+  (* Step 6: collapse Σ_U via pick lemma *)
+  eapply Qeq_trans.
+  { apply sumQ_map_ext; intros A _.
+    apply sumQ_map_ext; intros B _.
+    apply (@sumQ_all_masks_pick' n
+      (fun U => (F A * G B * chi' U s)%Q)
+      (mask_xor A B)). }
+
+  (* Step 7: apply chi_xor_mul, rearrange *)
+  apply (Qeq_trans _
+    (sumQ (map (fun A =>
+      sumQ (map (fun B =>
+        (F A * chi' A s) * (G B * chi' B s))%Q
+        (all_masks n)))
+      (all_masks n))) _).
+  { apply sumQ_map_ext; intros A _.
+    apply sumQ_map_ext; intros B _.
+    rewrite chi_xor_mul. ring. }
+
+  (* Step 8: factor inner sum *)
+  apply (Qeq_trans _
+    (sumQ (map (fun A =>
+      (F A * chi' A s) * sumQ (map (fun B => G B * chi' B s) (all_masks n)))
+      (all_masks n))) _).
+  { apply sumQ_map_ext; intros A _.
+    apply sumQ_map_scale_l. }
+
+  (* Step 9: factor outer sum = product of two evals *)
+  symmetry. unfold eval.
+  apply sumQ_mul_r.
+Qed.
 
 Lemma eval_abs_le_bound :
   forall n (F:MV n) (C:Q) s, eval_bounded F C -> Qabs (eval F s) <= C.
 Proof.
-Admitted.
+  intros n F C s Hb. exact (Hb s).
+Qed.
 
 Lemma eval_bounded_conv :
   forall n (F G : MV n) (CF CG : Q),
     eval_bounded F CF -> eval_bounded G CG ->
     eval_bounded (mv_conv F G) (CF * CG).
+Proof.
+  intros n F G CF CG HF HG s.
+  rewrite eval_conv_pointwise.
+  rewrite Qabs_Qmult.
+  apply Qmult_le_compat_nonneg.
+  - split; [apply Qabs_nonneg | exact (HF s)].
+  - split; [apply Qabs_nonneg | exact (HG s)].
+Qed.
+
+Lemma eval_sub_pointwise :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_sub F G) s == (eval F s - eval G s)%Q.
+Proof.
+  intros n F G s.
+  unfold mv_sub, eval.
+  rewrite <- (@sumQ_map_sub (Mask n)
+    (fun m => (F m * chi' m s)%Q)
+    (fun m => (G m * chi' m s)%Q)
+    (all_masks n)).
+  apply sumQ_map_ext; intros m _.
+  ring.
+Qed.
+
+Lemma Qabs_triangle_sub : forall x y : Q,
+  Qabs (x - y) <= Qabs x + Qabs y.
+Proof.
+  intros x y.
+  setoid_replace (x - y) with (x + (-y)) by ring.
+  eapply Qle_trans.
+  - apply Qabs_triangle.
+  - apply Qplus_le_compat.
+    + apply Qle_refl.
+    + rewrite Qabs_opp. apply Qle_refl.
+Qed.
+
+Lemma eval_bounded_sub :
+  forall n (F G : MV n) (CF CG : Q),
+    eval_bounded F CF ->
+    eval_bounded G CG ->
+    eval_bounded (mv_sub F G) (CF + CG).
+Proof.
+  intros n F G CF CG HF HG s.
+  rewrite eval_sub_pointwise.
+  eapply Qle_trans.
+  - apply Qabs_triangle_sub.
+  - apply Qplus_le_compat.
+    + exact (HF s).
+    + exact (HG s).
+Qed.
+
+Lemma eval_add_pointwise :
+  forall n (F G : MV n) (s : Corner n),
+    eval (mv_add F G) s == (eval F s + eval G s)%Q.
+Proof.
+  intros n F G s.
+  unfold mv_add, eval.
+  rewrite <- (@sumQ_map_add (Mask n)
+    (fun m => (F m * chi' m s)%Q)
+    (fun m => (G m * chi' m s)%Q)
+    (all_masks n)).
+  apply sumQ_map_ext; intros m _. ring.
+Qed.
+
+Lemma eval_bounded_add :
+  forall n (F G : MV n) (CF CG : Q),
+    eval_bounded F CF ->
+    eval_bounded G CG ->
+    eval_bounded (mv_add F G) (CF + CG).
+Proof.
+  intros n F G CF CG HF HG s.
+  rewrite eval_add_pointwise.
+  eapply Qle_trans.
+  - (* |x+y| <= |x|+|y| *)
+    apply Qabs_triangle.
+  - apply Qplus_le_compat; [exact (HF s) | exact (HG s)].
+Qed.
+
+Lemma eval_scale_pointwise :
+  forall n (c : Q) (F : MV n) (s : Corner n),
+    eval (mv_scale c F) s == c * eval F s.
+Proof.
+  intros n c F s.
+  unfold eval, mv_scale.
+  eapply Qeq_trans.
+  - apply sumQ_map_ext; intros m _.
+    rewrite Qmult_assoc.
+    rewrite (Qmult_comm c (F m)).
+    rewrite <- Qmult_assoc.
+    reflexivity.
+  - apply Qeq_sym.
+    symmetry.
+    apply (@sumQ_map_scale_l (Mask n) c
+             (fun m => (F m * chi' m s)%Q)
+             (all_masks n)).
+Qed.
+
+Lemma eval_bounded_scale :
+  forall n (c : Q) (F : MV n) (C : Q),
+    eval_bounded F C ->
+    eval_bounded (mv_scale c F) (Qabs c * C).
+Proof.
+  intros n c F C HF s.
+  rewrite eval_scale_pointwise.
+  rewrite Qabs_Qmult.
+  apply Qmult_le_compat_nonneg.
+  - split; [apply Qabs_nonneg | apply Qle_refl].
+  - split; [apply Qabs_nonneg | exact (HF s)].
+Qed.
+
+Definition eval_close_bool' {n} (F : MV n) (d : Q) : Prop :=
+  exists g : Corner n -> bool,
+    forall s, Qabs (eval F s - bQ (g s)) <= d.
+
+Lemma bQ_andb_mul : forall a b : bool,
+  bQ (andb a b) == (bQ a * bQ b)%Q.
+Proof.
+  intros a b; destruct a, b; simpl; ring.
+Qed.
+
+Fixpoint corner_pos (n : nat) : Corner n :=
+  match n with
+  | O => Vector.nil Sign
+  | S n' => Vector.cons Sign (Pos : Sign) n' (corner_pos n')
+  end.
+
+Lemma eval_close_bool_nonneg :
+  forall n (F : MV n) d,
+    eval_close_bool F d -> 0 <= d.
+Proof.
+  intros n F d [g Hg].
+  pose (s0 := corner_pos n).
+  specialize (Hg s0).
+  eapply Qle_trans.
+  - apply Qabs_nonneg.
+  - exact Hg.
+Qed.
+
+Lemma Qabs_triangle3 : forall x y z : Q,
+  Qabs (x + y + z) <= Qabs x + Qabs y + Qabs z.
+Proof.
+  intros x y z.
+  (* rewrite x+y+z as x + (y+z) *)
+  setoid_replace (x + y + z) with (x + (y + z)) by ring.
+  eapply Qle_trans.
+  - apply Qabs_triangle.
+  - (* reassociate RHS so it's Qabs x + (Qabs y + Qabs z) *)
+    setoid_replace (Qabs x + Qabs y + Qabs z)
+      with (Qabs x + (Qabs y + Qabs z)) by ring.
+    apply Qplus_le_compat_l.
+    apply Qabs_triangle.
+Qed.
+
+Lemma eval_close_bool_conv :
+  forall n (F G : MV n) dF dG,
+    eval_close_bool F dF ->
+    eval_close_bool G dG ->
+    eval_close_bool (mv_conv F G) (dF + dG + dF*dG).
+Proof.
+  intros n F G dF dG HF HG.
+  destruct HF as [g Hg].
+  destruct HG as [h Hh].
+  exists (fun s => andb (g s) (h s)).
+  intro s.
+
+  (* abbreviations *)
+  set (a  := eval F s).
+  set (b  := eval G s).
+  set (ga := bQ (g s)).
+  set (hb := bQ (h s)).
+  set (e  := (a - ga)%Q).
+  set (f  := (b - hb)%Q).
+
+  (* Error bounds at this s *)
+  assert (He : Qabs e <= dF).
+  { unfold e, a, ga. exact (Hg s). }
+  assert (Hf : Qabs f <= dG).
+  { unfold f, b, hb. exact (Hh s). }
+  
+  (* Nonnegativity of dF and dG (use a fixed corner) *)
+  assert (HdF0 : 0 <= dF).
+  { pose (s0 := corner_pos n).
+    specialize (Hg s0).
+    eapply Qle_trans; [apply Qabs_nonneg | exact Hg]. }
+  assert (HdG0 : 0 <= dG).
+  { pose (s0 := corner_pos n).
+    specialize (Hh s0).
+    eapply Qle_trans; [apply Qabs_nonneg | exact Hh]. }
+
+  (* switch to the AND target and use pointwise convolution *)
+  rewrite eval_conv_pointwise.
+  rewrite bQ_andb_mul.
+  unfold a, b, ga, hb, e, f.
+
+  (* Expand: (ga+e)(hb+f) - ga*hb = ga*f + hb*e + e*f *)
+  setoid_replace (eval F s * eval G s - bQ (g s) * bQ (h s))%Q
+    with (bQ (g s) * (eval G s - bQ (h s))
+          + bQ (h s) * (eval F s - bQ (g s))
+          + (eval F s - bQ (g s)) * (eval G s - bQ (h s)))%Q
+    by ring.
+
+  (* Triangle: |x+y+z| <= |x| + |y| + |z| *)
+  eapply Qle_trans.
+  - (* 3-term triangle in one shot *)
+  apply Qabs_triangle3.
+  - (* bound each term *)
+    (* rename the three terms for readability *)
+    set (t1 := (bQ (g s) * (eval G s - bQ (h s)))%Q).
+    set (t2 := (bQ (h s) * (eval F s - bQ (g s)))%Q).
+    set (t3 := ((eval F s - bQ (g s)) * (eval G s - bQ (h s)))%Q).
+
+    (* now we need: |t1| + |t2| + |t3| <= dF + dG + dF*dG *)
+    (* we’ll bound |t1|<=dG, |t2|<=dF, |t3|<=dF*dG *)
+
+    eapply Qle_trans.
+    + (* replace t1,t2,t3 and apply pointwise bounds *)
+      apply Qplus_le_compat.
+      * apply Qplus_le_compat.
+        -- (* |t1| <= dG *)
+           subst t1.
+           rewrite Qabs_Qmult.
+           eapply Qle_trans.
+           ++ apply Qmult_le_compat_nonneg.
+              ** split; [apply Qabs_nonneg | apply Qabs_bQ_le_1].
+              ** split; [apply Qabs_nonneg | exact Hf].
+           ++ (* 1 * dG = dG *)
+              rewrite Qmult_1_l.
+              apply Qle_refl.
+        -- (* |t2| <= dF *)
+           subst t2.
+           rewrite Qabs_Qmult.
+           eapply Qle_trans.
+           ++ apply Qmult_le_compat_nonneg.
+              ** split; [apply Qabs_nonneg | apply Qabs_bQ_le_1].
+              ** split; [apply Qabs_nonneg | exact He].
+           ++
+              rewrite Qmult_1_l.
+              apply Qle_refl.
+      * (* |t3| <= dF*dG *)
+        subst t3.
+        rewrite Qabs_Qmult.
+        (* |e| <= dF and |f| <= dG, with nonneg, so |e||f| <= dF*dG *)
+        apply Qmult_le_compat_nonneg.
+        -- split; [apply Qabs_nonneg | exact He].
+        -- split; [apply Qabs_nonneg | exact Hf].
+    + (* reorder dG + dF + dF*dG into dF + dG + dF*dG *)
+      apply Qle_of_Qeq. ring.
+Qed.
+
+Definition constMV {n} (c : Q) : MV n :=
+  mv_scale c (basis mask_empty).
+
+Lemma eval_constMV :
+  forall n (c : Q) (s : Corner n),
+    eval (@constMV n c) s == c.
+Proof.
+  intros n c s.
+  unfold constMV.
+  rewrite eval_scale, eval_basis, chi_mask_empty.
+  ring.
+Qed.
+
+Lemma eval_close_bool_not :
+  forall n (F : MV n) d,
+    eval_close_bool F d ->
+    eval_close_bool (mv_sub (constMV 1) F) d.
+Proof.
+  intros n F d [g Hg].
+  exists (fun s => negb (g s)).
+  intro s.
+  rewrite eval_sub_pointwise.
+  rewrite eval_constMV.
+  rewrite bQ_negb.
+  (* goal: |1 - eval F s - (1 - bQ (g s))| <= d *)
+  setoid_replace (1 - eval F s - (1 - bQ (g s)))
+    with (-(eval F s - bQ (g s)))%Q by ring.
+  rewrite Qabs_opp.
+  exact (Hg s).
+Qed.
+
+
+Lemma bQ_orb_mul : forall a b : bool,
+  bQ (orb a b) == (bQ a + bQ b - bQ a * bQ b)%Q.
+Proof.
+  intros a b; destruct a, b; simpl; ring.
+Qed.
+
+Lemma Qabs_1_minus_bQ_le_1 : forall b : bool, Qabs (1 - bQ b) <= 1.
+Proof.
+  intro b; destruct b; unfold bQ, Qminus, Qabs, Qle; simpl; lia.
+Qed.
+
+Lemma eval_close_bool_or :
+  forall n (F G : MV n) dF dG,
+    eval_close_bool F dF ->
+    eval_close_bool G dG ->
+    eval_close_bool
+      (mv_sub (mv_add F G) (mv_conv F G))
+      (dF + dG + dF * dG).
+Proof.
+  intros n F G dF dG HF HG.
+  destruct HF as [g Hg].
+  destruct HG as [h Hh].
+  exists (fun s => orb (g s) (h s)).
+  intro s.
+
+  rewrite eval_sub_pointwise.
+  rewrite eval_add_pointwise.
+  rewrite eval_conv_pointwise.
+  rewrite bQ_orb_mul.
+
+  (* goal: |(f+g - f*g) - (bf+bh - bf*bh)| <= dF+dG+dF*dG *)
+  (* rewrite as same decomposition used in conv proof *)
+  set (a  := eval F s).
+  set (b  := eval G s).
+  set (ga := bQ (g s)).
+  set (hb := bQ (h s)).
+  set (e  := (a - ga)%Q).
+  set (f  := (b - hb)%Q).
+
+  assert (He : Qabs e <= dF) by exact (Hg s).
+  assert (Hf : Qabs f <= dG) by exact (Hh s).
+
+  assert (HdF0 : 0 <= dF).
+  { eapply Qle_trans; [apply Qabs_nonneg | exact (Hg (corner_pos n))]. }
+  assert (HdG0 : 0 <= dG).
+  { eapply Qle_trans; [apply Qabs_nonneg | exact (Hh (corner_pos n))]. }
+
+  (* Key: (a+b - a*b) - (ga+hb - ga*hb)
+       = e + f - (ga*f + hb*e + e*f)
+       = e*(1 - hb) + f*(1 - ga) - e*f *)
+  setoid_replace (a + b - a * b - (ga + hb - ga * hb))
+    with (e * (1 - hb) + f * (1 - ga) - e * f)%Q
+    by (unfold e, f, a, b, ga, hb; ring).
+
+  eapply Qle_trans.
+  - apply Qabs_triangle_sub.
+  - eapply Qle_trans.
+    + apply Qplus_le_compat.
+      * apply Qabs_triangle.
+      * apply Qle_refl.
+    + (* now bound each of three terms *)
+      (* |e*(1-hb)| <= dF since |1-hb| <= 1 for hb in {0,1} *)
+      (* |f*(1-ga)| <= dG since |1-ga| <= 1 *)
+      (* |e*f| <= dF*dG *)
+
+      assert (Hga1 : Qabs (1 - ga) <= 1).
+      { unfold ga. apply Qabs_1_minus_bQ_le_1. }
+
+      assert (Hhb1 : Qabs (1 - hb) <= 1).
+      { unfold hb. apply Qabs_1_minus_bQ_le_1. }
+
+      eapply Qle_trans.
+      * apply Qplus_le_compat.
+        -- apply Qplus_le_compat.
+           ++ rewrite Qabs_Qmult.
+              apply Qmult_le_compat_nonneg.
+              ** split; [apply Qabs_nonneg | exact He].
+              ** split; [apply Qabs_nonneg | exact Hhb1].
+           ++ rewrite Qabs_Qmult.
+              apply Qmult_le_compat_nonneg.
+              ** split; [apply Qabs_nonneg | exact Hf].
+              ** split; [apply Qabs_nonneg | exact Hga1].
+        -- rewrite Qabs_Qmult.
+           apply Qmult_le_compat_nonneg.
+           ++ split; [apply Qabs_nonneg | exact He].
+           ++ split; [apply Qabs_nonneg | exact Hf].
+      * (* dF*1 + dG*1 + dF*dG = dF + dG + dF*dG *)
+        apply Qle_of_Qeq. ring.
+Qed.
+
+(* A literal is a variable index plus a negation flag. *)
+Definition Lit (n : nat) := (Fin.t n * bool)%type.
+Definition Clause (n : nat) := list (Lit n).
+Definition CNF (n : nat) := list (Clause n).
+
+Section CNFCompiler.
+  Context {n : nat}.
+  
+  Definition chiMV {n} (i : Fin.t n) : MV n :=
+  basis (mask_single i).
+  
+  Definition varMV {n} (i : Fin.t n) : MV n :=
+    mv_scale (1#2) (mv_add (constMV 1) (chiMV i)).
+  
+  (* Boolean connectives in MV-land *)
+  Definition mv_not (F : MV n) : MV n :=
+    mv_sub (constMV 1) F.
+
+  Definition mv_and (F G : MV n) : MV n :=
+    mv_conv F G.
+
+  Definition mv_or (F G : MV n) : MV n :=
+    mv_sub (mv_add F G) (mv_conv F G).
+
+  (* Compile a literal: x_i or ¬x_i *)
+  Definition compile_lit (l : Lit n) : MV n :=
+    let '(i, neg) := l in
+    if neg then mv_not (varMV i) else varMV i.
+
+  (* Compile a clause = OR of literals.
+     Identity for OR is FALSE = 0. *)
+  Fixpoint compile_clause (c : Clause n) : MV n :=
+    match c with
+    | [] => constMV 0
+    | l :: cs => mv_or (compile_lit l) (compile_clause cs)
+    end.
+
+  (* Compile a CNF = AND of clauses.
+     Identity for AND is TRUE = 1. *)
+  Fixpoint compile_cnf (phi : CNF n) : MV n :=
+    match phi with
+    | [] => constMV 1
+    | c :: cs => mv_and (compile_clause c) (compile_cnf cs)
+    end.
+End CNFCompiler.
+
+Lemma eval_chiMV :
+  forall n (i : Fin.t n) (s : Corner n),
+    eval (@chiMV n i) s == chi' (mask_single i) s.
+Proof.
+  intros n i s. unfold chiMV.
+  rewrite eval_basis. reflexivity.
+Qed.
+
+Lemma chi_single_is_sQ :
+  forall n (i : Fin.t n) (s : Corner n),
+    chi' (mask_single i) s == sQ (Vector.nth s i).
+Proof.
+  (* This depends on your definitions of chi'/chi and mask_single.
+     Usually proved by induction on i (Fin.t n) using Vector.nth. *)
+Admitted.
+
+Lemma bQ_corner_bit :
+  forall h : Sign,
+    bQ (sign_to_bool h) == (1#2) * (1 + sQ h).
+Proof.
+  intro h; destruct h; unfold sign_to_bool; simpl.
+  - (* Pos *)
+    (* goal: bQ false == 1/2 * (1 - sQ Pos) *)
+    (* bQ false = 0, sQ Pos = 1 *)
+    unfold bQ, sQ; simpl.
+    (* goal becomes: 0 == (1#2) * (1 - 1) *)
+    field.
+  - (* Neg *)
+    (* bQ true = 1, sQ Neg = -1 *)
+    unfold bQ, sQ; simpl.
+    (* goal becomes: 1 == (1#2) * (1 - (-1)) *)
+    field.
+Qed.
+
+Definition corner_bit {n} (i : Fin.t n) (s : Corner n) : bool :=
+  sign_to_bool (Vector.nth s i).
+
+Lemma bQ_sign_to_bool_plus :
+  forall h : Sign,
+    bQ (match h with Pos => true | Neg => false end)
+    == (1#2) * (1 + sQ h).
+Proof.
+  intro h; destruct h; simpl.
+  - (* Pos *) vm_compute. reflexivity.
+  - (* Neg *) vm_compute. reflexivity.
+Qed.
+
+Lemma eval_varMV :
+  forall n (i : Fin.t n) (s : Corner n),
+    eval (@varMV n i) s == bQ (corner_bit i s).
+Proof.
+  intros n i s.
+  unfold varMV.
+  rewrite eval_scale.
+  rewrite eval_add_pointwise.
+  rewrite eval_constMV.
+  rewrite eval_chiMV.
+  rewrite chi_single_is_sQ.
+  unfold corner_bit.
+  (* reduce sign_to_bool by case on the sign *)
+  destruct (Vector.nth s i); simpl; field; discriminate.
+Qed.
+
+Lemma eval_close_bool_varMV :
+  forall n (i : Fin.t n),
+    eval_close_bool (@varMV n i) 0.
+Proof.
+  intros n i.
+  exists (fun s => corner_bit i s).
+  intro s.
+  rewrite eval_varMV.
+  (* |bQ(bit)-bQ(bit)| = 0 *)
+  setoid_replace (bQ (corner_bit i s) - bQ (corner_bit i s)) with 0%Q by ring.
+  simpl. apply Qle_refl.
+Qed.
+
+Lemma eval_close_bool_const0 : forall n, eval_close_bool (@constMV n 0) 0.
+Proof.
+  intros n. exists (fun _ => false). intro s.
+  rewrite eval_constMV. simpl.
+  apply Qle_refl.
+Qed.
+
+Lemma eval_close_bool_const1 : forall n, eval_close_bool (@constMV n 1) 0.
+Proof.
+  intros n. exists (fun _ => true). intro s.
+  rewrite eval_constMV. simpl.
+  apply Qle_refl.
+Qed.
+
+Lemma compile_lit_eval_close :
+  forall n (l : Lit n),
+    eval_close_bool (compile_lit (n:=n) l) 0.
+Proof.
+  intros n l.
+  destruct l as [i neg]. simpl.
+  destruct neg.
+  - (* negated literal *)
+    apply eval_close_bool_not.
+    apply eval_close_bool_varMV.
+  - (* positive literal *)
+    apply eval_close_bool_varMV.
+Qed.
+
+Lemma eval_close_bool_or_mv_or :
+  forall n (F G : MV n) dF dG,
+    eval_close_bool F dF ->
+    eval_close_bool G dG ->
+    eval_close_bool (mv_or F G) (dF + dG + dF*dG).
+Proof.
+  intros n F G dF dG HF HG.
+  unfold mv_or.
+  exact (@eval_close_bool_or n F G dF dG HF HG).
+Qed.
+
+Lemma compile_clause_eval_close :
+  forall n (c : Clause n),
+    eval_close_bool (compile_clause (n:=n) c) 0.
+Proof.
+  intros n c; induction c as [|l cs IH]; simpl.
+  - apply eval_close_bool_const0.
+  
+  - (* OR preserves d=0 *)
+    (* First get the bound (0+0+0*0) *)
+    assert (H :
+      eval_close_bool (mv_or (compile_lit l) (compile_clause cs)) (0 + 0 + 0*0)).
+    { eapply (eval_close_bool_or_mv_or (n:=n)
+                (F:=compile_lit l) (G:=compile_clause cs)
+                (dF:=0) (dG:=0));
+      [ apply compile_lit_eval_close | exact IH ]. }
+
+    (* Then rewrite that bound to 0 *)
+    (* 0 + 0 + 0*0 == 0 *)
+    replace (0 + 0 + 0 * 0)%Q with 0%Q in H by (vm_compute; reflexivity).
+    exact H.
+Qed.
+
+Lemma compile_cnf_eval_close :
+  forall n (phi : CNF n),
+    eval_close_bool (compile_cnf (n:=n) phi) 0.
+Proof.
+  intros n phi; induction phi as [|c cs IH]; simpl.
+  - apply eval_close_bool_const1.
+  -
+    unfold mv_and.
+
+    assert (H :
+      eval_close_bool (mv_conv (compile_clause c) (compile_cnf cs))
+                     (0 + 0 + 0 * 0)).
+    { eapply (eval_close_bool_conv (n:=n)
+              (F:=compile_clause c) (G:=compile_cnf cs)
+              (dF:=0) (dG:=0)).
+      - apply compile_clause_eval_close.
+      - exact IH.
+    }
+
+    replace (0 + 0 + 0 * 0)%Q with 0%Q in H by (vm_compute; reflexivity).
+    exact H.
+Qed.
+
+Corollary compile_cnf_eval_bounded :
+  forall n (phi : CNF n),
+    eval_bounded (compile_cnf (n:=n) phi) 1.
+Proof.
+  intros n phi.
+  apply (eval_close_bool_implies_eval_bounded_1pd (n:=n) (F:=compile_cnf (n:=n) phi) (d:=0)).
+  apply compile_cnf_eval_close.
+Qed.
+
+Corollary compile_cnf_l1_bound :
+  forall n (phi : CNF n),
+    l1_norm (compile_cnf (n:=n) phi) <= pow2 n.
+Proof.
+  intros n phi.
+  (* first get the bound with *1 *)
+  eapply Qle_trans.
+  - apply (eval_bounded_implies_l1_bound
+            (n:=n) (F:=compile_cnf (n:=n) phi) (C:=1)).
+    apply compile_cnf_eval_bounded.
+  - (* simplify pow2 n * 1 to pow2 n *)
+    apply Qle_of_Qeq.
+    rewrite Qmult_1_r.
+    reflexivity.
+Qed.
+
+Lemma Qabs_le_0_eq :
+  forall x : Q, Qabs x <= 0 -> x == 0.
+Proof.
+  intros x Hle.
+  assert (H0 : Qabs x == 0).
+  { apply Qle_antisym; [exact Hle | apply Qabs_nonneg]. }
+  destruct (Qlt_le_dec x 0) as [Hxlt | Hxge].
+  - (* x < 0 *)
+    (* Qabs x = -x *)
+    assert (Hxle : x <= 0) by (apply Qlt_le_weak; exact Hxlt).
+    rewrite (Qabs_neg _ Hxle) in H0.
+    (* -x = 0 -> x = 0 *)
+    ring_simplify in H0.
+    exact H0.
+  - (* 0 <= x *)
+    rewrite (Qabs_pos _ Hxge) in H0.
+    exact H0.
+Qed.
+
+Corollary compile_cnf_correct :
+  forall n (phi : CNF n),
+    exists g : Corner n -> bool,
+      forall s : Corner n,
+        eval (compile_cnf (n:=n) phi) s == bQ (g s).
+Proof.
+  intros n phi.
+  apply eval_close_bool_0_implies_pointwise.
+  apply compile_cnf_eval_close.
+Qed.
+
+Lemma eval_pointwise_eq_implies_coeff_eq :
+  forall n (F G : MV n),
+    (forall s : Corner n, eval F s == eval G s) ->
+    forall m : Mask n, F m == G m.
+Proof.
+  intros n F G Heq m.
+  (* expand both sides using coeff_via_eval *)
+  rewrite (coeff_via_eval (n:=n) (F:=F) (m:=m)).
+  rewrite (coeff_via_eval (n:=n) (F:=G) (m:=m)).
+  (* same prefactor; push Heq through the sum *)
+  apply Qmult_comp; [reflexivity|].
+  apply sumQ_map_ext; intros s _.
+  rewrite (Heq s).
+  reflexivity.
+Qed.
+
+Lemma eval_eq_bQ_implies_coeff_eq_embed :
+  forall n (F : MV n) (f : Corner n -> bool),
+    (forall s : Corner n, eval F s == bQ (f s)) ->
+    forall m : Mask n, F m == embed f m.
+Proof.
+  intros n F f Hs m.
+  eapply eval_pointwise_eq_implies_coeff_eq with (G := embed f).
+  - intro s.
+    rewrite embed_correct.
+    exact (Hs s).
+  - exact m.
+Qed.
+
+Corollary compile_cnf_coeff_correct :
+  forall n (phi : CNF n),
+    exists g : Corner n -> bool,
+      forall m : Mask n,
+        (compile_cnf (n:=n) phi) m == embed g m.
+Proof.
+  intros n phi.
+  destruct (compile_cnf_correct (n:=n) phi) as [g Hg].
+  exists g.
+  intro m.
+  apply (eval_eq_bQ_implies_coeff_eq_embed (n:=n) (F:=compile_cnf (n:=n) phi) (f:=g)).
+  exact Hg.
+Qed.
+
+Theorem cnf_exists_small_rep :
+  forall n (phi : CNF n),
+    exists F : MV n,
+      (* F computes phi *)
+      (exists g, forall s, eval F s == bQ (g s)) /\
+      l1_norm F <= pow2 n.
 Proof.
 Admitted.
 
