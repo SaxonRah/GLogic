@@ -178,7 +178,7 @@ COMMAND_RE = re.compile(
 KIND_RE = re.compile(
     r'^(?:\#\[[^\]]*\]\s*)?'
     r'(' + _kind_alts + r')'
-    r'\s',
+    r'\s+',
     re.MULTILINE
 )
 
@@ -254,21 +254,23 @@ def parse_coq_file(filepath: str, base_dir: str) -> Tuple[List[CoqItem], List[st
 
         # Check if this is a proof terminator
         first_word = stripped.rstrip('.').strip()
-        if first_word in PROOF_END_KEYWORDS and current_item:
-            if first_word == 'Admitted':
-                current_item.status = 'admitted'
-            elif first_word == 'Abort':
-                current_item.status = 'aborted'
-            elif first_word == 'Defined':
-                current_item.status = 'defined'
-            else:  # Qed
-                current_item.status = 'proved'
+
+        if first_word in PROOF_END_KEYWORDS:
+            if current_item:
+                if first_word == 'Admitted':
+                    current_item.status = 'admitted'
+                elif first_word == 'Abort':
+                    current_item.status = 'aborted'
+                elif first_word == 'Defined':
+                    current_item.status = 'defined'
+                else:
+                    current_item.status = 'proved'
+                current_item = None
             in_proof = False
-            current_item = None
             continue
 
         # Skip proof internals
-        if stripped.startswith('Proof'):
+        if re.match(r'^Proof\s*\.$|^Proof\s+(using|with)\b', stripped):
             in_proof = True
             continue
 
