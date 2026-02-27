@@ -255,6 +255,35 @@ function simulate() {{
   active.forEach(n => {{ cx += n.x; cy += n.y; }});
   cx /= N; cy /= N;
 
+  // Measure compactness (mean radius)
+  let rSum = 0;
+  active.forEach(n => {{
+    const dx = n.x - cx, dy = n.y - cy;
+    rSum += Math.sqrt(dx*dx + dy*dy);
+  }});
+  const rMean = rSum / N;
+
+  // Only apply centering when things are already spread out enough.
+  // If you center while compact, you guarantee eventual collapse.
+  const centerGateRadius = 420; // tune
+  if (rMean > centerGateRadius) {{
+    active.forEach(n => {{
+      n.vx += (cx - n.x) * SIM.centerStrength * alpha;
+      n.vy += (cy - n.y) * SIM.centerStrength * alpha;
+    }});
+  }}
+
+  // If the whole layout is too compact, push outward from centroid
+  const minRadius = 360;     // tune
+  const breathe = 0.015;     // tune
+  if (rMean < minRadius) {{
+    active.forEach(n => {{
+      const dx = n.x - cx, dy = n.y - cy;
+      n.vx += dx * breathe * alpha;
+      n.vy += dy * breathe * alpha;
+    }});
+  }}
+
   active.forEach(n => {{
     n.vx += (cx - n.x) * SIM.centerStrength * alpha;
     n.vy += (cy - n.y) * SIM.centerStrength * alpha;
@@ -290,7 +319,39 @@ function simulate() {{
       }}
     }}
   }});
+  
+    // --- Long-range repulsion via a coarse grid of cell centroids ---
+  const bigCell = 520;     // coarse resolution
+  const big = {{}};          // key -> {{cx,cy,count}}
+  active.forEach(n => {{
+    const gx = Math.floor(n.x / bigCell);
+    const gy = Math.floor(n.y / bigCell);
+    const key = gx + ',' + gy;
+    let c = big[key];
+    if (!c) c = big[key] = {{ cx: 0, cy: 0, count: 0 }};
+    c.cx += n.x; c.cy += n.y; c.count++;
+  }});
+  const bigCells = Object.values(big).map(c => ({{
+    x: c.cx / c.count,
+    y: c.cy / c.count,
+    w: c.count
+  }}));
 
+  // Push nodes away from nearby big-cell centroids (except their own cell)
+  const bigStrength = 0.9 * SIM.repulsion; // tune
+  for (const n of active) {{
+    for (const c of bigCells) {{
+      // skip if node is basically in that centroid already
+      const dx = n.x - c.x, dy = n.y - c.y;
+      let d2 = dx*dx + dy*dy;
+      if (d2 < 1) d2 = 1;
+      // weight by cell "mass"
+      const f = bigStrength * c.w * alpha / d2;
+      n.vx += dx * f;
+      n.vy += dy * f;
+    }}
+  }}
+  
   // Soft collision: prevents "black hole cloud"
   applyMinSeparation(active, grid, cellSize, /*minDist=*/60, /*strength=*/0.11, alpha);
 
@@ -958,7 +1019,7 @@ function beginRelaxMode() {{
   // these are the knobs that stop black-hole collapse
   SIM.linkStrength = SIM.linkStrength * 0.35;     // much weaker springs
   SIM.repulsion = SIM.repulsion * 2.0;            // stronger separation
-  SIM.centerStrength = SIM.centerStrength * 0.25; // weaker gravity-to-centroid
+  SIM.centerStrength = 0; // weaker gravity-to-centroid
   SIM.damping = Math.min(SIM.damping, 0.48);      // more damping (0.48–0.55 works well)
   SIM.alphaDecay = Math.max(SIM.alphaDecay, 0.012); // cool faster
 
