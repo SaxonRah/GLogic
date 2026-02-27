@@ -3377,6 +3377,301 @@ Proof.
       apply Qle_refl.
 Qed.
 
+Definition bf_true {n} : Corner n -> bool := fun _ => true.
+
+Definition bf_var {n} (i : Fin.t n) : Corner n -> bool :=
+  fun s => match Vector.nth s i with Pos => true | Neg => false end.
+
+Definition bf_notvar {n} (i : Fin.t n) : Corner n -> bool :=
+  fun s => negb (bf_var i s).
+
+Lemma lincomb_embed_scale :
+  forall n (a : Q) (cs : list Q) (gs : list (Corner n -> bool)) (m : Mask n),
+    wf_lincomb cs gs ->
+    lincomb_embed (map (fun c => (a * c)%Q) cs) gs m
+    ==
+    mv_scale a (lincomb_embed cs gs) m.
+Proof.
+  intros n a cs.
+  induction cs as [|c cs IH]; intros gs m Hwf.
+  -
+    destruct gs as [|g gs].
+    +
+      unfold lincomb_embed; simpl.
+      unfold mv_scale, mv_zero; simpl.
+      ring.
+    +
+      unfold wf_lincomb in Hwf; simpl in Hwf; discriminate.
+  - (* cs = c :: cs *)
+    destruct gs as [|g gs].
+    + unfold wf_lincomb in Hwf; simpl in Hwf; discriminate.
+    +
+      unfold lincomb_embed; simpl.
+
+      assert (Hwf' : wf_lincomb cs gs).
+      { unfold wf_lincomb in *.
+        simpl in Hwf.
+        inversion Hwf.
+        reflexivity. }
+
+      specialize (IH gs m Hwf').
+      unfold mv_add; simpl.
+      setoid_rewrite IH.
+      unfold mv_scale; simpl.
+
+      change ((fix lincomb_embed (n0 : nat) (cs0 : list Q) (gs0 : list (Corner n0 -> bool)) {struct cs0} : MV n0 := _) n cs gs m)
+        with (lincomb_embed cs gs m).
+
+      ring.
+Qed.
+
+Lemma l1_norm_scale :
+  forall n (a : Q) (F : MV n),
+    ∥ mv_scale a F ∥₁ == (Qabs a * ∥F∥₁)%Q.
+Proof.
+  intros n a F.
+  unfold l1_norm.
+  unfold mv_scale.
+  
+  eapply Qeq_trans.
+  - apply (@sumQ_map_ext
+             (Mask n)
+             (fun m => Qabs (a * F m))
+             (fun m => Qabs a * Qabs (F m))
+             (all_masks n)).
+    intros m _.
+    rewrite Qabs_Qmult.
+    ring.
+  - rewrite <- (@sumQ_map_mul_l
+                  (Mask n)
+                  (Qabs a)
+                  (all_masks n)
+                  (fun m => Qabs (F m))).
+    reflexivity.
+Qed.
+
+Lemma boolish_k_le_scale_0 :
+  forall n (a : Q) (F : MV n) k,
+    boolish_k_le F k 0 ->
+    boolish_k_le (mv_scale a F) k 0.
+Proof.
+  intros n a F k Hb.
+  unfold boolish_k_le in *.
+  destruct Hb as [cs [gs [Hwf [Hlen Hdist]]]].
+  exists (map (fun c => (a * c)%Q) cs), gs.
+  repeat split.
+  - (* wf_lincomb *)
+    unfold wf_lincomb in *.
+    now rewrite length_map.
+  - (* length gs <= k *)
+    exact Hlen.
+  - (* distance *)
+    (* rewrite the norm to a scaled norm of the old residual *)
+    eapply Qle_trans.
+    + (* First: show the MV inside the norm is exactly mv_scale a (old residual) *)
+      apply Qle_of_Qeq.
+      apply (@l1_norm_ext n
+               (mv_sub (mv_scale a F)
+                       (lincomb_embed (map (fun c => (a * c)%Q) cs) gs))
+               (mv_scale a (mv_sub F (lincomb_embed cs gs))) ).
+      intro m.
+      unfold mv_sub.
+      (* expand mv_scale at coefficients *)
+      unfold mv_scale.
+      (* scale the lincomb back to mv_scale a (lincomb_embed cs gs) *)
+      rewrite (@lincomb_embed_scale n a cs gs m Hwf).
+      (* now it's pure Q arithmetic: a*F m - a*L m == a*(F m - L m) *)
+      unfold mv_scale; simpl.
+      ring.
+    + (* Now apply l1_norm_scale and Hdist *)
+      rewrite l1_norm_scale.
+      (* Qabs a >= 0 *)
+      assert (Ha : 0 <= Qabs a).
+      { apply Qabs_nonneg. }
+      (* multiply Hdist by Qabs a *)
+      eapply Qle_trans.
+      * apply Qmult_le_compat_l'; try exact Ha.
+        exact Hdist.
+      * (* Qabs a * 0 == 0 *)
+        rewrite Qmult_0_r.  (* x * 0 = 0 *)
+        apply Qle_refl.
+Qed.
+
+Lemma mv_one_eq_embed_true :
+  forall n, forall m : Mask n, mv_one (n:=n) m == embed (n:=n) (@bf_true n) m.
+Proof.
+  intros n m.
+  apply (@eval_pointwise_eq_implies_coeff_eq (n)
+           (@mv_one (n)) (@embed (n) (@bf_true n))).
+  intro s.
+  rewrite embed_correct.
+  rewrite eval_mv_one.
+  reflexivity.
+Qed.
+
+Lemma boolish_k_le_scalar_1_0 :
+  forall n (sq : Vector.t Q n) (c : Q),
+    boolish_k_le (eval_expr sq (Scalar c)) 1 0.
+Proof.
+  intros n sq c.
+  unfold boolish_k_le.
+  exists (c :: nil), ((@bf_true n) :: nil).
+  refine (conj _ (conj _ _)).
+  - (* wf_lincomb *)
+    unfold wf_lincomb; simpl; reflexivity.
+  - (* length gs <= 1 *)
+    simpl. apply le_n.
+  - (* distance *)
+    eapply Qle_trans.
+    + apply Qle_of_Qeq.
+      refine (@l1_norm_ext n
+                (mv_sub (eval_expr sq (Scalar c)) (lincomb_embed (c :: nil) ((@bf_true n) :: nil)))
+                mv_zero _).
+      intro m.
+      unfold mv_sub.
+      unfold lincomb_embed; simpl.
+      cbn [eval_expr].
+
+      unfold mv_scale.
+      setoid_rewrite (@mv_one_eq_embed_true n m).
+      unfold mv_add, mv_zero; simpl.
+      ring.
+    + rewrite l1_norm_zero.
+      apply Qle_refl.
+Qed.
+
+Lemma trace_boolish_k_le_root :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) k d,
+    trace_boolish_k_le sq e k d ->
+    boolish_k_le (eval_expr sq e) k d.
+Proof.
+  intros n sq e.
+  induction e; intros k d Ht; simpl in *.
+  - (* Scalar *)
+    exact Ht.
+  - (* Basis *)
+    exact Ht.
+  - (* Add *)
+    destruct Ht as [Ht1 [Ht2 Hnode]].
+    exact Hnode.
+  - (* Mul / gp *)
+    destruct Ht as [Ht1 [Ht2 Hnode]].
+    exact Hnode.
+  - (* Conv *)
+    destruct Ht as [Ht1 [Ht2 Hnode]].
+    exact Hnode.
+Qed.
+
+Lemma boolish_k_le_mv_scale_mv_one_1_0 :
+  forall n (sq : Vector.t Q n) (c : Q),
+    @boolish_k_le n (mv_scale c (@mv_one n)) 1 0.
+Proof.
+  intros n sq c.
+  (* reuse scalar lemma + definitional equality of eval_expr *)
+  eapply boolish_k_le_of_eq.
+  - intro m. cbn [eval_expr]. reflexivity.
+  - apply (@boolish_k_le_scalar_1_0 n sq c).
+Qed.
+
+Lemma bQ_var_minus_notvar :
+  forall n (i : Fin.t n) (s : Corner n),
+    bQ (bf_var i s) - bQ (bf_notvar i s) == sQ (Vector.nth s i).
+Proof.
+  intros n i s.
+  unfold bf_var, bf_notvar.
+  destruct (Vector.nth s i) eqn:Hnth; simpl.
+  - (* Pos *)
+    (* Goal is: 1 - bQ (negb (bf_var i s)) == 1 *)
+    (* Re-expand bf_var so it exposes the match, then rewrite that match using Hnth *)
+    unfold bf_var.
+    rewrite Hnth.
+    simpl.
+    ring.
+  - (* Neg *)
+    unfold bf_var.
+    rewrite Hnth.
+    simpl.
+    ring.
+Qed.
+
+Lemma basis_eq_embed_var_minus_notvar :
+  forall n (i : Fin.t n) (m : Mask n),
+    basis (n:=n) (mask_single i) m
+    ==
+    mv_sub (embed (n:=n) (bf_var i)) (embed (n:=n) (bf_notvar i)) m.
+Proof.
+  intros n i m.
+  apply (@eval_pointwise_eq_implies_coeff_eq
+           n
+           (basis (n:=n) (mask_single i))
+           (mv_sub (embed (n:=n) (bf_var i)) (embed (n:=n) (bf_notvar i)))).
+  intro s.
+  rewrite eval_basis.
+  rewrite chi_mask_single.
+  rewrite eval_sub_pointwise.
+  rewrite embed_correct.
+  rewrite embed_correct.
+  apply Qeq_sym.
+  apply bQ_var_minus_notvar.
+Qed.
+
+Lemma boolish_k_le_basis_2_0 :
+  forall n (i : Fin.t n),
+    boolish_k_le (basis (n:=n) (mask_single i)) 2 0.
+Proof.
+  intros n i.
+  unfold boolish_k_le.
+  exists (1%Q :: (-1)%Q :: nil), (bf_var i :: bf_notvar i :: nil).
+  (* Now prove: wf_lincomb /\ length<=2 /\ norm<=0 *)
+  refine (conj _ (conj _ _)).
+  - (* wf_lincomb *)
+    unfold wf_lincomb; simpl; reflexivity.
+  - (* length gs <= 2 *)
+    simpl; apply le_n.   (* 2 <= 2 *)
+  - (* exact distance 0 *)
+    eapply Qle_trans.
+    + apply Qle_of_Qeq.
+      refine (@l1_norm_ext n
+                (mv_sub (basis (n:=n) (mask_single i))
+                        (lincomb_embed (1%Q :: (-1)%Q :: nil)
+                                      (bf_var i :: bf_notvar i :: nil)))
+                mv_zero _).
+      intro m.
+      unfold mv_sub.
+      unfold lincomb_embed; simpl.
+      rewrite (@basis_eq_embed_var_minus_notvar n i m).
+      unfold mv_sub, mv_add, mv_scale, mv_zero; simpl.
+      ring.
+    + rewrite l1_norm_zero.
+      apply Qle_refl.
+Qed.
+
+Lemma mv_mul_scale_l :
+  forall n (sq : Vector.t Q n) (c : Q) (B : MV n) (m : Mask n),
+    @mv_gp n sq (mv_scale c mv_one) B m == mv_scale c B m.
+Proof.
+  intros n sq c B m.
+  rewrite (@mv_gp_scale_l n sq c mv_one B m).
+  unfold mv_scale; simpl.
+  change ((mv_one ⋆ B) m) with (@mv_gp n sq mv_one B m).
+  rewrite (@mv_gp_one_l n sq B m).
+  reflexivity.
+Qed.
+
+Lemma mv_mul_one_l n (sq : Vector.t Q n) (B : MV n) m :
+  @mv_gp n sq mv_one B m == B m.
+Proof. apply mv_gp_one_l. Qed.
+
+Lemma root_boolish_at n (sq : Vector.t Q n) e k k' :
+  (k <= k')%nat ->
+  trace_boolish_k_le sq e k 0 ->
+  boolish_k_le (eval_expr sq e) k' 0.
+Proof.
+  intros Hle Ht.
+  eapply boolish_k_le_mono; [exact Hle|].
+  exact (trace_boolish_k_le_root _ _ _ _ _ Ht).
+Qed.
+
 Lemma translate_trace_boolish_exists_k_0 :
   forall n (sq : Vector.t Q n) (psi : BoolFormula n),
     (forall i, Vector.nth sq i == 1) ->
@@ -3384,6 +3679,300 @@ Lemma translate_trace_boolish_exists_k_0 :
 Proof.
   intros n sq psi Hsq.
   unfold trace_boolish_exists_k.
+  revert sq Hsq.
+  induction psi; intros sq Hsq; simpl.
+
+  - (* Var t *)
+    exists 3%nat.
+    repeat split.
+
+    + (* boolish ( (1/2) * mv_one ) *)
+      apply (@boolish_k_le_mono n
+               (mv_scale (1#2) mv_one) 1%nat 3%nat 0).
+      * apply le_S. apply le_S. apply le_n.   (* 1 <= 3 *)
+      * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (1#2)).
+
+    + (* boolish ( 1 * mv_one ) *)
+      apply (@boolish_k_le_mono n
+               (mv_scale 1 mv_one) 1%nat 3%nat 0).
+      * apply le_S. apply le_S. apply le_n.
+      * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+
+    + (* boolish (basis ...) *)
+      apply (@boolish_k_le_mono n
+               (basis (mask_single t)) 2%nat 3%nat 0).
+      * apply le_S. apply le_n.               (* 2 <= 3 *)
+      * apply (@boolish_k_le_basis_2_0 n t).
+
+    + (* boolish ( 1*mv_one ⊕ basis ) *)
+      eapply (@boolish_k_le_add n
+                (mv_scale 1 mv_one) (basis (mask_single t))
+                1%nat 2%nat 0%Q 0%Q).
+      * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+      * apply (@boolish_k_le_basis_2_0 n t).
+
+    +
+      eapply boolish_k_le_of_eq.
+      * intro m.
+        rewrite (mv_mul_scale_l (n:=n) (c:=(1#2)) (A:=mv_one)
+          (B:=(mv_scale 1 mv_one ⊕ basis (mask_single t))) m).
+        rewrite (mv_mul_one_l (n:=n)
+          (B:=(mv_scale 1 mv_one ⊕ basis (mask_single t))) m).
+          reflexivity.
+      * apply (@boolish_k_le_scale_0 n (1#2)
+          (mv_scale 1 mv_one ⊕ basis (mask_single t)) 3%nat).
+        (* reuse the sum proof at k=3 *)
+        apply (@boolish_k_le_add n (mv_scale 1 mv_one) (basis (mask_single t)) 1%nat 2%nat 0).
+        -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+        -- apply (@boolish_k_le_basis_2_0 n t).
+
+  - (* Const b *)
+    exists 1%nat.
+    destruct b; simpl; cbn [trace_boolish_k_le].
+    + apply (@boolish_k_le_scalar_1_0 n sq 1).
+    + apply (@boolish_k_le_scalar_1_0 n sq 0).
+
+  - (* And psi1 psi2 : Conv *)
+    destruct (IHpsi1 sq Hsq) as [k1 Ht1].
+    destruct (IHpsi2 sq Hsq) as [k2 Ht2].
+    exists (k1 + k2)%nat.
+    repeat split.
+
+    + (* trace psi1 *)
+      apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 (k1 + k2)%nat 0).
+      * apply Nat.le_add_r.
+      * exact Ht1.
+
+    + (* trace psi2 *)
+      apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 (k1 + k2)%nat 0).
+      * apply Nat.le_add_l.
+      * exact Ht2.
+
+    + (* node boolish: conv *)
+      apply (@boolish_k_le_conv n
+               (eval_expr sq (translate psi1))
+               (eval_expr sq (translate psi2))
+               (k1 + k2)%nat (k1 + k2)%nat 0).
+      * (* left root boolish, lifted *)
+        apply (@boolish_k_le_mono n
+                 (eval_expr sq (translate psi1)) k1 (k1 + k2)%nat 0).
+        -- apply Nat.le_add_r.
+        -- apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+      * (* right root boolish, lifted *)
+        apply (@boolish_k_le_mono n
+                 (eval_expr sq (translate psi2)) k2 (k1 + k2)%nat 0).
+        -- apply Nat.le_add_l.
+        -- apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+
+  - (* Or psi1 psi2 *)
+    destruct (IHpsi1 sq Hsq) as [k1 Ht1].
+    destruct (IHpsi2 sq Hsq) as [k2 Ht2].
+    set (k := (k1 + k2 + 3)%nat).
+    exists k.
+    repeat split.
+
+    + (* (trace psi1 /\ trace psi2 /\ boolish (A⊕B)) *)
+      repeat split.
+      * apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 k 0).
+        -- unfold k. apply Nat.le_add_r.
+        -- exact Ht1.
+      * apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
+        -- unfold k. apply Nat.le_trans with (m := (k1 + k2)%nat).
+           ++ apply Nat.le_add_l.
+           ++ apply Nat.le_add_r.
+        -- exact Ht2.
+      * (* boolish (A ⊕ B) *)
+        apply (@boolish_k_le_add n
+                 (eval_expr sq (translate psi1))
+                 (eval_expr sq (translate psi2))
+                 k k 0).
+        -- (* left root boolish at k *)
+           apply (@boolish_k_le_mono n
+                    (eval_expr sq (translate psi1)) k1 k 0).
+           ++ unfold k. apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+        -- (* right root boolish at k *)
+           apply (@boolish_k_le_mono n
+                    (eval_expr sq (translate psi2)) k2 k 0).
+           ++ unfold k.
+              apply Nat.le_trans with (m := (k1 + k2)%nat).
+              ** apply Nat.le_add_l.
+              ** apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+
+    + (* (-1)mv_one /\ (trace psi1 /\ trace psi2 /\ conv) /\ (-1)⋆conv *)
+      repeat split.
+      * (* boolish (-1*mv_one) *)
+        apply (@boolish_k_le_mono n
+                 (mv_scale (-1) mv_one) 1%nat k 0).
+        -- unfold k. apply Nat.le_trans with (m := 3%nat).
+           ++ apply le_S. apply le_S. apply le_n.  (* 1<=3 *)
+           ++ apply Nat.le_add_r.
+        -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (-1)).
+      * (* (trace psi1 /\ trace psi2 /\ conv) *)
+        repeat split.
+        -- apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 k 0).
+           ++ unfold k. apply Nat.le_add_r.
+           ++ exact Ht1.
+        -- apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
+           ++ unfold k.
+              apply Nat.le_trans with (m := (k1 + k2)%nat).
+              ** apply Nat.le_add_l.
+              ** apply Nat.le_add_r.
+           ++ exact Ht2.
+        -- (* boolish conv at k *)
+           apply (@boolish_k_le_conv n
+                    (eval_expr sq (translate psi1))
+                    (eval_expr sq (translate psi2))
+                    k k 0).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi1)) k1 k 0).
+              ** unfold k. apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi2)) k2 k 0).
+              ** unfold k.
+                 apply Nat.le_trans with (m := (k1 + k2)%nat).
+                 --- apply Nat.le_add_l.
+                 --- apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+      * (* boolish (-1)⋆conv *)
+        eapply boolish_k_le_of_eq.
+        -- intro m.
+           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
+                     (B:=mv_conv (eval_expr sq (translate psi1))
+                                 (eval_expr sq (translate psi2))) m).
+           rewrite (mv_mul_one_l (n:=n)
+                     (B:=mv_conv (eval_expr sq (translate psi1))
+                                 (eval_expr sq (translate psi2))) m).
+           reflexivity.
+        -- apply (@boolish_k_le_scale_0 n (-1)
+                  (mv_conv (eval_expr sq (translate psi1))
+                           (eval_expr sq (translate psi2))) k).
+           apply (@boolish_k_le_conv n
+                    (eval_expr sq (translate psi1))
+                    (eval_expr sq (translate psi2))
+                    k k 0).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi1)) k1 k 0).
+              ** unfold k. apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi2)) k2 k 0).
+              ** unfold k.
+                 apply Nat.le_trans with (m := (k1 + k2)%nat).
+                 --- apply Nat.le_add_l.
+                 --- apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+
+    + (* final boolish: (A⊕B) ⊕ (-1)⋆conv *)
+      apply (@boolish_k_le_add n
+               (eval_expr sq (translate psi1) ⊕ eval_expr sq (translate psi2))
+               (mv_scale (-1) mv_one ⋆ mv_conv (eval_expr sq (translate psi1))
+                                        (eval_expr sq (translate psi2)))
+               k k 0).
+      * (* boolish(A⊕B) at k *)
+        apply (@boolish_k_le_add n
+                 (eval_expr sq (translate psi1))
+                 (eval_expr sq (translate psi2))
+                 k k 0).
+        -- apply (@boolish_k_le_mono n
+                  (eval_expr sq (translate psi1)) k1 k 0).
+           ++ unfold k. apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+        -- apply (@boolish_k_le_mono n
+                  (eval_expr sq (translate psi2)) k2 k 0).
+           ++ unfold k.
+              apply Nat.le_trans with (m := (k1 + k2)%nat).
+              ** apply Nat.le_add_l.
+              ** apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+      * (* boolish((-1)⋆conv) at k *)
+        eapply boolish_k_le_of_eq.
+        -- intro m.
+           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
+                     (B:=mv_conv (eval_expr sq (translate psi1))
+                                 (eval_expr sq (translate psi2))) m).
+           rewrite (mv_mul_one_l (n:=n)
+                     (B:=mv_conv (eval_expr sq (translate psi1))
+                                 (eval_expr sq (translate psi2))) m).
+           reflexivity.
+        -- apply (@boolish_k_le_scale_0 n (-1)
+                  (mv_conv (eval_expr sq (translate psi1))
+                           (eval_expr sq (translate psi2))) k).
+           apply (@boolish_k_le_conv n
+                    (eval_expr sq (translate psi1))
+                    (eval_expr sq (translate psi2))
+                    k k 0).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi1)) k1 k 0).
+              ** unfold k. apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
+           ++ apply (@boolish_k_le_mono n
+                     (eval_expr sq (translate psi2)) k2 k 0).
+              ** unfold k.
+                 apply Nat.le_trans with (m := (k1 + k2)%nat).
+                 --- apply Nat.le_add_l.
+                 --- apply Nat.le_add_r.
+              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+
+  - (* Not psi *)
+    destruct (IHpsi sq Hsq) as [k1 Ht].
+    exists (k1 + 2)%nat.
+    repeat split.
+
+    + (* boolish (1*mv_one) *)
+      apply (@boolish_k_le_mono n
+               (mv_scale 1 mv_one) 1%nat (k1 + 2)%nat 0).
+      * apply le_S. apply le_S. apply le_n.   (* 1 <= 3, but also 1<=k1+2 by trans is ok;
+                                                 simplest: 1<=k1+2 via Nat.le_trans with 3 if you want *)
+      * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+
+    + (* inner: (-1)mv_one /\ trace /\ (-1)⋆A *)
+      repeat split.
+      * apply (@boolish_k_le_mono n
+               (mv_scale (-1) mv_one) 1%nat (k1 + 2)%nat 0).
+        -- apply le_S. apply le_S. apply le_n.
+        -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (-1)).
+      * apply (@trace_boolish_k_le_mono n sq (translate psi) k1 (k1 + 2)%nat 0).
+        -- apply Nat.le_add_r.
+        -- exact Ht.
+      * eapply boolish_k_le_of_eq.
+        -- intro m.
+           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
+                     (B:=eval_expr sq (translate psi)) m).
+           rewrite (mv_mul_one_l (n:=n)
+                     (B:=eval_expr sq (translate psi)) m).
+           reflexivity.
+        -- apply (@boolish_k_le_scale_0 n (-1)
+                  (eval_expr sq (translate psi)) (k1 + 2)%nat).
+           apply (@boolish_k_le_mono n
+                    (eval_expr sq (translate psi)) k1 (k1 + 2)%nat 0).
+           ++ apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi) (k:=k1) (d:=0) Ht).
+
+    + (* final add: 1 ⊕ (-1)⋆A *)
+      apply (@boolish_k_le_add n
+               (mv_scale 1 mv_one)
+               (mv_scale (-1) mv_one ⋆ eval_expr sq (translate psi))
+               (k1 + 2)%nat (k1 + 2)%nat 0).
+      * apply (@boolish_k_le_mono n
+               (mv_scale 1 mv_one) 1%nat (k1 + 2)%nat 0).
+        -- apply le_S. apply le_S. apply le_n.
+        -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+      * eapply boolish_k_le_of_eq.
+        -- intro m.
+           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
+                     (B:=eval_expr sq (translate psi)) m).
+           rewrite (mv_mul_one_l (n:=n)
+                     (B:=eval_expr sq (translate psi)) m).
+           reflexivity.
+        -- apply (@boolish_k_le_scale_0 n (-1)
+                  (eval_expr sq (translate psi)) (k1 + 2)%nat).
+           apply (@boolish_k_le_mono n
+                    (eval_expr sq (translate psi)) k1 (k1 + 2)%nat 0).
+           ++ apply Nat.le_add_r.
+           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi) (k:=k1) (d:=0) Ht).
 Qed.
 
 Theorem cnf_easy_in_booleanish_trace_tracepart :
