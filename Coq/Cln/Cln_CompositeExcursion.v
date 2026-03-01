@@ -3669,7 +3669,391 @@ Lemma root_boolish_at n (sq : Vector.t Q n) e k k' :
 Proof.
   intros Hle Ht.
   eapply boolish_k_le_mono; [exact Hle|].
-  exact (trace_boolish_k_le_root _ _ _ _ _ Ht).
+  exact (@trace_boolish_k_le_root n sq e k 0 Ht).
+Qed.
+
+Lemma boolish_k_le_neg_gp_as_scale n (sq : Vector.t Q n) (F : MV n) k :
+  boolish_k_le F k 0 ->
+  boolish_k_le (@mv_gp n sq (mv_scale (-1) mv_one) F) k 0.
+Proof.
+  intro H.
+  eapply boolish_k_le_of_eq.
+  - intro m. apply mv_mul_scale_l.
+  - (* make the scalar be a Q *)
+    change (boolish_k_le (mv_scale (-1)%Q F) k 0).
+    exact (@boolish_k_le_scale_0 n (-1)%Q F k H).
+Qed.
+
+Lemma mul_coeffs_cons :
+  forall (c : Q) cs1 cs2,
+    mul_coeffs (c :: cs1) cs2 =
+    (map (fun c2 => (c * c2)%Q) cs2) ++ mul_coeffs cs1 cs2.
+Proof.
+  intros c cs1 cs2.
+  unfold mul_coeffs. simpl. reflexivity.
+Qed.
+
+Lemma and_gens_cons {n} :
+  forall (g : Corner n -> bool) gs1 gs2,
+    and_gens (g :: gs1) gs2 =
+    (map (and_gen g) gs2) ++ and_gens gs1 gs2.
+Proof.
+  intros g gs1 gs2.
+  unfold and_gens. simpl. reflexivity.
+Qed.
+
+Lemma length_and_gens {n} :
+  forall (gs1 gs2 : list (Corner n -> bool)),
+    length (and_gens gs1 gs2) = (length gs1 * length gs2)%nat.
+Proof.
+  intros gs1 gs2.
+  induction gs1 as [|g gs1 IH]; simpl.
+  - reflexivity.
+  - rewrite and_gens_cons.
+    rewrite length_app, length_map.
+    rewrite IH.
+    lia.
+Qed.
+
+Lemma length_mul_coeffs :
+  forall (cs1 cs2 : list Q),
+    length (mul_coeffs cs1 cs2) = (length cs1 * length cs2)%nat.
+Proof.
+  intros cs1 cs2.
+  induction cs1 as [|c cs1 IH]; simpl.
+  - reflexivity.
+  - rewrite mul_coeffs_cons.
+    rewrite length_app, length_map.
+    rewrite IH.
+    lia.
+Qed.
+
+Lemma wf_lincomb_mul_and :
+  forall (n : nat)
+         (csF csG : list Q)
+         (gsF gsG : list (Corner n -> bool)),
+    wf_lincomb csF gsF ->
+    wf_lincomb csG gsG ->
+    wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
+Proof.
+  intros n csF csG gsF gsG HwfF HwfG.
+  unfold wf_lincomb in *.
+  rewrite length_mul_coeffs, length_and_gens.
+  now rewrite HwfF, HwfG.
+Qed.
+
+Lemma embed_conv_and :
+  forall n (f g : Corner n -> bool) (m : Mask n),
+    mv_conv (embed f) (embed g) m == embed (and_gen f g) m.
+Proof.
+  intros n f g m.
+  apply (@eval_pointwise_eq_implies_coeff_eq n).
+  intro s.
+  rewrite eval_conv.
+  rewrite embed_correct, embed_correct, embed_correct.
+  symmetry. apply bQ_andb.
+Qed.
+
+Lemma sumQ_map_const0 {A} (l : list A) :
+  sumQ (map (fun _ => 0%Q) l) == 0%Q.
+Proof.
+  induction l as [|x xs IH]; simpl.
+  - reflexivity.
+  - rewrite IH. ring.
+Qed.
+
+Lemma mv_conv_zero_l {n : nat} :
+  forall (G : MV n) m, mv_conv mv_zero G m == 0.
+Proof.
+  intros G m.
+  unfold mv_conv, mv_zero.
+
+  set (L := all_masks n).
+
+  (* First: show the inner sum is 0 for every A *)
+  assert (Hinner : forall A : Mask n,
+            sumQ
+              (map (fun B : Mask n =>
+                      if mask_eq_dec (mask_xor A B) m
+                      then (0 * G B)%Q
+                      else 0%Q) L) == 0%Q).
+  {
+    intro A.
+    (* rewrite the mapped function to the constant 0 function *)
+    transitivity (sumQ (map (fun _ : Mask n => 0%Q) L)).
+    - apply sumQ_map_ext; intros B _.
+      destruct (mask_eq_dec (mask_xor A B) m); reflexivity.
+    - apply sumQ_map_const0.
+  }
+
+  (* Now rewrite the outer map using Hinner, making it a map of all zeros *)
+  transitivity (sumQ (map (fun _ : Mask n => 0%Q) L)).
+  - apply sumQ_map_ext; intros A _.
+    exact (Hinner A).
+  - apply sumQ_map_const0.
+Qed.
+
+Lemma sumQ_map_scale {A} (c : Q) (l : list A) (f : A -> Q) :
+  sumQ (map (fun x => (c * f x)%Q) l) == (c * sumQ (map f l))%Q.
+Proof.
+  induction l as [|x xs IH]; simpl.
+  - ring.
+  - rewrite IH. ring.
+Qed.
+
+Lemma sumQ_map_ext_eq {A} (l : list A) (f g : A -> Q) :
+  (forall x, In x l -> f x = g x) ->
+  sumQ (map f l) = sumQ (map g l).
+Proof.
+  induction l as [|a l IH]; intro H; simpl.
+  - reflexivity.
+  - rewrite (H a (or_introl eq_refl)).
+    rewrite IH.
+    + reflexivity.
+    + intros x Hx. apply H. right. exact Hx.
+Qed.
+
+Lemma sumQ_map_scale_eq {A} (c : Q) (l : list A) (f : A -> Q) :
+  sumQ (map (fun x => (c * f x)%Q) l) = (c * sumQ (map f l))%Q.
+Proof.
+  induction l as [|a l IH]; simpl.
+  - ring.
+  - rewrite IH. ring.
+Qed.
+
+Lemma mv_conv_scale_l :
+  forall n (c : Q) (F G : MV n),
+    mv_conv (mv_scale c F) G
+    =
+    mv_scale c (mv_conv F G).
+Proof.
+  intros n c F G.
+  apply functional_extensionality.
+  intro m.
+
+  unfold mv_conv, mv_scale.
+  set (L := all_masks n).
+
+  (* inner factorisation *)
+  assert (Hinner :
+    forall A,
+      sumQ
+        (map
+           (fun B =>
+              if mask_eq_dec (mask_xor A B) m
+              then ((c * F A) * G B)%Q
+              else 0%Q)
+           L)
+      ==
+      (c *
+       sumQ
+         (map
+            (fun B =>
+               if mask_eq_dec (mask_xor A B) m
+               then (F A * G B)%Q
+               else 0%Q)
+            L))%Q).
+  {
+    intro A.
+    transitivity
+      (sumQ
+         (map
+            (fun B =>
+               (c *
+                (if mask_eq_dec (mask_xor A B) m
+                 then (F A * G B)%Q
+                 else 0%Q))%Q)
+            L)).
+    - apply sumQ_map_ext; intros B _.
+      destruct (mask_eq_dec (mask_xor A B) m); ring.
+    - apply sumQ_map_scale.
+  }
+
+  (* outer factorisation *)
+  transitivity
+    (sumQ
+       (map
+          (fun A =>
+             (c *
+              sumQ
+                (map
+                   (fun B =>
+                      if mask_eq_dec (mask_xor A B) m
+                      then (F A * G B)%Q
+                      else 0%Q)
+                   L))%Q)
+          L)).
+  - apply Qeq_eqR.
+
+  - apply sumQ_map_ext; intros A _.
+    apply Hinner.
+  - apply sumQ_map_scale.
+Qed.
+
+Lemma mv_conv_scale_r :
+  forall n (c : Q) (F G : MV n),
+    mv_conv F (mv_scale c G) = mv_scale c (mv_conv F G).
+Proof.
+Qed.
+
+Lemma mv_conv_embed_lincomb_r {n : nat} :
+  forall (f : Corner n -> bool)
+         (cs : list Q) (gs : list (Corner n -> bool)),
+    wf_lincomb cs gs ->
+    forall m,
+      mv_conv (embed f) (lincomb_embed cs gs) m
+      == lincomb_embed cs (map (and_gen f) gs) m.
+Proof.
+  intros f cs.
+  induction cs as [|c cs IH]; intros gs Hwf m.
+  - (* cs = [] *)
+    destruct gs; [| unfold wf_lincomb in Hwf; simpl in Hwf; discriminate].
+    simpl. unfold mv_conv, mv_zero.
+
+    set (L := all_masks n).
+
+    (* inner sum is 0 for each A *)
+    assert (Hinner : forall A : Mask n,
+      sumQ (map (fun B : Mask n =>
+        if mask_eq_dec (mask_xor A B) m then (embed f A * 0)%Q else 0%Q) L) == 0%Q).
+    {
+      intro A.
+      transitivity (sumQ (map (fun _ : Mask n => 0%Q) L)).
+      - apply sumQ_map_ext; intros B _.
+        destruct (mask_eq_dec (mask_xor A B) m); ring.
+      - apply sumQ_map_const0.
+    }
+
+    (* outer sum is then also 0 *)
+    transitivity (sumQ (map (fun _ : Mask n => 0%Q) L)).
+    + apply sumQ_map_ext; intros A _.
+      exact (Hinner A).
+    + apply sumQ_map_const0.
+  
+  - destruct gs as [|g gs]; [unfold wf_lincomb in Hwf; simpl in Hwf; discriminate|].
+    assert (Hwf' : wf_lincomb cs gs).
+    { unfold wf_lincomb in *; simpl in *; lia. }
+    simpl lincomb_embed at 1.
+    (* LHS: mv_conv (embed f) (mv_scale c (embed g) ⊕ lincomb cs gs) *)
+    rewrite mv_conv_add_r.
+    rewrite mv_conv_scale_r.
+    (* now: mv_scale c (mv_conv (embed f) (embed g)) ⊕ mv_conv (embed f) (lincomb cs gs) *)
+    unfold mv_add.
+    rewrite (IH gs Hwf' m).
+    (* LHS term 1: rewrite conv of embeds *)
+    rewrite (embed_conv_and n f g).
+    (* RHS *)
+    simpl (lincomb_embed (c :: cs) (and_gen f g :: map (and_gen f) gs)).
+    unfold mv_add, mv_scale.
+    ring.
+Qed.
+
+Lemma boolish_k_le_conv :
+  forall n (F G : MV n) k1 k2 d1 d2,
+    boolish_k_le F k1 d1 ->
+    boolish_k_le G k2 d2 ->
+    boolish_k_le (mv_conv F G) (k1 * k2)
+      (d1 * l1_norm G + l1_norm F * d2 + d1 * d2).
+Proof.
+  intros n F G k1 k2 d1 d2
+         [csF [gsF [HwfF [HlenF HdF]]]]
+         [csG [gsG [HwfG [HlenG HdG]]]].
+
+  set (F0 := lincomb_embed csF gsF).
+  set (G0 := lincomb_embed csG gsG).
+
+  exists (mul_coeffs csF csG), (and_gens gsF gsG).
+  repeat split.
+  - (* wf *)
+    eapply wf_lincomb_mul_and; eauto.
+  - (* length bound *)
+    rewrite length_and_gens.
+    (* |gsF|*|gsG| <= k1*k2 *)
+    apply Nat.mul_le_mono; lia.
+  - (* error bound *)
+    (* Rewrite witness as mv_conv F0 G0 using lincomb_embed_conv *)
+    set (W := lincomb_embed (mul_coeffs csF csG) (and_gens gsF gsG)).
+    assert (HW : mv_conv F0 G0 = W).
+    {
+      subst W F0 G0.
+      apply (lincomb_embed_conv (n:=n)); assumption.
+    }
+
+    (* Reduce to bounding || mv_conv F G - mv_conv F0 G0 ||_1 *)
+    eapply Qle_trans.
+    + (* replace W by mv_conv F0 G0 inside l1_norm *)
+      apply Qle_of_Qeq.
+      apply l1_norm_ext; intro m.
+      unfold W.
+      rewrite <- HW.
+      reflexivity.
+    + (* Now use conv_error_split + triangle + submultiplicativity *)
+      eapply Qle_trans.
+      * (* split via conv_error_split pointwise, then l1_add_bound *)
+        eapply Qle_trans.
+        -- apply Qle_of_Qeq.
+           apply l1_norm_ext; intro m.
+           exact (conv_error_split (n:=n) (F:=F) (G:=G) (eF:=F0) (eG:=G0) m).
+        -- eapply Qle_trans.
+           ++ apply l1_add_bound.
+           ++ apply Qplus_le_compat.
+              ** (* first term *)
+                 eapply Qle_trans.
+                 --- apply l1_conv_submultiplicative.
+                 --- (* <= ||F|| * d2 *)
+                     apply Qmult_le_compat_l.
+                     { apply l1_norm_nonneg. }
+                     exact HdG.
+              ** (* second term *)
+                 eapply Qle_trans.
+                 --- apply l1_conv_submultiplicative.
+                 --- (* <= d1 * ||G0|| *)
+                     apply Qmult_le_compat_r.
+                     { apply l1_norm_nonneg. }
+                     exact HdF.
+      * (* bound ||G0|| <= ||G|| + d2, then algebra *)
+        (* First: ||G0|| = ||G - (G-G0)|| <= ||G|| + ||G-G0|| <= ||G|| + d2 *)
+        assert (HG0_le : l1_norm G0 <= l1_norm G + d2).
+        {
+          subst G0.
+          (* G0 = G - (G-G0) *)
+          rewrite <- (mv_sub_cancel (n:=n) (G:=G) (G0:=lincomb_embed csG gsG)).
+          eapply Qle_trans.
+          - apply l1_sub_bound.
+          - apply Qplus_le_compat.
+            + apply Qle_refl.
+            + exact HdG.
+        }
+
+        (* Use HG0_le to rewrite d1*||G0|| <= d1*(||G||+d2) *)
+        (* and then expand to match goal *)
+        (* Current bound from previous step is:
+             ||F||*d2 + d1*||G0|| *)
+        eapply Qle_trans.
+        -- (* replace d1*||G0|| by d1*(||G||+d2) *)
+           apply Qplus_le_compat.
+           ++ apply Qle_refl.
+           ++ apply Qmult_le_compat_l.
+              { (* need 0 <= d1; follows from HdF since l1_norm >=0 *)
+                eapply Qle_trans; [apply l1_norm_nonneg | exact HdF]. }
+              exact HG0_le
+        -- (* algebra: ||F||*d2 + d1*(||G||+d2) = d1*||G|| + ||F||*d2 + d1*d2 *)
+           (* expand and reorder *)
+           ring_simplify.
+           (* `ring_simplify` may or may not close; if it doesn't, use: *)
+           ring.
+Qed.
+
+Lemma boolish_k_le_conv_0 n (F G : MV n) k1 k2 :
+  boolish_k_le F k1 0 -> boolish_k_le G k2 0 ->
+  boolish_k_le (mv_conv F G) (k1 * k2) 0.
+Proof.
+  intros HF HG.
+  pose proof (boolish_k_le_conv k1 k2 HF HG) as H.
+  (* error bound simplifies: 0*∥G∥ + ∥F∥*0 + 0*0 <= 0 *)
+  eapply boolish_k_le_mono; [| exact H].
+  (* k1*k2 <= k1*k2 *) lia.
+  (* or handle the Qle cleanup if the error term needs rewriting *)
 Qed.
 
 Lemma translate_trace_boolish_exists_k_0 :
@@ -4288,64 +4672,6 @@ Proof.
   apply trace_boolish_poly_to_canonical; exact Hpoly.
 Qed.
 
-Lemma mul_coeffs_cons :
-  forall (c : Q) cs1 cs2,
-    mul_coeffs (c :: cs1) cs2 =
-    (map (fun c2 => (c * c2)%Q) cs2) ++ mul_coeffs cs1 cs2.
-Proof.
-  intros c cs1 cs2.
-  unfold mul_coeffs. simpl. reflexivity.
-Qed.
-
-Lemma and_gens_cons {n} :
-  forall (g : Corner n -> bool) gs1 gs2,
-    and_gens (g :: gs1) gs2 =
-    (map (and_gen g) gs2) ++ and_gens gs1 gs2.
-Proof.
-  intros g gs1 gs2.
-  unfold and_gens. simpl. reflexivity.
-Qed.
-
-Lemma length_and_gens {n} :
-  forall (gs1 gs2 : list (Corner n -> bool)),
-    length (and_gens gs1 gs2) = (length gs1 * length gs2)%nat.
-Proof.
-  intros gs1 gs2.
-  induction gs1 as [|g gs1 IH]; simpl.
-  - reflexivity.
-  - rewrite and_gens_cons.
-    rewrite length_app, length_map.
-    rewrite IH.
-    lia.
-Qed.
-
-Lemma length_mul_coeffs :
-  forall (cs1 cs2 : list Q),
-    length (mul_coeffs cs1 cs2) = (length cs1 * length cs2)%nat.
-Proof.
-  intros cs1 cs2.
-  induction cs1 as [|c cs1 IH]; simpl.
-  - reflexivity.
-  - rewrite mul_coeffs_cons.
-    rewrite length_app, length_map.
-    rewrite IH.
-    lia.
-Qed.
-
-Lemma wf_lincomb_mul_and :
-  forall (n : nat)
-         (csF csG : list Q)
-         (gsF gsG : list (Corner n -> bool)),
-    wf_lincomb csF gsF ->
-    wf_lincomb csG gsG ->
-    wf_lincomb (mul_coeffs csF csG) (and_gens gsF gsG).
-Proof.
-  intros n csF csG gsF gsG HwfF HwfG.
-  unfold wf_lincomb in *.
-  rewrite length_mul_coeffs, length_and_gens.
-  now rewrite HwfF, HwfG.
-Qed.
-
 Lemma l1_sub_bound :
   forall n (F G : MV n),
     (l1_norm (mv_sub F G) <= l1_norm F + l1_norm G)%Q.
@@ -4609,51 +4935,6 @@ Qed.
 ===============================================================================
 
 
-Lemma mv_conv_scale_l :
-  forall n (c : Q) (F G : MV n),
-    mv_conv (mv_scale c F) G = mv_scale c (mv_conv F G).
-Proof.
-  intros n c F G.
-  apply functional_extensionality; intro U.
-  unfold mv_conv, mv_scale.
-  (* pull c through both sums *)
-  rewrite <- sumQ_map_scale_l.
-  apply Qeq_trans with
-    (c * sumQ
-       (map (fun A =>
-          sumQ (map (fun B =>
-            if mask_eq_dec (mask_xor A B) U
-            then (F A * G B)%Q else 0%Q) (all_masks n)))
-         (all_masks n)))%Q.
-  - (* show LHS equals c * ... by rewriting inner sums *)
-    apply sumQ_map_ext; intros A _.
-    rewrite <- sumQ_map_scale_l.
-    apply sumQ_map_ext; intros B _.
-    destruct (mask_eq_dec (mask_xor A B) U); simpl; ring.
-  - reflexivity.
-Qed.
-
-Lemma mv_conv_scale_r :
-  forall n (c : Q) (F G : MV n),
-    mv_conv F (mv_scale c G) = mv_scale c (mv_conv F G).
-Proof.
-  intros n c F G.
-  apply functional_extensionality; intro U.
-  unfold mv_conv, mv_scale.
-  rewrite <- sumQ_map_scale_l.
-  apply Qeq_trans with
-    (c * sumQ
-       (map (fun A =>
-          sumQ (map (fun B =>
-            if mask_eq_dec (mask_xor A B) U
-            then (F A * G B)%Q else 0%Q) (all_masks n)))
-         (all_masks n)))%Q.
-  - apply sumQ_map_ext; intros A _.
-    rewrite <- sumQ_map_scale_l.
-    apply sumQ_map_ext; intros B _.
-    destruct (mask_eq_dec (mask_xor A B) U); simpl; ring.
-  - reflexivity.
-Qed.
 
 
 (* --- key Fourier-basis fact: Pi convolution is Kronecker --- *)

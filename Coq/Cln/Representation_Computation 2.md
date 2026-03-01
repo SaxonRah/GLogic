@@ -12,7 +12,7 @@
 
 Let $G=(\mathbb Z_2)^n$ and let
 ```math
-MV_n ;\cong; \mathbb Q[G]
+MV_n \cong \mathbb Q[G]
 ```
 with basis ${e_A}_{A\subseteq[n]}$.
 
@@ -20,7 +20,7 @@ There is a canonical, “semantic” multiplication on this space:
 
 * **Untwisted convolution (group algebra product)**
   ```math
-  e_A \odot e_B ;=; e_{A\oplus B}.
+  e_A \odot e_B = e_{A\oplus B}.
   ```
 
 Under Walsh/Fourier evaluation, $MV_n,\odot$ is (morally) the algebra of functions on the hypercube with pointwise multiplication. That’s why it simulates Boolean formulas cleanly: evaluation becomes multiplicative.
@@ -35,7 +35,7 @@ On the same vector space, the geometric product is a **twisted** multiplication:
 
 * **Twisted product (Clifford / GA layer)**
   ```math
-  e_A \star e_B ;=; \omega(A,B), e_{A\oplus B},
+  e_A \star e_B = \omega(A,B), e_{A\oplus B},
   ```
   where (\omega) is a 2-cocycle (sign + metric factor). Associativity is exactly the cocycle condition.
 
@@ -124,7 +124,7 @@ This is the “P (or P/poly) ⇒ poly-excursion” theorem.
 Show there exists an NP language (L) (e.g., SAT encoded as a Boolean function family (f_n)) such that:
 
 ```math
-\mathcal{E}(f_n) ;\ge; 2^{\Omega(n)} \quad \text{(or even superpoly)}.
+\mathcal{E}(f_n) \ge 2^{\Omega(n)} \quad \text{(or even superpoly)}.
 ```
 
 ### Corollary (the payoff)
