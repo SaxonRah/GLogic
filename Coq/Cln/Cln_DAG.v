@@ -274,6 +274,8 @@ From Coq Require Import Fin.
 From Coq Require Import Vectors.Vector.
 From Coq Require Import Program.Equality.
 
+Require Import Coq.micromega.Lra.
+
 Import ListNotations.
 Open Scope Q_scope.
 Set Implicit Arguments.
@@ -652,8 +654,15 @@ Lemma dag_computes_implies_dist_zero :
 Proof.
   intros sq k d root f Hcomp.
   unfold dist_to, bool_dist_wrt.
+  
   assert (Hext : forall m, mv_sub (eval_dag sq d root) (embed f) m == 0).
-  { intro m. unfold mv_sub. specialize (Hcomp m). lra. }
+  { intro m.
+    unfold mv_sub.
+    (* goal: eval_dag ... m - embed f m == 0 *)
+    rewrite (Hcomp m).
+    ring.
+  }
+
   (* l1_norm of the zero function is 0 *)
   eapply Qeq_trans.
   - apply l1_norm_ext. intro m. apply Hext.
@@ -669,7 +678,10 @@ Lemma dag_computes_implies_boolish_0 :
 Proof.
   intros sq k d root f Hcomp.
   exists f.
-  rewrite <- (dag_computes_implies_dist_zero sq d root f Hcomp).
+  pose proof (dag_computes_implies_dist_zero
+                (sq:=sq) (d:=d) (root:=root) (f:=f) Hcomp) as Hz.
+  unfold dist_to in Hz.
+  rewrite Hz.
   apply Qle_refl.
 Qed.
 
@@ -844,7 +856,6 @@ Proof.
     destruct (flatten e2) as [k2 [d2 r2]];
     reflexivity.
 Qed.
-Proof. Admitted.
 
 
 (* ============================================================ *)
