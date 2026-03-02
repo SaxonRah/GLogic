@@ -910,6 +910,17 @@ Proof.
   - lia.
 Qed.
 
+Lemma boolish_k_le_tol_mono :
+  forall n (F : MV n) k d1 d2,
+    d1 <= d2 ->
+    boolish_k_le F k d1 ->
+    boolish_k_le F k d2.
+Proof.
+  intros n F k d1 d2 Hle [cs [gs [Hwf [Hlen Hd]]]].
+  exists cs, gs; repeat split; try assumption.
+  eapply Qle_trans; eassumption.
+Qed.
+
 Definition poly1 (n : nat) (a c : nat) : nat :=
   c * Nat.pow (n + 1) a.
 

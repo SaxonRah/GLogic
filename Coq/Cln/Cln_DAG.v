@@ -290,12 +290,27 @@ Variable n : nat.
 (* A single operation at scope k: can reference k previously
    defined nodes via Fin.t k indices. *)
 
+(*
 Inductive dag_op : nat -> Type :=
   | DOpBasis  : forall {k}, Fin.t n -> dag_op k
   | DOpScalar : forall {k}, Q -> dag_op k
   | DOpAdd    : forall {k}, Fin.t k -> Fin.t k -> dag_op k
   | DOpMul    : forall {k}, Fin.t k -> Fin.t k -> dag_op k
   | DOpConv   : forall {k}, Fin.t k -> Fin.t k -> dag_op k.
+*)
+
+Inductive dag_op (k : nat) : Type :=
+  | DOpBasis  : Fin.t n -> dag_op k
+  | DOpScalar : Q -> dag_op k
+  | DOpAdd    : Fin.t k -> Fin.t k -> dag_op k
+  | DOpMul    : Fin.t k -> Fin.t k -> dag_op k
+  | DOpConv   : Fin.t k -> Fin.t k -> dag_op k.
+
+Arguments DOpBasis  {k} _.
+Arguments DOpScalar {k} _.
+Arguments DOpAdd    {k} _ _.
+Arguments DOpMul    {k} _ _.
+Arguments DOpConv   {k} _ _.
 
 (* ============================================================ *)
 (* Section 2: The DAG Structure                                  *)
@@ -316,14 +331,15 @@ Definition dag_size {k} (_ : GA_dag k) : nat := k.
 (* ============================================================ *)
 
 (* Evaluate a single node given an environment of previous results *)
+
 Definition eval_op (sq : Vector.t Q n) {k}
     (env : Fin.t k -> MV n) (op : dag_op k) : MV n :=
   match op with
-  | DOpBasis _ i   => basis (mask_single i)
-  | DOpScalar _ c  => constMV c
-  | DOpAdd _ a b   => mv_add (env a) (env b)
-  | DOpMul _ a b   => mv_gp sq (env a) (env b)
-  | DOpConv _ a b  => mv_conv (env a) (env b)
+  | DOpBasis i    => basis (mask_single i)
+  | DOpScalar c   => constMV c
+  | DOpAdd a b    => mv_add (env a) (env b)
+  | DOpMul a b    => mv_gp sq (env a) (env b)
+  | DOpConv a b   => mv_conv (env a) (env b)
   end.
 
 (* Evaluate entire DAG, producing all intermediate results.
@@ -355,14 +371,14 @@ Lemma eval_dag_env_snoc_F1 :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k),
     eval_dag_env sq (DagSnoc d op) Fin.F1
     = eval_op sq (eval_dag_env sq d) op.
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 Lemma eval_dag_env_snoc_FS :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k)
          (j : Fin.t k),
     eval_dag_env sq (DagSnoc d op) (Fin.FS j)
     = eval_dag_env sq d j.
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 
 (* ============================================================ *)
@@ -373,8 +389,9 @@ Fixpoint dag_max_l1 (sq : Vector.t Q n) {k} (d : GA_dag k) : Q :=
   match d with
   | DagNil => 0
   | DagSnoc d' op =>
-      Qmax (dag_max_l1 sq d')
-           (l1_norm (eval_op sq (eval_dag_env sq d') op))
+      let prev_env := eval_dag_env sq d' in
+      let newest   := eval_op sq prev_env op in
+      Qmax (dag_max_l1 sq d') (l1_norm newest)
   end.
 
 (* The dag_max_l1 has the same "output-mass shortcut" problem. Right now:
@@ -409,26 +426,31 @@ Fixpoint dag_max_l1 (sq : Vector.t Q n) {k} (d : GA_dag k) : Q :=
 *)
 
 Fixpoint dag_max_l1_except (sq : Vector.t Q n) {k}
-  (d : GA_dag k) (root : Fin.t k) : Q :=
-  match d with
-  | DagNil => 0
-  | DagSnoc d' op =>
-      let prev_env := eval_dag_env sq d' in
-      let newest := eval_op sq prev_env op in
-      (* index of newest node is Fin.F1 in the snoc'd env *)
-      let peak_prev :=
-        (* lift root into the prefix: root is in Fin.t (S k') here;
-           in the prefix it's either the newest (F1) or an FS j. *)
-        match root with
-        | Fin.F1 => dag_max_l1_except sq d' (*some root in prefix*) (*...*)
-        | Fin.FS r' => dag_max_l1_except sq d' r'
+  (d : GA_dag k) : Fin.t k -> Q :=
+  match d in GA_dag k0 return Fin.t k0 -> Q with
+  | DagNil =>
+      fun _ => 0
+
+  | @DagSnoc k' d' op =>
+      fun root0 : Fin.t (S k') =>
+        let prev_env := eval_dag_env sq d' in
+        let newest   := eval_op sq prev_env op in
+
+        (* compute peak over prefix, excluding the lifted root if it lies in prefix *)
+        let peak_prev :=
+          (match root0 in Fin.t (S k'') return (Fin.t k'' -> Q) -> Q with
+           | Fin.F1 =>
+               fun _rec => dag_max_l1 sq d'
+           | Fin.FS r' =>
+               fun rec  => rec r'
+           end) (dag_max_l1_except sq d')
+        in
+
+        (* include newest only if root0 is not the newest *)
+        match root0 with
+        | Fin.F1    => peak_prev
+        | Fin.FS _  => Qmax peak_prev (l1_norm newest)
         end
-      in
-      (* include newest only if root ≠ newest *)
-      match root with
-      | Fin.F1 => peak_prev
-      | Fin.FS _ => Qmax peak_prev (l1_norm newest)
-      end
   end.
 
 (* 
@@ -463,24 +485,49 @@ Definition dag_exc (sq : Vector.t Q n) {k} (d : GA_dag k) : ExcNum :=
 Lemma eval_dag_l1_le_peak :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (i : Fin.t k),
     l1_norm (eval_dag sq d i) <= dag_max_l1 sq d.
-Proof. Admitted.
+Proof.
+  intros sq k d. unfold eval_dag.
+  induction d as [| k' d' IH op]; intros i.
+  - inversion i.
+  - dependent destruction i.
+    + (* F1: newest node *)
+      simpl. apply Qmax_r.
+    + (* FS i: in prefix *)
+      simpl.
+      eapply Qle_trans.
+      * exact (IH i).
+      * apply Qmax_l.
+Qed.
 
 (* Every node's max_grade is bounded by the peak *)
 Lemma eval_dag_grade_le_peak :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (i : Fin.t k),
     (max_grade (eval_dag sq d i) <= dag_max_grade sq d)%nat.
-Proof. Admitted.
+Proof.
+  intros sq k d. unfold eval_dag.
+  induction d as [| k' d' IH op]; intros i.
+  - inversion i.
+  - dependent destruction i.
+    + simpl. apply Nat.le_max_r.
+    + simpl. eapply Nat.le_trans.
+      * exact (IH i).
+      * apply Nat.le_max_l.
+Qed.
 
 (* Monotonicity: extending the DAG doesn't decrease the peak *)
 Lemma dag_max_l1_mono :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k),
     dag_max_l1 sq d <= dag_max_l1 sq (DagSnoc d op).
-Proof. Admitted.
+Proof.
+  intros. simpl. apply Qmax_l.
+Qed.
 
 Lemma dag_max_grade_mono :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k),
     (dag_max_grade sq d <= dag_max_grade sq (DagSnoc d op))%nat.
-Proof. Admitted.
+Proof.
+  intros. simpl. apply Nat.le_max_l.
+Qed.
 
 
 (* ============================================================ *)
@@ -522,7 +569,14 @@ Lemma dag_trace_boolish_k_mono :
     (k1 <= k2)%nat ->
     dag_trace_boolish_k sq d k1 tol ->
     dag_trace_boolish_k sq d k2 tol.
-Proof. Admitted.
+Proof.
+  intros sq k d k1 k2 tol Hle.
+  induction d as [| k' d' IH op]; simpl.
+  - trivial.
+  - intros [Hd Hop]. split.
+    + exact (IH Hd).
+    + eapply boolish_k_le_mono; eassumption.
+Qed.
 
 (* Monotonicity in tol *)
 Lemma dag_trace_boolish_tol_mono :
@@ -530,7 +584,14 @@ Lemma dag_trace_boolish_tol_mono :
     tol1 <= tol2 ->
     dag_trace_boolish_k sq d bound tol1 ->
     dag_trace_boolish_k sq d bound tol2.
-Proof. Admitted.
+Proof.
+  intros sq k d bound tol1 tol2 Hle.
+  induction d as [| k' d' IH op]; simpl.
+  - trivial.
+  - intros [Hd Hop]. split.
+    + exact (IH Hd).
+    + eapply boolish_k_le_tol_mono; eassumption.
+Qed.
 
 (* Extension: if the prefix is boolish and the new node is boolish,
    the extended DAG is boolish *)
@@ -539,7 +600,9 @@ Lemma dag_trace_boolish_snoc :
     dag_trace_boolish sq d tol ->
     boolish_le (eval_op sq (eval_dag_env sq d) op) tol ->
     dag_trace_boolish sq (DagSnoc d op) tol.
-Proof. Admitted.
+Proof.
+  intros. simpl. split; assumption.
+Qed.
 
 Lemma dag_trace_boolish_k_snoc :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k)
@@ -547,7 +610,9 @@ Lemma dag_trace_boolish_k_snoc :
     dag_trace_boolish_k sq d bound tol ->
     boolish_k_le (eval_op sq (eval_dag_env sq d) op) bound tol ->
     dag_trace_boolish_k sq (DagSnoc d op) bound tol.
-Proof. Admitted.
+Proof.
+  intros. simpl. split; assumption.
+Qed.
 
 (* Prefix extraction: boolishness of DagSnoc implies boolishness
    of the prefix *)
@@ -555,14 +620,18 @@ Lemma dag_trace_boolish_prefix :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k) tol,
     dag_trace_boolish sq (DagSnoc d op) tol ->
     dag_trace_boolish sq d tol.
-Proof. Admitted.
+Proof.
+  intros sq k d op tol [Hd _]. exact Hd.
+Qed.
 
 Lemma dag_trace_boolish_k_prefix :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k) (op : dag_op k)
          bound tol,
     dag_trace_boolish_k sq (DagSnoc d op) bound tol ->
     dag_trace_boolish_k sq d bound tol.
-Proof. Admitted.
+Proof.
+  intros sq k d op bound tol [Hd _]. exact Hd.
+Qed.
 
 
 (* ============================================================ *)
@@ -574,22 +643,35 @@ Definition dag_computes (sq : Vector.t Q n) {k}
     (d : GA_dag k) (root : Fin.t k) (f : Corner n -> bool) : Prop :=
   forall m : Mask n, eval_dag sq d root m == embed f m.
 
-(* Computes implies the output is exactly Boolean *)
-Lemma dag_computes_implies_boolish_0 :
-  forall (sq : Vector.t Q n) {k} (d : GA_dag k)
-         (root : Fin.t k) (f : Corner n -> bool),
-    dag_computes sq d root f ->
-    boolish_le (eval_dag sq d root) 0.
-Proof. Admitted.
-
 (* Computes implies zero Boolean distance at the output *)
 Lemma dag_computes_implies_dist_zero :
   forall (sq : Vector.t Q n) {k} (d : GA_dag k)
          (root : Fin.t k) (f : Corner n -> bool),
     dag_computes sq d root f ->
     dist_to (eval_dag sq d root) f == 0.
-Proof. Admitted.
+Proof.
+  intros sq k d root f Hcomp.
+  unfold dist_to, bool_dist_wrt.
+  assert (Hext : forall m, mv_sub (eval_dag sq d root) (embed f) m == 0).
+  { intro m. unfold mv_sub. specialize (Hcomp m). lra. }
+  (* l1_norm of the zero function is 0 *)
+  eapply Qeq_trans.
+  - apply l1_norm_ext. intro m. apply Hext.
+  - apply l1_norm_zero.
+Qed.
 
+(* Computes implies the output is exactly Boolean *)
+Lemma dag_computes_implies_boolish_0 :
+  forall (sq : Vector.t Q n) {k} (d : GA_dag k)
+         (root : Fin.t k) (f : Corner n -> bool),
+    dag_computes sq d root f ->
+    boolish_le (eval_dag sq d root) 0.
+Proof.
+  intros sq k d root f Hcomp.
+  exists f.
+  rewrite <- (dag_computes_implies_dist_zero sq d root f Hcomp).
+  apply Qle_refl.
+Qed.
 
 (* ============================================================ *)
 (* Section 7: Index Shifting Utilities                           *)
@@ -600,7 +682,7 @@ Proof. Admitted.
 Fixpoint fin_weaken_by (m : nat) {k} (i : Fin.t k)
     : Fin.t (m + k) :=
   match m with
-  | 0 => i
+  | 0%nat => i
   | S m' => Fin.FS (fin_weaken_by m' i)
   end.
 
@@ -614,22 +696,23 @@ Definition fin_lift_into (m : nat) {k} (i : Fin.t k)
 (* Shift all references in a dag_op by m (for appending) *)
 Definition shift_op (m : nat) {k} (op : dag_op k) : dag_op (k + m) :=
   match op with
-  | DOpBasis _ i   => DOpBasis i
-  | DOpScalar _ c  => DOpScalar c
-  | DOpAdd _ a b   => DOpAdd (fin_lift_into m a) (fin_lift_into m b)
-  | DOpMul _ a b   => DOpMul (fin_lift_into m a) (fin_lift_into m b)
-  | DOpConv _ a b  => DOpConv (fin_lift_into m a) (fin_lift_into m b)
+  | DOpBasis i    => DOpBasis (k:=k+m) i
+  | DOpScalar c   => DOpScalar (k:=k+m) c
+  | DOpAdd a b    => DOpAdd (k:=k+m) (fin_lift_into m a) (fin_lift_into m b)
+  | DOpMul a b    => DOpMul (k:=k+m) (fin_lift_into m a) (fin_lift_into m b)
+  | DOpConv a b   => DOpConv (k:=k+m) (fin_lift_into m a) (fin_lift_into m b)
   end.
+
 
 Lemma fin_weaken_by_0 :
   forall {k} (i : Fin.t k),
     fin_weaken_by 0 i = i.
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 Lemma fin_weaken_by_S :
   forall (m : nat) {k} (i : Fin.t k),
     fin_weaken_by (S m) i = Fin.FS (fin_weaken_by m i).
-Proof. Admitted.
+Proof. reflexivity. Qed.
 
 
 (* ============================================================ *)
@@ -706,11 +789,11 @@ Fixpoint flatten (e : GA_expr n)
     : { k : nat & GA_dag (S k) * Fin.t (S k) }%type :=
   match e with
   | Basis i =>
-      existT _ 0
+      existT _ 0%nat
         (DagSnoc DagNil (DOpBasis i), Fin.F1)
 
   | Scalar c =>
-      existT _ 0
+      existT _ 0%nat
         (DagSnoc DagNil (DOpScalar c), Fin.F1)
 
   | Cln_Grade.Add e1 e2 =>
@@ -719,7 +802,7 @@ Fixpoint flatten (e : GA_expr n)
       let combined := dag_append d1 d2 in
       let r1' := fin_weaken_by (S k2) r1 in
       let r2' := fin_lift_into (S k1) r2 in
-      existT _ (S k2 + S k1)
+      existT _ ((S k2 + S k1)%nat)
         (DagSnoc combined (DOpAdd r1' r2'), Fin.F1)
       (* existT _ (S (S k2) + S k1)
           (DagSnoc combined (DOpAdd r1' r2'), Fin.F1)
@@ -731,7 +814,7 @@ Fixpoint flatten (e : GA_expr n)
       let combined := dag_append d1 d2 in
       let r1' := fin_weaken_by (S k2) r1 in
       let r2' := fin_lift_into (S k1) r2 in
-      existT _ (S k2 + S k1)
+      existT _ ((S k2 + S k1)%nat)
         (DagSnoc combined (DOpMul r1' r2'), Fin.F1)
       (* existT _ (S (S k2) + S k1)
           (DagSnoc combined (DOpMul r1' r2'), Fin.F1)
@@ -743,7 +826,7 @@ Fixpoint flatten (e : GA_expr n)
       let combined := dag_append d1 d2 in
       let r1' := fin_weaken_by (S k2) r1 in
       let r2' := fin_lift_into (S k1) r2 in
-      existT _ (S k2 + S k1)
+      existT _ ((S k2 + S k1)%nat)
         (DagSnoc combined (DOpConv r1' r2'), Fin.F1)
       (* existT _ (S (S k2) + S k1)
           (DagSnoc combined (DOpConv r1' r2'), Fin.F1)
@@ -755,6 +838,12 @@ Lemma flatten_root_is_F1 :
   forall (e : GA_expr n),
     let '(existT _ _ (_, r)) := flatten e in
     r = Fin.F1.
+Proof.
+  induction e; simpl; try reflexivity;
+    destruct (flatten e1) as [k1 [d1 r1]];
+    destruct (flatten e2) as [k2 [d2 r2]];
+    reflexivity.
+Qed.
 Proof. Admitted.
 
 
@@ -814,26 +903,34 @@ Proof. Admitted.
    Duplicates shared subexpressions — tree size may be
    exponentially larger than DAG size. *)
 
-Fixpoint unfold_node {k} (d : GA_dag k) (i : Fin.t k)
-    : GA_expr n :=
-  match d with
-  | DagNil => Fin.case0 _ i
-  | DagSnoc d' op =>
-      match i with
-      | Fin.F1 =>
-          match op with
-          | DOpBasis _ j   => Basis j
-          | DOpScalar _ c  => Scalar c
-          | DOpAdd _ a b   => Cln_Grade.Add (unfold_node d' a)
-                                             (unfold_node d' b)
-          | DOpMul _ a b   => Mul (unfold_node d' a)
-                                   (unfold_node d' b)
-          | DOpConv _ a b  => Conv (unfold_node d' a)
-                                    (unfold_node d' b)
-          end
-      | Fin.FS j => unfold_node d' j
-      end
+Fixpoint unfold_node' {k} (d : GA_dag k) : Fin.t k -> GA_expr n :=
+  match d in GA_dag k0 return Fin.t k0 -> GA_expr n with
+  | DagNil =>
+      fun i => Fin.case0 _ i
+
+  | @DagSnoc k' d' op =>
+      fun i : Fin.t (S k') =>
+        (match i in Fin.t (S k'')
+               return (Fin.t k'' -> GA_expr n) -> GA_expr n with
+         | Fin.F1 =>
+             fun _rec =>
+               match op with
+               | DOpBasis j   => Basis j
+               | DOpScalar c  => Scalar c
+               | DOpAdd a b   => Cln_Grade.Add (unfold_node' d' a)
+                                               (unfold_node' d' b)
+               | DOpMul a b   => Mul (unfold_node' d' a)
+                                     (unfold_node' d' b)
+               | DOpConv a b  => Conv (unfold_node' d' a)
+                                      (unfold_node' d' b)
+               end
+         | Fin.FS j =>
+             fun rec => rec j
+         end) (unfold_node' d')
   end.
+
+Definition unfold_node {k} (d : GA_dag k) (i : Fin.t k) : GA_expr n :=
+  unfold_node' d i.
 
 (* Unfolding preserves evaluation *)
 Theorem unfold_eval_correct :
@@ -971,31 +1068,46 @@ Definition dag_and {k} (d : GA_dag k)
     (rx ry : Fin.t k) : { d' : GA_dag (S k) & Fin.t (S k) } :=
   existT _ (DagSnoc d (DOpConv rx ry)) Fin.F1.
 
-(* OR gadget: x OR y = x + y - conv(x,y). Needs 3 new nodes. *)
-Definition dag_or {k} (d : GA_dag k)
-    (rx ry : Fin.t k)
-    : { d' : GA_dag (S (S (S k))) & Fin.t (S (S (S k))) } :=
-  let d1 := DagSnoc d (DOpAdd rx ry) in                   (* node k: x+y *)
+(* OR gadget: x OR y = x + y - conv(x,y)
+   Implemented as: sum := x+y; and := conv(x,y);
+   minus1 := -1; neg_and := minus1 * and; or := sum + neg_and.
+   Adds 5 nodes total. *)
+Definition dag_or {k} (d : GA_dag k) (rx ry : Fin.t k)
+  : { d' : GA_dag (S (S (S (S (S k))))) & Fin.t (S (S (S (S (S k))))) } :=
+  let d1 := DagSnoc d (DOpAdd rx ry) in                         (* +1 node: sum *)
   let rx1 := Fin.FS rx in
   let ry1 := Fin.FS ry in
-  let d2 := DagSnoc d1 (DOpConv rx1 ry1) in               (* node k+1: conv(x,y) *)
-  (* OR = (x+y) - conv(x,y).
-     We don't have Sub, so: OR = Add(x+y, Mul(Scalar(-1), conv(x,y)))
-     That needs 2 more nodes: Scalar(-1) and Mul. Then Add.
-     Actually let's just extend. *)
-  (* dag_or is a placeholder FIX WHEN YOU GET HERE *)
-  let d3 := DagSnoc d2 (DOpScalar (-1)) in                (* node k+2: -1 *)
-  existT _ d3 Fin.F1.  (* placeholder — needs more nodes *)
+  let d2 := DagSnoc d1 (DOpConv rx1 ry1) in                     (* +1 node: and *)
+
+  (* after 2 snocs, old nodes are shifted by FS∘FS *)
+  let sum_ref := Fin.FS Fin.F1 in                               (* node from d1 *)
+  let and_ref := Fin.F1 in                                      (* newest in d2 *)
+
+  let d3 := DagSnoc d2 (DOpScalar (-1)) in                      (* +1 node: minus1 *)
+  let and_ref3 := Fin.FS and_ref in                             (* shift and into d3 *)
+  let d4 := DagSnoc d3 (DOpMul Fin.F1 and_ref3) in              (* +1 node: neg_and *)
+  let sum_ref4 := Fin.FS (Fin.FS sum_ref) in                    (* shift sum into d4 *)
+  let neg_and_ref := Fin.F1 in                                  (* newest in d4 *)
+
+  let d5 := DagSnoc d4 (DOpAdd sum_ref4 neg_and_ref) in          (* +1 node: or *)
+  existT _ d5 Fin.F1.
 
 (* NAND gadget: NOT(AND(x,y)).
    = 1 - conv(x,y).
    Encoded as: conv node, then NOT of that. *)
 Definition dag_nand {k} (d : GA_dag k) (rx ry : Fin.t k)
-    : { k' : nat & GA_dag k' * Fin.t k' }%type :=
-  let '(existT _ (DagSnoc _ _ as d_and) r_and) := dag_and d rx ry in
+  : { d' : GA_dag (S (S (S (S (S k))))) & Fin.t (S (S (S (S (S k))))) } :=
+  let '(existT _ d_and r_and) := dag_and d rx ry in
   let '(existT _ d_not r_not) := dag_not_full d_and r_and in
-  existT _ (d_not, r_not).
+  existT _ d_not r_not.
 
+
+Lemma dag_or_size :
+  forall {k} (d : GA_dag k) rx ry d' r',
+    dag_or d rx ry = existT _ d' r' ->
+    dag_size d' = S (S (S (S (S k)))).
+Proof.
+Admitted.
 
 (* ============================================================ *)
 (* Section 14: Gate Gadget Correctness                           *)
@@ -1030,9 +1142,10 @@ Lemma dag_nand_correct :
     (forall i, Qabs (Vector.nth sq i) == 1) ->
     (forall m, eval_dag sq d rx m == embed gx m) ->
     (forall m, eval_dag sq d ry m == embed gy m) ->
-    let '(existT _ (d', r')) := dag_nand d rx ry in
-    forall m, eval_dag sq d' r' m
-              == embed (fun s => negb (andb (gx s) (gy s))) m.
+    forall m,
+      let '(existT _ d' r') := dag_nand d rx ry in
+      eval_dag sq d' r' m
+      == embed (fun s => negb (andb (gx s) (gy s))) m.
 Proof. Admitted.
 
 
@@ -1067,9 +1180,18 @@ Lemma dag_nand_boolish :
     (forall i, Qabs (Vector.nth sq i) == 1) ->
     boolish_k_le (eval_dag sq d rx) 1 0 ->
     boolish_k_le (eval_dag sq d ry) 1 0 ->
-    let '(existT _ (d', r')) := dag_nand d rx ry in
+    let '(existT _ d' r') := dag_nand d rx ry in
     boolish_k_le (eval_dag sq d' r') 1 0.
-Proof. Admitted.
+Proof.
+Admitted.
+
+Definition dag_nand_d {k} (d : GA_dag k) rx ry :=
+  projT1 (dag_nand d rx ry).
+
+Definition dag_nand_r {k} (d : GA_dag k) rx ry :=
+  projT2 (dag_nand d rx ry).
+
+(* "boolish_k_le (eval_dag sq (dag_nand_d d rx ry) (dag_nand_r d rx ry)) 1 0." *)
 
 (* Trace-level closure: if the prefix DAG has boolish trace,
    and we append a gate gadget, the extended DAG has boolish trace. *)
@@ -1101,10 +1223,11 @@ Lemma dag_nand_trace_boolish :
     dag_trace_boolish sq d tol ->
     boolish_le (eval_dag sq d rx) tol ->
     boolish_le (eval_dag sq d ry) tol ->
-    let '(existT _ (d', _)) := dag_nand d rx ry in
-    dag_trace_boolish sq d' tol.
+    dag_trace_boolish
+      sq
+      (let '(existT _ d' _) := dag_nand d rx ry in d')
+      tol.
 Proof. Admitted.
-
 
 (* ============================================================ *)
 (* Section 16: Functional Completeness                           *)
@@ -1122,6 +1245,9 @@ Inductive bool_gate (num_inputs : nat) : nat -> Type :=
   | BGInput : forall {k}, Fin.t num_inputs -> bool_gate num_inputs k
   | BGNand  : forall {k}, Fin.t k -> Fin.t k -> bool_gate num_inputs k.
 
+Arguments BGInput {num_inputs k} _.
+Arguments BGNand  {num_inputs k} _ _.
+
 Inductive bool_circuit (num_inputs : nat) : nat -> Type :=
   | BCNil   : bool_circuit num_inputs 0
   | BCSnoc  : forall {k}, bool_circuit num_inputs k
@@ -1132,52 +1258,79 @@ Inductive bool_circuit (num_inputs : nat) : nat -> Type :=
 Fixpoint eval_bool_circuit {ni k}
     (inputs : Fin.t ni -> bool)
     (c : bool_circuit ni k) : Fin.t k -> bool :=
-  match c with
-  | BCNil _ => fun i => Fin.case0 _ i
-  | BCSnoc c' g =>
+  match c in bool_circuit _ k0 return Fin.t k0 -> bool with
+  | BCNil _ =>
+      fun i => Fin.case0 _ i
+
+  | @BCSnoc _ k' c' g =>
       let prev := eval_bool_circuit inputs c' in
-      let v := match g with
-               | BGInput _ i => inputs i
-               | BGNand _ a b => negb (andb (prev a) (prev b))
-               end in
-      fun i =>
-        match i with
-        | Fin.F1 => v
-        | Fin.FS j => prev j
-        end
+      let v :=
+        (match g in bool_gate _ k0 return (Fin.t k0 -> bool) -> bool with
+         | BGInput i   => fun _prev => inputs i
+         | BGNand a b  => fun prev0 => negb (andb (prev0 a) (prev0 b))
+         end) prev
+      in
+      fun i : Fin.t (S k') =>
+        (match i in Fin.t (S k'') return (Fin.t k'' -> bool) -> bool with
+         | Fin.F1    => fun _prev => v
+         | Fin.FS j  => fun prev0 => prev0 j
+         end) prev
   end.
+
+Fixpoint fin_snoc_weaken (m : nat) {k} (i : Fin.t k) : Fin.t (Nat.iter m S k) :=
+  match m with
+  | O => i
+  | S m' => Fin.FS (fin_snoc_weaken m' i)
+  end.
+
 
 (* Compilation: Boolean circuit → GA_dag.
    Needs n = num_inputs for the variable embedding. *)
 Fixpoint compile_bool_circuit {k}
-    (sq_hyp : forall i : Fin.t n, Qabs (Vector.nth (Vector.const 1 n) i) == 1)
+    (sq_hyp : forall i : Fin.t n,
+        Qabs (Vector.nth (Vector.const 1 n) i) == 1)
     (c : bool_circuit n k)
-    : { k' : nat & GA_dag k' * (Fin.t k -> Fin.t k') }%type :=
-  match c with
+  : { k' : nat & GA_dag k' * (Fin.t k -> Fin.t k') }%type :=
+  match c in bool_circuit _ k0
+        return { k' : nat & GA_dag k' * (Fin.t k0 -> Fin.t k') }%type with
   | BCNil _ =>
-      existT _ 0 (DagNil, fun i => Fin.case0 _ i)
-  | BCSnoc c' g =>
-      let '(existT _ k' (d, wire_map)) := compile_bool_circuit sq_hyp c' in
-      match g with
-      | BGInput _ i =>
-          (* Add a Basis node for variable i *)
-          existT _ (S k')
-            (DagSnoc d (DOpBasis i),
-             fun j => match j with
-                      | Fin.F1 => Fin.F1
-                      | Fin.FS j' => Fin.FS (wire_map j')
-                      end)
-      | BGNand _ a b =>
-          let ra := wire_map a in
-          let rb := wire_map b in
-          let '(existT _ (d', r')) := dag_nand d ra rb in
-          existT _ _
-            (d',
-             fun j => match j with
-                      | Fin.F1 => r'
-                      | Fin.FS j' => fin_weaken_by _ (wire_map j')
-                      end)
-      end
+      existT _ O (DagNil, fun i => Fin.case0 _ i)
+
+  | @BCSnoc _ k' c' g =>
+      let '(existT _ kd (d, wire_map)) := compile_bool_circuit sq_hyp c' in
+      match g in bool_gate _ k0
+            return (k0 = k' ->
+                    { k'' : nat & GA_dag k'' * (Fin.t (S k') -> Fin.t k'') }%type) with
+      
+      | BGInput i =>
+          fun _ =>
+            existT _ (S kd)
+              ( DagSnoc d (DOpBasis i)
+              , fun j : Fin.t (S k') =>
+                  (match j in Fin.t (S k'')
+                         return (Fin.t k'' -> Fin.t kd) -> Fin.t (S kd) with
+                   | Fin.F1    => fun _wm => Fin.F1
+                   | Fin.FS j' => fun wm  => Fin.FS (wm j')
+                   end) wire_map )
+
+      | BGNand a b =>
+          fun H =>
+            (* Here: a b : Fin.t k0, and H : k0 = k'. We can transport them to Fin.t k' *)
+            let a' : Fin.t k' := eq_rect _ Fin.t a _ H in
+            let b' : Fin.t k' := eq_rect _ Fin.t b _ H in
+            let ra := wire_map a' in
+            let rb := wire_map b' in
+            let '(existT _ d' r') := dag_nand d ra rb in
+            existT _ _
+              ( d'
+              , fun j : Fin.t (S k') =>
+                  (* dependent match on j, and lift old wires by 5 *)
+                  (match j in Fin.t (S k'')
+                         return (Fin.t k'' -> Fin.t kd) -> Fin.t _ with
+                   | Fin.F1    => fun _wm => r'
+                   | Fin.FS j' => fun wm  => fin_snoc_weaken 5%nat (wm j')
+                   end) wire_map )
+      end eq_refl
   end.
 
 (* The compiled DAG computes the same function *)
@@ -1224,7 +1377,6 @@ End GA_DAG.
 (* Any DAG computing IP with boolish trace needs exponential
    excursion. Strictly stronger than the tree version because
    DAGs subsume trees. *)
-
 Theorem IP_dag_exponential :
   forall d : Q,
   exists c : nat,
@@ -1232,10 +1384,11 @@ Theorem IP_dag_exponential :
            (dag : GA_dag (m+m) (S k))
            (root : Fin.t (S k)),
       (m >= 2)%nat ->
-      dag_computes (m+m) sq dag root (@IP_n_func (m+m)) ->
-      dag_trace_boolish_exists_k (m+m) sq dag d ->
-      (Qpow2 (c * m) <= exc_l1 (dag_exc (m+m) sq dag))%Q.
+      dag_computes (n := (m+m)%nat) sq dag root (@IP_n_func ((m+m)%nat)) ->
+      dag_trace_boolish_exists_k (n := (m+m)%nat) sq dag d ->
+      (Qpow2 ((c * m)%nat) <= exc_l1 (dag_exc (n := (m+m)%nat) sq dag))%Q.
 Proof. Admitted.
+
 
 (* The tradeoff version for DAGs *)
 Theorem IP_dag_booleanish_tradeoff :
@@ -1245,21 +1398,21 @@ Theorem IP_dag_booleanish_tradeoff :
            (dag : GA_dag (m+m) (S k))
            (root : Fin.t (S k)),
       (m >= 2)%nat ->
-      dag_computes (m+m) sq dag root (@IP_n_func (m+m)) ->
-      ( dag_trace_boolish_exists_k (m+m) sq dag d ->
-          Qpow2 (c * m) <= exc_l1 (dag_exc (m+m) sq dag) )
+      dag_computes (n := (m+m)%nat) sq dag root (@IP_n_func ((m+m)%nat)) ->
+      ( dag_trace_boolish_exists_k (n := (m+m)%nat) sq dag d ->
+          (Qpow2 ((c * m)%nat) <= exc_l1 (dag_exc (n := (m+m)%nat) sq dag))%Q )
       /\
-      ( exc_l1 (dag_exc (m+m) sq dag) < Qpow2 (c * m) ->
-          ~ dag_trace_boolish_exists_k (m+m) sq dag d ).
+      ( (exc_l1 (dag_exc (n := (m+m)%nat) sq dag) < Qpow2 ((c * m)%nat))%Q ->
+          ~ dag_trace_boolish_exists_k (n := (m+m)%nat) sq dag d ).
 Proof. Admitted.
 
 (* CNFs are easy even as DAGs *)
 Theorem cnf_easy_dag :
   forall m (phi : CNF (m+m)),
   exists k (d : GA_dag (m+m) (S k)) (root : Fin.t (S k)),
-    dag_computes (m+m) (Vector.const 1 (m+m)) d root (cnf_sem phi) /\
-    dag_trace_boolish_k (m+m) (Vector.const 1 (m+m)) d 1 0 /\
-    exc_l1 (dag_exc (m+m) (Vector.const 1 (m+m)) d) <= pow2 (m+m).
+    dag_computes (n := (m+m)%nat) (Vector.const 1 (m+m)) d root (cnf_sem phi) /\
+    dag_trace_boolish_k (n := (m+m)%nat) (Vector.const 1 (m+m)) d 1 0 /\
+    (exc_l1 (dag_exc (n := (m+m)%nat) (Vector.const 1 (m+m)) d) <= pow2 (m+m))%Q.
 Proof. Admitted.
 
 (* The ideal separation for DAGs *)
@@ -1269,17 +1422,17 @@ Theorem dag_booleanish_vs_unrestricted_separation :
     (exists poly_bound : nat -> Q,
        forall m,
          exists k (d : GA_dag (m+m) (S k)) (root : Fin.t (S k)),
-           dag_computes (m+m) (Vector.const 1 (m+m)) d root (f (m+m)) /\
-           exc_l1 (dag_exc (m+m) (Vector.const 1 (m+m)) d)
-             <= poly_bound m)
+           dag_computes (n := (m+m)%nat) (Vector.const 1 (m+m)) d root (f (m+m)%nat) /\
+           (exc_l1 (dag_exc (n := (m+m)%nat) (Vector.const 1 (m+m)) d)
+              <= poly_bound m)%Q)
     /\
     (* but any boolish-trace DAG needs exponential excursion *)
     (forall d, exists c,
        forall m k (sq : Vector.t Q (m+m))
               (dag : GA_dag (m+m) (S k)) (root : Fin.t (S k)),
-         dag_computes (m+m) sq dag root (f (m+m)) ->
-         dag_trace_boolish_exists_k (m+m) sq dag d ->
-         Qpow2 (c * m) <= exc_l1 (dag_exc (m+m) sq dag)).
+         dag_computes (n := (m+m)%nat) sq dag root (f (m+m)%nat) ->
+         dag_trace_boolish_exists_k (n := (m+m)%nat) sq dag d ->
+         (Qpow2 ((c * m)%nat) <= exc_l1 (dag_exc (n := (m+m)%nat) sq dag))%Q).
 Proof. Admitted.
 
 
@@ -1288,7 +1441,6 @@ Proof. Admitted.
 (* ============================================================ *)
 
 (* Generalize the EasyCompiler record to DAGs *)
-
 Record DAG_EasyCompiler := {
   dag_R : nat -> Type;
 
@@ -1305,17 +1457,17 @@ Record DAG_EasyCompiler := {
 
   dag_compile_correct :
     forall {m : nat} (sq : Vector.t Q m) (r : dag_R m),
-      dag_computes m sq (dag_compile r) (dag_compile_root r)
+      dag_computes (n := m) sq (dag_compile r) (dag_compile_root r)
                    (dag_target r);
 
   dag_compile_exc_bound :
     forall {m : nat} (sq : Vector.t Q m) (r : dag_R m),
-      exc_pre (dag_exc m sq (dag_compile r))
+      exc_pre (dag_exc (n := m) sq (dag_compile r))
               (dag_B (S (dag_compile_size r)));
 
   dag_compile_boolish_bound :
     forall {m : nat} (sq : Vector.t Q m) (r : dag_R m),
-      dag_trace_boolish m sq (dag_compile r) dag_d0
+      dag_trace_boolish (n := m) sq (dag_compile r) dag_d0
 }.
 
 Definition dag_easy (C : DAG_EasyCompiler) {m} (f : Corner m -> bool)
@@ -1327,9 +1479,9 @@ Definition dag_easy (C : DAG_EasyCompiler) {m} (f : Corner m -> bool)
 Definition dag_easy_under (B : nat -> ExcNum) (d0 : Q)
     {m} (sq : Vector.t Q m) (f : Corner m -> bool) : Prop :=
   exists k (dag : GA_dag m (S k)) (root : Fin.t (S k)),
-    dag_computes m sq dag root f /\
-    exc_pre (dag_exc m sq dag) (B (S k)) /\
-    dag_trace_boolish m sq dag d0.
+    dag_computes (n := m) sq dag root f /\
+    exc_pre (dag_exc (n := m) sq dag) (B (S k)) /\
+    dag_trace_boolish (n := m) sq dag d0.
 
 Lemma dag_easy_implies_dag_easy_under :
   forall (C : DAG_EasyCompiler) m (sq : Vector.t Q m)
@@ -1360,9 +1512,9 @@ Theorem tree_to_dag_simulation :
   forall m (sq : Vector.t Q m) (e : GA_expr m) (f : Corner m -> bool),
     computes sq e f ->
     exists k (d : GA_dag m (S k)) (root : Fin.t (S k)),
-      dag_computes m sq d root f /\
-      dag_max_l1 m sq d == max_l1_during sq e /\
-      (dag_max_grade m sq d = max_grade_during sq e)%nat.
+      dag_computes (n := m) sq d root f /\
+      dag_max_l1 (n := m) sq d == max_l1_during sq e /\
+      (dag_max_grade (n := m) sq d = max_grade_during sq e)%nat.
 Proof. Admitted.
 
 (* A GA_dag can be unfolded to a GA_expr with bounded excursion.
@@ -1371,11 +1523,11 @@ Theorem dag_to_tree_simulation :
   forall m (sq : Vector.t Q m) {k}
          (d : GA_dag m (S k)) (root : Fin.t (S k))
          (f : Corner m -> bool),
-    dag_computes m sq d root f ->
+    dag_computes (n := m) sq d root f ->
     exists e : GA_expr m,
       computes sq e f /\
-      max_l1_during sq e <= dag_max_l1 m sq d /\
-      (max_grade_during sq e <= dag_max_grade m sq d)%nat.
+      max_l1_during sq e <= dag_max_l1 (n := m) sq d /\
+      (max_grade_during sq e <= dag_max_grade (n := m) sq d)%nat.
 Proof. Admitted.
 
 
@@ -1407,12 +1559,53 @@ Proof. Admitted.
 *)
 
 (* Summary theorem: the model is non-trivial *)
+Require Import Coq.Vectors.Vector.
+Require Import Coq.Vectors.Fin.
+Require Import Coq.QArith.QArith.
+Require Import Coq.micromega.Lia.   (* for lia *)
+
+Import VectorNotations.
+
+(* Local helper: nth (const a) = a *)
+Lemma my_Vector_nth_const :
+  forall (A : Type) (a : A) n,
+    forall i : Fin.t n,
+      Vector.nth (Vector.const a n) i = a.
+Proof.
+  intros A a n i.
+  revert n i.
+  (* now n and i are both generalized so IH matches exactly *)
+  fix IH 1.
+  intros n i.
+  destruct n as [|n].
+  - inversion i.
+  - dependent destruction i; simpl.
+    + reflexivity.
+    + apply IH.
+Qed.
+
+(* Local helper: 0 <= 1 in Q (in case Qle_0_1 isn't available) *)
+Lemma my_Qle_0_1 : (0 <= (1:Q))%Q.
+Proof.
+  unfold Qle; simpl; lia.
+Qed.
+
+(* This is the replacement for your missing VectorDef_nth_const_1 *)
+Lemma VectorDef_nth_const_1_abs :
+  forall m (i : Fin.t m),
+    Qabs (Vector.nth (Vector.const (1:Q) m) i) == 1.
+Proof.
+  intros m i.
+  rewrite (@my_Vector_nth_const Q (1:Q) m i).
+  rewrite Qabs_pos; [reflexivity | exact my_Qle_0_1 ].
+Qed.
+
 Theorem model_captures_boolean_circuits :
   forall m (c : bool_circuit m (S 0)),
-    (* Any single-output Boolean circuit of size s *)
-    forall s, dag_size (snd (fst (projT2
-      (compile_bool_circuit m
-        (fun i => VectorDef_nth_const_1 m i) c)))) = s ->
-    (* produces a GA_dag with boolish trace *)
-    True.  (* stated loosely; the real content is in Sections 15-16 *)
+    forall s,
+      dag_size (fst (projT2
+        (compile_bool_circuit (n := m)
+          (fun i : Fin.t m => @VectorDef_nth_const_1_abs m i) c))) = s ->
+    True.
 Proof. Admitted.
+
