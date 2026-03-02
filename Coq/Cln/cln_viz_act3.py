@@ -401,7 +401,7 @@ class Act3DAG(Scene):
                 all_highlight_ids.extend(ds)
 
             # Annotation
-            anno = Text(f"identical: {round_label}", font_size=24, color=hi_color)
+            anno = Text(f"identical2: {round_label}", font_size=24, color=hi_color)
             anno.to_edge(DOWN, buff=0.35).shift(LEFT * 2.5)
             self.play(FadeIn(anno, run_time=0.3))
 

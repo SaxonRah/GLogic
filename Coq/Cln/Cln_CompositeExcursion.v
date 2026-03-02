@@ -1652,18 +1652,6 @@ Proof.
   eapply trace_boolish_k_le_mono; eauto.
 Qed.
 
-Theorem IP_exponential_in_booleanish_model :
-  forall d : Q,
-  exists c : nat,
-    forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
-      (m >= 2)%nat ->
-      computes sq e (@IP_n_func (m+m)) ->
-      trace_boolish_poly_size sq e d ->
-      (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
-Proof.
-Admitted.
-
-
 (*
 ========================================================================
 *)
@@ -2697,13 +2685,56 @@ Proof.
   rewrite eval_basis. reflexivity.
 Qed.
 
-Lemma chi_single_is_sQ :
+Lemma chi_single_is_sQ'' :
   forall n (i : Fin.t n) (s : Corner n),
     chi' (mask_single i) s == sQ (Vector.nth s i).
 Proof.
   (* This depends on your definitions of chi'/chi and mask_single.
      Usually proved by induction on i (Fin.t n) using Vector.nth. *)
 Admitted.
+
+Lemma chi_single_is_sQ :
+  forall n (i : Fin.t n) (s : Corner n),
+    chi' (mask_single i) s == sQ (Vector.nth s i).
+Proof.
+  intros n i s.
+  revert s.
+  induction i as [n'|n' j IH]; intro s.
+  - (* i = F1, so n = S n' *)
+    (* prove: chi' (const false) = 1 *)
+    assert (Hconst :
+      forall n (s : Corner n),
+        chi' (Vector.const false n) s == 1%Q).
+    { intro n0. induction n0 as [|n0 IHn0]; intro s0.
+      - (* n0 = 0 *)
+        dependent destruction s0. simpl. reflexivity.
+      - (* n0 = S n0 *)
+        dependent destruction s0.
+        (* s0 = h :: s0 *)
+        (* peel the leading false in the mask *)
+        rewrite (@chi_false_cons n0 (Vector.const false n0) s0 h).
+        apply IHn0.
+    }
+
+    dependent destruction s.
+    (* s = h :: st *)
+    (* mask_single F1 = true :: const false *)
+    cbn [mask_single].
+    rewrite (@chi_true_cons n' (Vector.const false n') s h).
+    rewrite (Hconst n' s).
+    (* Vector.nth (h::st) F1 = h *)
+    simpl.
+    ring.
+
+  - (* i = FS j, so n = S n' *)
+    dependent destruction s.
+    (* mask_single (FS j) = false :: mask_single j *)
+    cbn [mask_single].
+    rewrite (@chi_false_cons n' (mask_single j) s h).
+    rewrite (IH s).
+    simpl.
+    reflexivity.
+Qed.
 
 Lemma bQ_corner_bit :
   forall h : Sign,
@@ -3813,78 +3844,44 @@ Proof.
     + intros x Hx. apply H. right. exact Hx.
 Qed.
 
-Lemma sumQ_map_scale_eq {A} (c : Q) (l : list A) (f : A -> Q) :
-  sumQ (map (fun x => (c * f x)%Q) l) = (c * sumQ (map f l))%Q.
-Proof.
-  induction l as [|a l IH]; simpl.
-  - ring.
-  - rewrite IH. ring.
-Qed.
-
 Lemma mv_conv_scale_l :
   forall n (c : Q) (F G : MV n),
-    mv_conv (mv_scale c F) G
-    =
-    mv_scale c (mv_conv F G).
+    forall m,
+      mv_conv (mv_scale c F) G m
+      == (mv_scale c (mv_conv F G)) m.
 Proof.
-  intros n c F G.
-  apply functional_extensionality.
-  intro m.
-
+  intros n c F G m.
   unfold mv_conv, mv_scale.
   set (L := all_masks n).
 
-  (* inner factorisation *)
-  assert (Hinner :
-    forall A,
-      sumQ
-        (map
-           (fun B =>
-              if mask_eq_dec (mask_xor A B) m
-              then ((c * F A) * G B)%Q
-              else 0%Q)
-           L)
-      ==
-      (c *
-       sumQ
-         (map
-            (fun B =>
-               if mask_eq_dec (mask_xor A B) m
-               then (F A * G B)%Q
-               else 0%Q)
-            L))%Q).
+  (* inner: factor c out of the B-sum *)
+  assert (Hinner : forall A : Mask n,
+    sumQ (map (fun B : Mask n =>
+      if mask_eq_dec (mask_xor A B) m
+      then ((c * F A) * G B)%Q
+      else 0%Q) L)
+    ==
+    (c * sumQ (map (fun B : Mask n =>
+      if mask_eq_dec (mask_xor A B) m
+      then (F A * G B)%Q
+      else 0%Q) L))%Q).
   {
     intro A.
     transitivity
-      (sumQ
-         (map
-            (fun B =>
-               (c *
-                (if mask_eq_dec (mask_xor A B) m
-                 then (F A * G B)%Q
-                 else 0%Q))%Q)
-            L)).
+      (sumQ (map (fun B : Mask n =>
+        (c * (if mask_eq_dec (mask_xor A B) m
+              then (F A * G B)%Q else 0%Q))%Q) L)).
     - apply sumQ_map_ext; intros B _.
       destruct (mask_eq_dec (mask_xor A B) m); ring.
     - apply sumQ_map_scale.
   }
 
-  (* outer factorisation *)
+  (* outer: rewrite by Hinner, then factor c out of the A-sum *)
   transitivity
-    (sumQ
-       (map
-          (fun A =>
-             (c *
-              sumQ
-                (map
-                   (fun B =>
-                      if mask_eq_dec (mask_xor A B) m
-                      then (F A * G B)%Q
-                      else 0%Q)
-                   L))%Q)
-          L)).
-  - apply Qeq_eqR.
-
+    (sumQ (map (fun A : Mask n =>
+      (c * sumQ (map (fun B : Mask n =>
+        if mask_eq_dec (mask_xor A B) m
+        then (F A * G B)%Q else 0%Q) L))%Q) L)).
   - apply sumQ_map_ext; intros A _.
     apply Hinner.
   - apply sumQ_map_scale.
@@ -3892,8 +3889,43 @@ Qed.
 
 Lemma mv_conv_scale_r :
   forall n (c : Q) (F G : MV n),
-    mv_conv F (mv_scale c G) = mv_scale c (mv_conv F G).
+    forall m,
+      mv_conv F (mv_scale c G) m
+      == (mv_scale c (mv_conv F G)) m.
 Proof.
+  intros n c F G m.
+  unfold mv_conv, mv_scale.
+  set (L := all_masks n).
+
+  assert (Hinner : forall A : Mask n,
+    sumQ (map (fun B : Mask n =>
+      if mask_eq_dec (mask_xor A B) m
+      then (F A * (c * G B))%Q
+      else 0%Q) L)
+    ==
+    (c * sumQ (map (fun B : Mask n =>
+      if mask_eq_dec (mask_xor A B) m
+      then (F A * G B)%Q
+      else 0%Q) L))%Q).
+  {
+    intro A.
+    transitivity
+      (sumQ (map (fun B : Mask n =>
+        (c * (if mask_eq_dec (mask_xor A B) m
+              then (F A * G B)%Q else 0%Q))%Q) L)).
+    - apply sumQ_map_ext; intros B _.
+      destruct (mask_eq_dec (mask_xor A B) m); ring.
+    - apply sumQ_map_scale.
+  }
+
+  transitivity
+    (sumQ (map (fun A : Mask n =>
+      (c * sumQ (map (fun B : Mask n =>
+        if mask_eq_dec (mask_xor A B) m
+        then (F A * G B)%Q else 0%Q) L))%Q) L)).
+  - apply sumQ_map_ext; intros A _.
+    apply Hinner.
+  - apply sumQ_map_scale.
 Qed.
 
 Lemma mv_conv_embed_lincomb_r {n : nat} :
@@ -3936,16 +3968,134 @@ Proof.
     simpl lincomb_embed at 1.
     (* LHS: mv_conv (embed f) (mv_scale c (embed g) ⊕ lincomb cs gs) *)
     rewrite mv_conv_add_r.
-    rewrite mv_conv_scale_r.
+    
+    unfold mv_add.
+    rewrite (@mv_conv_scale_r n c (embed f) (embed g) m).
     (* now: mv_scale c (mv_conv (embed f) (embed g)) ⊕ mv_conv (embed f) (lincomb cs gs) *)
     unfold mv_add.
     rewrite (IH gs Hwf' m).
-    (* LHS term 1: rewrite conv of embeds *)
-    rewrite (embed_conv_and n f g).
-    (* RHS *)
-    simpl (lincomb_embed (c :: cs) (and_gen f g :: map (and_gen f) gs)).
-    unfold mv_add, mv_scale.
-    ring.
+    
+    simpl (lincomb_embed (c :: cs) (map (and_gen f) (g :: gs))) at 1.
+    unfold mv_add.
+    apply Qplus_comp.
+    
+    + (* show the scaled conv equals scaled embed *)
+      unfold mv_scale.
+      (* goal: c * mv_conv (embed f) (embed g) m == c * embed (and_gen f g) m *)
+      apply Qmult_comp.
+      * reflexivity.              (* c == c *)
+      * exact (@embed_conv_and n f g m).
+    + (* the tail terms match *)
+      * reflexivity.
+Qed.
+
+Lemma lincomb_embed_conv {n : nat} :
+  forall (cs1 cs2 : list Q)
+         (gs1 gs2 : list (Corner n -> bool)),
+    wf_lincomb cs1 gs1 ->
+    wf_lincomb cs2 gs2 ->
+    forall m,
+      mv_conv (lincomb_embed cs1 gs1) (lincomb_embed cs2 gs2) m
+      ==
+      lincomb_embed (mul_coeffs cs1 cs2) (and_gens gs1 gs2) m.
+Proof.
+  intros cs1 cs2 gs1 gs2 Hwf1 Hwf2.
+  revert gs1 Hwf1.
+  induction cs1 as [|c cs1 IH]; intros gs1 Hwf1 m.
+  -
+    destruct gs1 as [|g gs1].
+    +
+      simpl. apply mv_conv_zero_l.
+    +
+      unfold wf_lincomb in Hwf1; simpl in Hwf1; discriminate.
+  -
+    destruct gs1 as [|g gs1].
+    + unfold wf_lincomb in Hwf1; simpl in Hwf1; discriminate.
+    + assert (Hwf1' : wf_lincomb cs1 gs1).
+      { unfold wf_lincomb in *; simpl in *; lia. }
+      simpl lincomb_embed at 1.
+      eapply Qeq_trans.
+      { apply mv_conv_add_l. }
+      unfold mv_add.
+      
+      assert (Hfst :
+        mv_conv (mv_scale c (embed g)) (lincomb_embed cs2 gs2) m
+        == lincomb_embed (map (fun c2 => (c * c2)%Q) cs2) (map (and_gen g) gs2) m).
+      {
+        eapply Qeq_trans.
+        - apply mv_conv_scale_l.
+        - (* now: mv_scale c (mv_conv (embed g) (lincomb_embed cs2 gs2)) m == RHS *)
+
+          (* wf for cs2 vs mapped gs2 *)
+          assert (Hwf2' : wf_lincomb cs2 (map (and_gen g) gs2)).
+          { unfold wf_lincomb in *.
+            rewrite length_map.
+            exact Hwf2. }
+
+          (* choose the "middle" as mv_scale c (lincomb_embed cs2 (map ...) ) m *)
+          eapply Qeq_trans
+            with (y := mv_scale c (lincomb_embed cs2 (map (and_gen g) gs2)) m).
+
+          + (* scale congruence: c * (conv ...) == c * (lincomb ...) *)
+            unfold mv_scale.
+            apply Qmult_comp; [reflexivity|].
+            apply mv_conv_embed_lincomb_r.
+            exact Hwf2.
+
+          + (* middle == RHS, via lincomb_embed_scale (reversed) *)
+            symmetry.
+            exact (@lincomb_embed_scale n c cs2 (map (and_gen g) gs2) m Hwf2').
+      }
+
+      assert (Hsnd :
+        mv_conv (lincomb_embed cs1 gs1) (lincomb_embed cs2 gs2) m
+        == lincomb_embed (mul_coeffs cs1 cs2) (and_gens gs1 gs2) m).
+      { apply IH. exact Hwf1'. }
+
+      rewrite Hfst, Hsnd.
+      rewrite mul_coeffs_cons, and_gens_cons.
+      symmetry.
+      eapply Qeq_trans.
+      { apply lincomb_embed_app.
+        - (* wf for map..cs2, map (and_gen g) gs2 *)
+          unfold wf_lincomb. rewrite length_map, length_map.
+          unfold wf_lincomb in Hwf2. exact Hwf2.
+        - (* wf for mul_coeffs, and_gens *)
+          apply wf_lincomb_mul_and; assumption.
+      }
+      unfold mv_add. reflexivity.
+Qed.
+
+Lemma mv_sub_cancel_qeq :
+  forall n (G G0 : MV n) m,
+    Qeq (mv_sub G (mv_sub G G0) m) (G0 m).
+Proof.
+  intros n G G0 m.
+  unfold mv_sub, Qminus.
+  ring.
+Qed.
+
+Lemma l1_sub_bound :
+  forall n (F G : MV n),
+    (l1_norm (mv_sub F G) <= l1_norm F + l1_norm G)%Q.
+Proof.
+  intros n F G.
+  unfold l1_norm, mv_sub.
+
+  eapply Qle_trans.
+  - (* lift pointwise inequality through sum *)
+    apply (@sumQ_map_le (Mask n)
+             (fun U => Qabs (F U + (- G U))%Q)
+             (fun U => (Qabs (F U) + Qabs (G U))%Q)
+             (all_masks n)).
+    intros U HU.
+    (* |x + (-y)| <= |x| + |y| *)
+    eapply Qle_trans.
+    + apply Qabs_triangle.
+    + rewrite Qabs_opp. exact (Qle_refl _).
+  - (* sum of (a+b) = sum a + sum b *)
+    rewrite <- sumQ_map_add.
+    apply Qle_refl.
 Qed.
 
 Lemma boolish_k_le_conv :
@@ -3973,27 +4123,25 @@ Proof.
   - (* error bound *)
     (* Rewrite witness as mv_conv F0 G0 using lincomb_embed_conv *)
     set (W := lincomb_embed (mul_coeffs csF csG) (and_gens gsF gsG)).
-    assert (HW : mv_conv F0 G0 = W).
-    {
-      subst W F0 G0.
-      apply (lincomb_embed_conv (n:=n)); assumption.
-    }
-
-    (* Reduce to bounding || mv_conv F G - mv_conv F0 G0 ||_1 *)
+    
     eapply Qle_trans.
-    + (* replace W by mv_conv F0 G0 inside l1_norm *)
-      apply Qle_of_Qeq.
+    + apply Qle_of_Qeq.
       apply l1_norm_ext; intro m.
-      unfold W.
-      rewrite <- HW.
-      reflexivity.
+      unfold W, F0, G0.
+      (* we need: mv_sub (mv_conv F G) W m == mv_sub (mv_conv F G) (mv_conv F0 G0) m *)
+      unfold mv_sub.
+      apply Qminus_comp; [reflexivity|].
+      (* now show W m == mv_conv F0 G0 m *)
+      symmetry.
+      apply (lincomb_embed_conv (n:=n)); assumption.
+
     + (* Now use conv_error_split + triangle + submultiplicativity *)
       eapply Qle_trans.
       * (* split via conv_error_split pointwise, then l1_add_bound *)
         eapply Qle_trans.
         -- apply Qle_of_Qeq.
            apply l1_norm_ext; intro m.
-           exact (conv_error_split (n:=n) (F:=F) (G:=G) (eF:=F0) (eG:=G0) m).
+           exact (@conv_error_split n F G F0 G0 m).
         -- eapply Qle_trans.
            ++ apply l1_add_bound.
            ++ apply Qplus_le_compat.
@@ -4001,30 +4149,45 @@ Proof.
                  eapply Qle_trans.
                  --- apply l1_conv_submultiplicative.
                  --- (* <= ||F|| * d2 *)
-                     apply Qmult_le_compat_l.
+                     apply Qmult_le_compat_l'.
                      { apply l1_norm_nonneg. }
                      exact HdG.
+              
               ** (* second term *)
                  eapply Qle_trans.
-                 --- apply l1_conv_submultiplicative.
-                 --- (* <= d1 * ||G0|| *)
-                     apply Qmult_le_compat_r.
-                     { apply l1_norm_nonneg. }
-                     exact HdF.
-      * (* bound ||G0|| <= ||G|| + d2, then algebra *)
-        (* First: ||G0|| = ||G - (G-G0)|| <= ||G|| + ||G-G0|| <= ||G|| + d2 *)
+                 --- (* submultiplicativity: ||conv (F-F0) G0|| <= ||F-F0|| * ||G0|| *)
+                     apply l1_conv_submultiplicative.
+                 --- (* now we are at the product; use HdF' *)
+                     assert (HdF' : ∥ mv_sub F F0 ∥₁ <= d1).
+                     { subst F0. exact HdF. }
+                     eapply Qle_trans.
+                     +++ (* multiply HdF' on the right by ||G0|| *)
+                         apply Qmult_le_compat_r.
+                         **** exact HdF'.
+                         **** apply l1_norm_nonneg.   (* 0 <= ||G0|| *)
+                     +++ (* clean up: d1 * ||G0|| is exactly what you want *)
+                         apply Qle_refl.
+
+      *
         assert (HG0_le : l1_norm G0 <= l1_norm G + d2).
         {
           subst G0.
-          (* G0 = G - (G-G0) *)
-          rewrite <- (mv_sub_cancel (n:=n) (G:=G) (G0:=lincomb_embed csG gsG)).
+          (* rewrite G0 as G - (G - G0) *)
           eapply Qle_trans.
-          - apply l1_sub_bound.
-          - apply Qplus_le_compat.
-            + apply Qle_refl.
-            + exact HdG.
+          - (* rewrite the norm’s argument pointwise using mv_sub_cancel_qeq *)
+            apply Qle_of_Qeq.
+            apply l1_norm_ext; intro m.
+            (* we want: mv_sub G (mv_sub G (lincomb_embed csG gsG)) m == lincomb_embed csG gsG m *)
+            symmetry.
+            apply (@mv_sub_cancel_qeq n G (lincomb_embed csG gsG) m).
+          - (* now apply triangle bound: ||A|| <= ||G|| + ||G-A|| *)
+            eapply Qle_trans.
+            + apply l1_sub_bound.    (* ||G - (G - G0)|| <= ||G|| + ||G - G0|| *)
+            + apply Qplus_le_compat.
+              * apply Qle_refl.
+              * exact HdG.
         }
-
+        
         (* Use HG0_le to rewrite d1*||G0|| <= d1*(||G||+d2) *)
         (* and then expand to match goal *)
         (* Current bound from previous step is:
@@ -4033,27 +4196,46 @@ Proof.
         -- (* replace d1*||G0|| by d1*(||G||+d2) *)
            apply Qplus_le_compat.
            ++ apply Qle_refl.
-           ++ apply Qmult_le_compat_l.
-              { (* need 0 <= d1; follows from HdF since l1_norm >=0 *)
-                eapply Qle_trans; [apply l1_norm_nonneg | exact HdF]. }
-              exact HG0_le
-        -- (* algebra: ||F||*d2 + d1*(||G||+d2) = d1*||G|| + ||F||*d2 + d1*d2 *)
-           (* expand and reorder *)
-           ring_simplify.
-           (* `ring_simplify` may or may not close; if it doesn't, use: *)
-           ring.
+           ++ apply Qmult_le_compat_l'.
+              eapply Qle_trans.
+                ** exact (@l1_norm_nonneg n (mv_sub F (lincomb_embed csF gsF))).
+                ** exact HdF.
+                
+        (* Solve goal (1): ||G0|| <= ?b *)
+        ** exact HG0_le.
+        
+        -- (* algebra *)
+          ring_simplify.
+          apply Qle_refl.
+Qed.
+
+Lemma boolish_k_le_d_mono :
+  forall n (F : MV n) k d d',
+    d <= d' ->
+    boolish_k_le F k d ->
+    boolish_k_le F k d'.
+Proof.
+  intros n F k d d' Hle [cs [gs [Hwf [Hlen Hdist]]]].
+  exists cs, gs. repeat split; try assumption.
+  eapply Qle_trans; [exact Hdist | exact Hle].
 Qed.
 
 Lemma boolish_k_le_conv_0 n (F G : MV n) k1 k2 :
-  boolish_k_le F k1 0 -> boolish_k_le G k2 0 ->
+  boolish_k_le F k1 0 ->
+  boolish_k_le G k2 0 ->
   boolish_k_le (mv_conv F G) (k1 * k2) 0.
 Proof.
   intros HF HG.
-  pose proof (boolish_k_le_conv k1 k2 HF HG) as H.
-  (* error bound simplifies: 0*∥G∥ + ∥F∥*0 + 0*0 <= 0 *)
-  eapply boolish_k_le_mono; [| exact H].
-  (* k1*k2 <= k1*k2 *) lia.
-  (* or handle the Qle cleanup if the error term needs rewriting *)
+  specialize (@boolish_k_le_conv n F G k1 k2 0 0 HF HG) as H.
+
+  eapply (boolish_k_le_d_mono
+            (n:=n) (F:=mv_conv F G) (k:=k1*k2)
+            (d := (0 * (∥ G ∥₁) + ∥ F ∥₁ * 0 + 0 * 0)%Q)
+            (d' := 0%Q)).
+  - (* prove: 0*||G|| + ||F||*0 + 0*0 <= 0 *)
+    apply Qle_of_Qeq.
+    ring.
+  - exact H.
 Qed.
 
 Lemma translate_trace_boolish_exists_k_0 :
@@ -4070,45 +4252,54 @@ Proof.
     exists 3%nat.
     repeat split.
 
-    + (* boolish ( (1/2) * mv_one ) *)
-      apply (@boolish_k_le_mono n
+    + apply (@boolish_k_le_mono n
                (mv_scale (1#2) mv_one) 1%nat 3%nat 0).
-      * apply le_S. apply le_S. apply le_n.   (* 1 <= 3 *)
+      * lia.
       * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (1#2)).
 
-    + (* boolish ( 1 * mv_one ) *)
-      apply (@boolish_k_le_mono n
+    + apply (@boolish_k_le_mono n
                (mv_scale 1 mv_one) 1%nat 3%nat 0).
-      * apply le_S. apply le_S. apply le_n.
+      * lia.
       * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
 
-    + (* boolish (basis ...) *)
-      apply (@boolish_k_le_mono n
+    + apply (@boolish_k_le_mono n
                (basis (mask_single t)) 2%nat 3%nat 0).
-      * apply le_S. apply le_n.               (* 2 <= 3 *)
+      * lia.
       * apply (@boolish_k_le_basis_2_0 n t).
 
-    + (* boolish ( 1*mv_one ⊕ basis ) *)
-      eapply (@boolish_k_le_add n
+    + eapply (@boolish_k_le_add n
                 (mv_scale 1 mv_one) (basis (mask_single t))
                 1%nat 2%nat 0%Q 0%Q).
       * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
       * apply (@boolish_k_le_basis_2_0 n t).
 
-    +
-      eapply boolish_k_le_of_eq.
+    + eapply (@boolish_k_le_of_eq
+            n
+            (mv_scale (1#2) mv_one ⋆
+               (mv_scale 1 mv_one ⊕ basis (mask_single t)))
+            (mv_scale (1#2)
+               (mv_scale 1 mv_one ⊕ basis (mask_single t)))
+            3%nat
+            0%Q).
       * intro m.
-        rewrite (mv_mul_scale_l (n:=n) (c:=(1#2)) (A:=mv_one)
-          (B:=(mv_scale 1 mv_one ⊕ basis (mask_single t))) m).
-        rewrite (mv_mul_one_l (n:=n)
-          (B:=(mv_scale 1 mv_one ⊕ basis (mask_single t))) m).
-          reflexivity.
-      * apply (@boolish_k_le_scale_0 n (1#2)
-          (mv_scale 1 mv_one ⊕ basis (mask_single t)) 3%nat).
-        (* reuse the sum proof at k=3 *)
-        apply (@boolish_k_le_add n (mv_scale 1 mv_one) (basis (mask_single t)) 1%nat 2%nat 0).
+        rewrite (@mv_mul_scale_l
+                  n sq
+                  (1#2)
+                  (mv_scale 1 mv_one ⊕ basis (mask_single t))
+                  m).
+        reflexivity.
+      
+      * apply (@boolish_k_le_scale_0
+           n
+           (1#2)
+           (mv_scale 1 mv_one ⊕ basis (mask_single t))
+           3%nat).
+
+        apply (@boolish_k_le_add n (mv_scale 1 mv_one) (basis (mask_single t))
+                  1%nat 2%nat 0 0).
         -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
         -- apply (@boolish_k_le_basis_2_0 n t).
+
 
   - (* Const b *)
     exists 1%nat.
@@ -4117,246 +4308,207 @@ Proof.
     + apply (@boolish_k_le_scalar_1_0 n sq 0).
 
   - (* And psi1 psi2 : Conv *)
+    (* FIX: witness must accommodate k1*k2 from conv, plus k1 and k2 for subtrees *)
     destruct (IHpsi1 sq Hsq) as [k1 Ht1].
     destruct (IHpsi2 sq Hsq) as [k2 Ht2].
-    exists (k1 + k2)%nat.
+    exists (k1 + k2 + k1 * k2)%nat.
     repeat split.
 
     + (* trace psi1 *)
-      apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 (k1 + k2)%nat 0).
-      * apply Nat.le_add_r.
+      apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 (k1 + k2 + k1 * k2)%nat 0).
+      * lia.
       * exact Ht1.
 
     + (* trace psi2 *)
-      apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 (k1 + k2)%nat 0).
-      * apply Nat.le_add_l.
+      apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 (k1 + k2 + k1 * k2)%nat 0).
+      * lia.
       * exact Ht2.
 
-    + (* node boolish: conv *)
-      apply (@boolish_k_le_conv n
-               (eval_expr sq (translate psi1))
-               (eval_expr sq (translate psi2))
-               (k1 + k2)%nat (k1 + k2)%nat 0).
-      * (* left root boolish, lifted *)
-        apply (@boolish_k_le_mono n
-                 (eval_expr sq (translate psi1)) k1 (k1 + k2)%nat 0).
-        -- apply Nat.le_add_r.
-        -- apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-      * (* right root boolish, lifted *)
-        apply (@boolish_k_le_mono n
-                 (eval_expr sq (translate psi2)) k2 (k1 + k2)%nat 0).
-        -- apply Nat.le_add_l.
-        -- apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+    + (* node boolish: conv at k1*k2, then mono up *)
+      apply (@boolish_k_le_mono n
+               (mv_conv (eval_expr sq (translate psi1))
+                        (eval_expr sq (translate psi2)))
+               (k1 * k2)%nat (k1 + k2 + k1 * k2)%nat 0).
+      * lia.
+      * apply boolish_k_le_conv_0.
+        -- exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+        -- exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
 
   - (* Or psi1 psi2 *)
+    (* FIX: witness must accommodate (k1+k2) for inner add and k1*k2 for conv *)
     destruct (IHpsi1 sq Hsq) as [k1 Ht1].
     destruct (IHpsi2 sq Hsq) as [k2 Ht2].
-    set (k := (k1 + k2 + 3)%nat).
+    set (k := S (k1 + k2 + k1 * k2)%nat).
     exists k.
     repeat split.
 
     + (* (trace psi1 /\ trace psi2 /\ boolish (A⊕B)) *)
       repeat split.
       * apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 k 0).
-        -- unfold k. apply Nat.le_add_r.
+        -- unfold k. lia.
         -- exact Ht1.
-      * apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
-        -- unfold k. apply Nat.le_trans with (m := (k1 + k2)%nat).
-           ++ apply Nat.le_add_l.
-           ++ apply Nat.le_add_r.
+      + apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
+        -- unfold k. lia.
         -- exact Ht2.
-      * (* boolish (A ⊕ B) *)
-        apply (@boolish_k_le_add n
-                 (eval_expr sq (translate psi1))
-                 (eval_expr sq (translate psi2))
-                 k k 0).
-        -- (* left root boolish at k *)
-           apply (@boolish_k_le_mono n
-                    (eval_expr sq (translate psi1)) k1 k 0).
-           ++ unfold k. apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-        -- (* right root boolish at k *)
-           apply (@boolish_k_le_mono n
-                    (eval_expr sq (translate psi2)) k2 k 0).
-           ++ unfold k.
-              apply Nat.le_trans with (m := (k1 + k2)%nat).
-              ** apply Nat.le_add_l.
-              ** apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+      + (* boolish (A ⊕ B): add at k1+k2, then mono to k *)
+        apply (@boolish_k_le_mono n
+                 (eval_expr sq (translate psi1) ⊕ eval_expr sq (translate psi2))
+                 (k1 + k2)%nat k 0).
+        -- unfold k. lia.
+        -- apply (@boolish_k_le_add n
+                    (eval_expr sq (translate psi1))
+                    (eval_expr sq (translate psi2))
+                    k1 k2 
+                    0%Q 0%Q).
+           ++ exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+           ++ exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
 
     + (* (-1)mv_one /\ (trace psi1 /\ trace psi2 /\ conv) /\ (-1)⋆conv *)
       repeat split.
       * (* boolish (-1*mv_one) *)
         apply (@boolish_k_le_mono n
                  (mv_scale (-1) mv_one) 1%nat k 0).
-        -- unfold k. apply Nat.le_trans with (m := 3%nat).
-           ++ apply le_S. apply le_S. apply le_n.  (* 1<=3 *)
-           ++ apply Nat.le_add_r.
+        -- unfold k. lia.
         -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (-1)).
-      * (* (trace psi1 /\ trace psi2 /\ conv) *)
-        repeat split.
-        -- apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 k 0).
-           ++ unfold k. apply Nat.le_add_r.
-           ++ exact Ht1.
-        -- apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
-           ++ unfold k.
-              apply Nat.le_trans with (m := (k1 + k2)%nat).
-              ** apply Nat.le_add_l.
-              ** apply Nat.le_add_r.
-           ++ exact Ht2.
-        -- (* boolish conv at k *)
-           apply (@boolish_k_le_conv n
-                    (eval_expr sq (translate psi1))
-                    (eval_expr sq (translate psi2))
-                    k k 0).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi1)) k1 k 0).
-              ** unfold k. apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi2)) k2 k 0).
-              ** unfold k.
-                 apply Nat.le_trans with (m := (k1 + k2)%nat).
-                 --- apply Nat.le_add_l.
-                 --- apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
-      * (* boolish (-1)⋆conv *)
-        eapply boolish_k_le_of_eq.
-        -- intro m.
-           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
-                     (B:=mv_conv (eval_expr sq (translate psi1))
-                                 (eval_expr sq (translate psi2))) m).
-           rewrite (mv_mul_one_l (n:=n)
-                     (B:=mv_conv (eval_expr sq (translate psi1))
-                                 (eval_expr sq (translate psi2))) m).
-           reflexivity.
-        -- apply (@boolish_k_le_scale_0 n (-1)
-                  (mv_conv (eval_expr sq (translate psi1))
-                           (eval_expr sq (translate psi2))) k).
-           apply (@boolish_k_le_conv n
-                    (eval_expr sq (translate psi1))
-                    (eval_expr sq (translate psi2))
-                    k k 0).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi1)) k1 k 0).
-              ** unfold k. apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi2)) k2 k 0).
-              ** unfold k.
-                 apply Nat.le_trans with (m := (k1 + k2)%nat).
-                 --- apply Nat.le_add_l.
-                 --- apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+    + (* trace psi1 *)
+      apply (@trace_boolish_k_le_mono n sq (translate psi1) k1 k 0).
+      -- unfold k. lia.
+      -- exact Ht1.
+    + (* trace psi2 *)
+      apply (@trace_boolish_k_le_mono n sq (translate psi2) k2 k 0).
+      -- unfold k. lia.
+      -- exact Ht2.
+    + (* boolish conv: at k1*k2, then mono to k *)
+      apply (@boolish_k_le_mono n
+               (mv_conv (eval_expr sq (translate psi1))
+                        (eval_expr sq (translate psi2)))
+               (k1 * k2)%nat k 0).
+      -- unfold k. lia.
+      -- apply boolish_k_le_conv_0.
+         ++ exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+         ++ exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
+         
+    +
+    (* inside the "* (* boolish (-1)⋆conv *)" branch *)
+      set (C :=
+        mv_conv (eval_expr sq (translate psi1))
+                (eval_expr sq (translate psi2))).
 
+      eapply (@boolish_k_le_of_eq
+                n
+                (mv_scale (-1) mv_one ⋆ C)   (* F: the thing you currently have *)
+                (mv_scale (-1) C)            (* G: the thing scale_0 will give *)
+                k
+                0%Q).
+      * intro m.
+        rewrite (@mv_mul_scale_l
+                  n sq (-1) C m).
+        reflexivity.
+      * (* now the goal is: boolish_k_le (mv_scale (-1) C) k 0 *)
+        apply (@boolish_k_le_scale_0 n (-1) C k).
+        apply (@boolish_k_le_mono n C (k1 * k2)%nat k 0).
+        -- unfold k. lia.
+        -- apply boolish_k_le_conv_0.
+          ++ exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+          ++ exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
+
+    
+    
+    
     + (* final boolish: (A⊕B) ⊕ (-1)⋆conv *)
-      apply (@boolish_k_le_add n
-               (eval_expr sq (translate psi1) ⊕ eval_expr sq (translate psi2))
-               (mv_scale (-1) mv_one ⋆ mv_conv (eval_expr sq (translate psi1))
-                                        (eval_expr sq (translate psi2)))
-               k k 0).
-      * (* boolish(A⊕B) at k *)
-        apply (@boolish_k_le_add n
-                 (eval_expr sq (translate psi1))
-                 (eval_expr sq (translate psi2))
-                 k k 0).
-        -- apply (@boolish_k_le_mono n
-                  (eval_expr sq (translate psi1)) k1 k 0).
-           ++ unfold k. apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-        -- apply (@boolish_k_le_mono n
-                  (eval_expr sq (translate psi2)) k2 k 0).
-           ++ unfold k.
-              apply Nat.le_trans with (m := (k1 + k2)%nat).
-              ** apply Nat.le_add_l.
-              ** apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
-      * (* boolish((-1)⋆conv) at k *)
-        eapply boolish_k_le_of_eq.
-        -- intro m.
-           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
-                     (B:=mv_conv (eval_expr sq (translate psi1))
-                                 (eval_expr sq (translate psi2))) m).
-           rewrite (mv_mul_one_l (n:=n)
-                     (B:=mv_conv (eval_expr sq (translate psi1))
-                                 (eval_expr sq (translate psi2))) m).
-           reflexivity.
-        -- apply (@boolish_k_le_scale_0 n (-1)
-                  (mv_conv (eval_expr sq (translate psi1))
-                           (eval_expr sq (translate psi2))) k).
-           apply (@boolish_k_le_conv n
-                    (eval_expr sq (translate psi1))
-                    (eval_expr sq (translate psi2))
-                    k k 0).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi1)) k1 k 0).
-              ** unfold k. apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi1) (k:=k1) (d:=0) Ht1).
-           ++ apply (@boolish_k_le_mono n
-                     (eval_expr sq (translate psi2)) k2 k 0).
-              ** unfold k.
-                 apply Nat.le_trans with (m := (k1 + k2)%nat).
-                 --- apply Nat.le_add_l.
-                 --- apply Nat.le_add_r.
-              ** apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi2) (k:=k2) (d:=0) Ht2).
+      (* First: use add at (k1+k2) and (k1*k2), then mono up to k if needed *)
+      apply (@boolish_k_le_mono
+               n
+               (eval_expr sq (translate psi1) ⊕ eval_expr sq (translate psi2)
+                ⊕ mv_scale (-1) mv_one ⋆
+                  mv_conv (eval_expr sq (translate psi1))
+                          (eval_expr sq (translate psi2)))
+               ((k1 + k2) + (k1 * k2))%nat
+               k
+               0).
+      * unfold k. lia.
+      * (* now prove it at ((k1+k2) + (k1*k2)) using boolish_k_le_add *)
+        apply (@boolish_k_le_add
+                 n
+                 (eval_expr sq (translate psi1) ⊕ eval_expr sq (translate psi2))
+                 (mv_scale (-1) mv_one ⋆
+                   mv_conv (eval_expr sq (translate psi1))
+                           (eval_expr sq (translate psi2)))
+                 (k1 + k2)%nat
+                 (k1 * k2)%nat
+                 0
+                 0).
+
+        ++ (* boolish(A⊕B) at (k1+k2) *)
+          apply (@boolish_k_le_add
+                   n
+                   (eval_expr sq (translate psi1))
+                   (eval_expr sq (translate psi2))
+                   k1
+                   k2
+                   0%Q
+                   0%Q).
+          -- exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+          -- exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
+
+        ++ (* boolish((-1)⋆conv) at (k1*k2) *)
+          set (C :=
+            mv_conv (eval_expr sq (translate psi1))
+                    (eval_expr sq (translate psi2))).
+
+          eapply (@boolish_k_le_of_eq
+                    n
+                    (mv_scale (-1) mv_one ⋆ C)
+                    (mv_scale (-1) C)
+                    (k1 * k2)%nat
+                    0%Q).
+          -- intro m.
+             rewrite (@mv_mul_scale_l n sq (-1) C m).
+             reflexivity.
+          -- apply (@boolish_k_le_scale_0 n (-1) C (k1 * k2)%nat).
+             apply boolish_k_le_conv_0.
+             ** exact (@trace_boolish_k_le_root n sq (translate psi1) k1 0 Ht1).
+             ** exact (@trace_boolish_k_le_root n sq (translate psi2) k2 0 Ht2).
 
   - (* Not psi *)
     destruct (IHpsi sq Hsq) as [k1 Ht].
-    exists (k1 + 2)%nat.
+    exists (k1 + 1)%nat.
     repeat split.
 
     + (* boolish (1*mv_one) *)
-      apply (@boolish_k_le_mono n
-               (mv_scale 1 mv_one) 1%nat (k1 + 2)%nat 0).
-      * apply le_S. apply le_S. apply le_n.   (* 1 <= 3, but also 1<=k1+2 by trans is ok;
-                                                 simplest: 1<=k1+2 via Nat.le_trans with 3 if you want *)
+      apply (@boolish_k_le_mono n (mv_scale 1 mv_one) 1%nat (k1 + 1)%nat 0).
+      * lia.
       * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
 
     + (* inner: (-1)mv_one /\ trace /\ (-1)⋆A *)
       repeat split.
-      * apply (@boolish_k_le_mono n
-               (mv_scale (-1) mv_one) 1%nat (k1 + 2)%nat 0).
-        -- apply le_S. apply le_S. apply le_n.
+      * apply (@boolish_k_le_mono n (mv_scale (-1) mv_one) 1%nat (k1 + 1)%nat 0).
+        -- lia.
         -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq (-1)).
-      * apply (@trace_boolish_k_le_mono n sq (translate psi) k1 (k1 + 2)%nat 0).
-        -- apply Nat.le_add_r.
-        -- exact Ht.
-      * eapply boolish_k_le_of_eq.
-        -- intro m.
-           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
-                     (B:=eval_expr sq (translate psi)) m).
-           rewrite (mv_mul_one_l (n:=n)
-                     (B:=eval_expr sq (translate psi)) m).
-           reflexivity.
-        -- apply (@boolish_k_le_scale_0 n (-1)
-                  (eval_expr sq (translate psi)) (k1 + 2)%nat).
-           apply (@boolish_k_le_mono n
-                    (eval_expr sq (translate psi)) k1 (k1 + 2)%nat 0).
-           ++ apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi) (k:=k1) (d:=0) Ht).
+    + apply (@trace_boolish_k_le_mono n sq (translate psi) k1 (k1 + 1)%nat 0).
+      * lia.
+      * exact Ht.
+    + set (A := eval_expr sq (translate psi)).
+      eapply (@boolish_k_le_of_eq n (mv_scale (-1) mv_one ⋆ A) (mv_scale (-1) A)
+                (k1 + 1)%nat 0%Q).
+      * intro m. rewrite (@mv_mul_scale_l n sq (-1) A m). reflexivity.
+      * apply (@boolish_k_le_mono n (mv_scale (-1) A) k1 (k1 + 1)%nat 0).
+         -- lia.
+         -- apply (@boolish_k_le_scale_0 n (-1) A k1).
+            exact (@trace_boolish_k_le_root n sq (translate psi) k1 0 Ht).
 
-    + (* final add: 1 ⊕ (-1)⋆A *)
-      apply (@boolish_k_le_add n
-               (mv_scale 1 mv_one)
-               (mv_scale (-1) mv_one ⋆ eval_expr sq (translate psi))
-               (k1 + 2)%nat (k1 + 2)%nat 0).
-      * apply (@boolish_k_le_mono n
-               (mv_scale 1 mv_one) 1%nat (k1 + 2)%nat 0).
-        -- apply le_S. apply le_S. apply le_n.
-        -- apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
-      * eapply boolish_k_le_of_eq.
-        -- intro m.
-           rewrite (mv_mul_scale_l (n:=n) (c:=(-1)) (A:=mv_one)
-                     (B:=eval_expr sq (translate psi)) m).
-           rewrite (mv_mul_one_l (n:=n)
-                     (B:=eval_expr sq (translate psi)) m).
-           reflexivity.
-        -- apply (@boolish_k_le_scale_0 n (-1)
-                  (eval_expr sq (translate psi)) (k1 + 2)%nat).
-           apply (@boolish_k_le_mono n
-                    (eval_expr sq (translate psi)) k1 (k1 + 2)%nat 0).
-           ++ apply Nat.le_add_r.
-           ++ apply (trace_boolish_k_le_root (n:=n) (sq:=sq) (e:=translate psi) (k:=k1) (d:=0) Ht).
+    +
+      set (A := eval_expr sq (translate psi)).
+      replace (k1 + 1)%nat with (1 + k1)%nat by lia.
+      apply (@boolish_k_le_add n (mv_scale 1 mv_one) (mv_scale (-1) mv_one ⋆ A)
+                1%nat k1 0%Q 0%Q).
+      * apply (@boolish_k_le_mv_scale_mv_one_1_0 n sq 1).
+      * eapply (@boolish_k_le_of_eq n (mv_scale (-1) mv_one ⋆ A) (mv_scale (-1) A)
+                  k1 0%Q).
+        -- intro m. rewrite (@mv_mul_scale_l n sq (-1) A m). reflexivity.
+        -- apply (@boolish_k_le_scale_0 n (-1) A k1).
+           exact (@trace_boolish_k_le_root n sq (translate psi) k1 0 Ht).
+
 Qed.
 
 Theorem cnf_easy_in_booleanish_trace_tracepart :
@@ -4369,7 +4521,7 @@ Proof.
   exists (Vector.const 1 n), (compile_cnf_expr phi).
   split.
   - (* computes *)
-    destruct (compile_cnf_expr_sound (n:=n) (phi:=phi) (sq:=Vector.const 1 n))
+    destruct (@compile_cnf_expr_sound n phi (Vector.const 1 n))
       as [Hc _].
     + intro i. rewrite VectorDef_nth_const. reflexivity.
     + exact Hc.
@@ -4383,26 +4535,337 @@ Theorem cnf_easy_in_booleanish_trace :
   forall n (phi : CNF n),
   exists sq e,
     computes sq e (cnf_sem phi) /\
-    trace_boolish_exists_k sq e 0 /\
-    exc_l1 (exc_of sq e) <= pow2 n.
+    trace_boolish_exists_k sq e 0.
 Proof.
   intros n phi.
   exists (Vector.const 1 n), (compile_cnf_expr phi).
-  repeat split.
-  - (* computes *)
-    apply (proj1 (compile_cnf_expr_sound (n:=n) (phi:=phi) (sq:=Vector.const 1 n))).
-    intro i. rewrite VectorDef_nth_const. reflexivity.
-  - (* trace boolish *)
-    unfold compile_cnf_expr.
+  split.
+
+  - destruct (compile_cnf_expr_sound phi (Vector.const 1 n)) as [Hc _].
+    + intro i. rewrite VectorDef_nth_const. reflexivity.
+    + exact Hc.
+
+  - unfold compile_cnf_expr.
     apply translate_trace_boolish_exists_k_0.
     intro i. rewrite VectorDef_nth_const. reflexivity.
-  - (* excursion l1 bound: use l1_eval_le_max_l1_during + your l1 bound for CNF MV rep *)
-    (* You can show l1_norm(eval_expr sq e) <= exc_l1(exc_of sq e) by l1_eval_le_max_l1_during,
-       then combine with whatever l1 bound you have for this representation.
-       If you proved eval_expr_compile_cnf_expr_eq_compile_cnf, rewrite and use compile_cnf_l1_bound. *)
+Qed.
+
+Theorem IP_exponential_excursion_simple :
+    (* This uses no boolish hypothesis, and it gives a clean exponential lower bound. *)
+  forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+    (m >= 2)%nat ->
+    computes sq e (@IP_n_func (m+m)) ->
+    (pow2 (m - 1) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+  intros m sq e Hm Hcomp.
+  (* l1(eval) = l1(embed) because computes is pointwise equality *)
+  assert (Hl1eq : l1_norm (eval_expr sq e) == l1_norm (embed (@IP_n_func (m+m)))).
+  { apply l1_norm_ext; intro M. apply Hcomp. }
+
+  (* l1(eval) ≤ max_l1_during = exc_l1(exc_of ...) *)
+  eapply Qle_trans.
+  - exact (@l1_norm_embed_IP_lower_bound m Hm).
+  - (* rewrite via Hl1eq and then apply l1_eval_le_max_l1_during *)
+    eapply Qle_trans.
+    + apply Qle_of_Qeq. symmetry. exact Hl1eq.
+    + unfold exc_of; simpl. (* exc_l1 is max_l1_during *)
+      apply l1_eval_le_max_l1_during.
+      
+      
+(* What IP_exponential_excursion_simple is really doing
+
+  The core inequality it uses is:
+    exc_l1 ≥ l1_norm(final_value) (max over intermediates is ≥ final)
+  and computes lets you identify the final value with embed(IP)
+  and l1_norm(embed(IP)) is exponential
+
+  So the lower bound is coming from:
+  IP has big ℓ₁ Walsh mass in your fixed basis,
+  therefore any expression computing it must at some point hold an object with big ℓ₁ mass
+  (in fact, the final object already has it).
+  
+  That is not the “intermediate blowup forced by constrained composition” story.
+  It’s “the output itself is huge under this measure.”
+
+  That’s still a legitimate lower bound inside your model, but it’s a different kind of lower bound.
+  
+  ---
+  
+  If your main separation uses IP_exponential_excursion_simple, then the honest story is:
+
+  “In this model, some functions (like IP) have exponentially large representation mass (Fourier ℓ₁),
+  and since the computation must output that object, excursion is forced to be exponential.”
+
+  That is more like a monotone-complexity-style phenomenon
+  (“the representation itself is big under this measure”)
+  than a dynamical “trace constraint forces intermediate growth” phenomenon.
+
+  It doesn’t make the program bogus, but it shifts the “why this might lift” question:
+
+  Output-mass lower bounds are often model-/representation-dependent.
+
+  Lifting them to general computation typically requires arguing the measure is
+  robust/invariant under simulation or compilation into other representations;
+  which you already suspected is hard (Morita invariance, basis changes, etc.).
+
+  So the “open problem” paragraph as writen becomes more important,
+  because the proof is now even more clearly tied to your chosen embedding/measure.
+  
+  “open problem” paragraph:
+    The open problem is whether this structural, norm-based separation in the restricted algebraic model
+    can be robustly lifted to general computation.
+    Establishing such robustness would determine whether the framework remains a restricted-model phenomenon 
+    or points toward a more fundamental separation.
+  
+  --- Furthermore: 
+  
+* `exc_l1 (exc_of sq e) = max_l1_during sq e`
+* and `computes` is *pointwise equality of the final multivector with `embed f`*
+
+So **any** lower bound that only uses
+
+> `max_l1_during ≥ l1_norm(final)` and `final = embed f`
+
+is, by construction, an **output-size argument**. It never needs to “look inside.”
+
+That doesn’t mean the framework fails — it means your current invariant (`max_l1_during`) is too permissive to force internal reasoning by itself.
+
+What you want is an invariant (or theorem shape) that *cannot* be discharged by “max ≥ final.”
+
+Below are three ways to fix that, in increasing strength, and all are fully compatible with your existing `exc_of`/`computes`.
+
+---
+
+## 1) Define a “strict” excursion that factors out the final output
+
+### Idea
+
+Measure how much bigger an intermediate gets compared to the **final** object.
+
+Two natural variants:
+
+### (a) Additive strict excursion
+
+```coq
+Definition strict_exc_l1 {n} (sq : Vector.t Q n) (e : GA_expr n) : Q :=
+  max_l1_during sq e - l1_norm (eval_expr sq e).
+```
+
+Now the trivial inequality becomes:
+
+* `strict_exc_l1 ≥ 0`, but you **cannot** prove a positive lower bound from output mass alone.
+
+To get `strict_exc_l1 ≥ 2^(Ω(m))`, you *must* use internal structure / trace constraints.
+
+### (b) Multiplicative blowup ratio
+
+```coq
+Definition blowup_ratio_l1 {n} (sq : Vector.t Q n) (e : GA_expr n) : Q :=
+  max_l1_during sq e / l1_norm (eval_expr sq e).
+```
+
+Again, output size alone gives you `≥ 1`. Anything stronger is inherently “inside-computation.”
+
+### Why this helps your program
+
+If your flagship theorem lower-bounds `strict_exc_l1` or `blowup_ratio_l1` **under booleanish trace**, you’re genuinely tracking internal dynamics.
+
+---
+
+## 2) Change the main theorem to a “peak-before-output” form
+
+Right now, since `max_l1_during` includes the final step, output mass dominates.
+
+So you can define the max *excluding the root* (i.e., all proper subexpressions). If you have an evaluator that can traverse subterms, define:
+
+```coq
+(* sketch: maximum l1 among all strict subexpressions *)
+Parameter max_l1_strict_subexpr : forall {n}, Vector.t Q n -> GA_expr n -> Q.
+```
+
+Then prove a theorem like:
+
+> If `e` computes IP and is booleanish-trace poly, then
+> `max_l1_strict_subexpr sq e ≥ 2^(c*m)`.
+
+This *forces* “looking inside,” because the final output is excluded by definition.
+
+If you don’t currently have an accessor for “strict subexpressions,” your trace machinery likely already walks the syntax tree, so this is very feasible to define.
+
+---
+
+## 3) Use booleanish trace to bound *intermediate representational complexity*, not final mass
+
+Given your `trace_boolish_poly_size` setup, the “inside” thing you wanted is something like:
+
+> Every intermediate multivector is close to a combination of ≤ poly masks / or ≤ poly embeds / or has ≤ poly “active spectrum.”
+
+That suggests the missing lemma you were circling:
+
+* **Trace boolish ⇒ bounded intermediate “effective support” / bounded intermediate “coefficient budget.”**
+
+Once you have that, you can prove:
+
+* IP’s flat spectrum cannot be reached without either
+
+  * huge intermediate coefficient mass (→ huge ℓ₁), or
+  * huge support growth (→ huge trace/size), etc.
+
+This is the true “internal dynamics” route.
+
+But crucially: **it won’t show up if your conclusion is just `max_l1_during`**, because output already has big ℓ₁. You need one of the “strict” notions above.
+
+---
+
+# What this means for your current theorems
+
+### `IP_exponential_excursion_simple`
+
+With your current definitions, it’s unavoidably output-mass-driven:
+
+* `computes` pins the final value to `embed IP`
+* `max_l1_during` counts the final value
+* so the proof can ignore the computation structure
+
+So yes: your fear is exactly correct.
+
+### Does the barrier-avoidance narrative still hold?
+
+It becomes conditional:
+
+* The narrative about “tracking internal dynamics” is not demonstrated by `IP_exponential_excursion_simple`.
+* The narrative becomes *true* once your main theorem is about **strict excursion / pre-output peak / intermediate constraints**.
+
+---
+
+# Concrete “flagship theorem” shapes that force internal reasoning
+
+Pick one:
+
+### A) Strict excursion tradeoff
+
+```coq
+Theorem IP_booleanish_forces_strict_blowup :
+  forall d : Q, exists c : nat,
+  forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+    (m >= 2)%nat ->
+    computes sq e (@IP_n_func (m+m)) ->
+    trace_boolish_poly_size sq e d ->
+    (Qpow2 (c * m) <= strict_exc_l1 sq e)%Q.
+```
+
+### B) Peak-before-output tradeoff
+
+```coq
+Theorem IP_booleanish_forces_prepeak :
+  forall d : Q, exists c : nat,
+  forall m sq e,
+    computes sq e IP ->
+    trace_boolish_poly_size sq e d ->
+    Qpow2 (c*m) <= max_l1_strict_subexpr sq e.
+```
+
+### C) Ratio blowup
+
+```coq
+Theorem IP_booleanish_forces_ratio_blowup :
+  forall d : Q, exists c : nat,
+  forall m sq e,
+    computes sq e IP ->
+    trace_boolish_poly_size sq e d ->
+    Qpow2 (c*m) <= blowup_ratio_l1 sq e.
+```
+
+All three *cannot* be proven by output-size alone. They require real internal structure lemmas.
+
+
+  
+  *)
+Qed.
+
+(* --------------------------------------------------------------------------------------------- *)
+(* --------------------------------------------------------------------------------------------- *)
+(* --------------------------------------------------------------------------------------------- *)
+(* --------------------------------------------------------------------------------------------- *)
+
+
+Lemma l1_norm_embed_IP_ge :
+  forall m,
+    (m >= 2)%nat ->
+    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
+Proof.
+  intros m Hm2.
+  assert (Hm : (m > 0)%nat) by lia.
+  (* lower bound the sum by summing only over nonempty masks *)
+  (* each nonempty term contributes exactly 1 / 2^(m+1) *)
+  (* number of nonempty masks is 2^(2m) - 1 *)
 Admitted.
 
+Lemma l1_norm_embed_IP_ge_pow2 :
+  forall m,
+    (m >= 2)%nat ->
+    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
+Proof.
 (*
+  In hard_family_separates_div2,
+    choose f n := IP_n_func n
+         and c := 1,
+         and use Nat.div2 (m+m) = m.
+*)
+Admitted.
+
+Lemma computes_l1_eq_Qeq :
+  forall n (sq : Vector.t Q n) (e : GA_expr n) (f : Corner n -> bool),
+    computes sq e f ->
+    l1_norm (eval_expr sq e) == l1_norm (embed f).
+Proof.
+  intros n sq e f Hcomp.
+  apply l1_norm_ext.
+  intro m. exact (Hcomp m).
+Qed.
+
+Theorem IP_exponential_in_booleanish_model :
+  forall d : Q,
+  exists c : nat,
+    forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+      (m >= 2)%nat ->
+      computes sq e (@IP_n_func (m+m)) ->
+      trace_boolish_poly_size sq e d ->
+      (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+  intro d.
+  destruct (IP_exponential_in_booleanish_model_div2 d) as [c Hc].
+  exists c.
+  intros m sq e Hm Hcomp Htrace.
+
+  (* apply the old theorem at n := m+m *)
+  specialize (Hc (m+m) sq e Hcomp Htrace).
+
+  (* rewrite div2 (m+m) = m *)
+  (* option A: using Nat.div2_double with 2*m *)
+  assert (Hdiv : Nat.div2 (m+m) = m).
+  { (* turn m+m into 2*m *)
+    rewrite <- Nat.mul_2_l.
+    (* 2*m = m+m *)
+    rewrite Nat.div2_double.
+    reflexivity.
+  }
+  (* now rewrite the exponent and finish *)
+  rewrite Hdiv in Hc.
+  exact Hc.
+Qed.
+
+Theorem IP_exponential_in_booleanish_model :
+  forall d : Q,
+  exists c : nat,
+    forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
+      (m >= 2)%nat ->
+      computes sq e (@IP_n_func (m+m)) ->
+      trace_boolish_poly_size sq e d ->
+      (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
+Proof.
+Admitted.
+
 Theorem IP_booleanish_tradeoff :
   forall d : Q,
   exists c : nat,
@@ -4413,32 +4876,33 @@ Theorem IP_booleanish_tradeoff :
           Qpow2 (c * m) <= exc_l1 (exc_of sq e) )
       /\
       ( exc_l1 (exc_of sq e) < Qpow2 (c * m) ->
-          ~ trace_boolish_exists_k sq e d ).
+          ~ trace_boolish_poly_size sq e d ).
 Proof.
-  (* If you manage to keep excursion subexponential,
-      then you must violate booleanishness somewhere along the trace. *)
-Admitted.
-*)
+  (* Second clause is contrapositive of first; 
+     both follow from IP_exponential_in_booleanish_model *)
+  intro d.
+  destruct (IP_exponential_in_booleanish_model d) as [c Hc].
+  exists c. intros m sq e Hm Hcomp. split.
+  - intro Htrace. exact (Hc m sq e Hm Hcomp Htrace).
+  - intros Hlt Htrace.
+    apply Qlt_not_le in Hlt. apply Hlt.
+    exact (Hc m sq e Hm Hcomp Htrace).
+Qed.
 
 Theorem IP_beats_CNF_in_booleanish_trace :
   forall d : Q,
   exists c, forall m (sq : Vector.t Q (m+m)) (e : GA_expr (m+m)),
     (m >= 2)%nat ->
     computes sq e (@IP_n_func (m+m)) ->
-    trace_boolish_exists_k sq e d ->
+    trace_boolish_poly_size sq e d ->
     (Qpow2 (c * m) <= exc_l1 (exc_of sq e))%Q.
 Proof.
   intro d.
-  destruct (IP_booleanish_tradeoff d) as [c Hc].
+  destruct (IP_exponential_in_booleanish_model d) as [c Hc].
   exists c.
-  intros m sq e Hm Hcomp Htrace.
-  specialize (Hc m sq e Hm Hcomp).
-  destruct Hc as [_ Hcontra].
-  (* If exc_l1 < bound, then not trace_exists_k; contrapositive gives bound <= exc_l1 *)
-  destruct (Qlt_le_dec (exc_l1 (exc_of sq e)) (Qpow2 (c*m))) as [Hlt|Hge].
-  - exfalso. exact (Hcontra Hlt Htrace).
-  - exact Hge.
+  exact Hc.
 Qed.
+
 
 (*
 ========================================================================
@@ -4509,19 +4973,6 @@ Lemma computes_l1_eq :
 Proof.
 Admitted.
 
-Lemma l1_norm_embed_IP_ge_pow2 :
-  forall m,
-    (m >= 2)%nat ->
-    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
-Proof.
-(*
-  In hard_family_separates_div2,
-    choose f n := IP_n_func n
-         and c := 1,
-         and use Nat.div2 (m+m) = m.
-*)
-Admitted.
-
 Lemma embed_IP_abs_nonempty :
   forall m (M : Mask (m + m)),
     (m > 0)%nat ->
@@ -4553,18 +5004,6 @@ Lemma l1_norm_ge_sum_over_subset :
       (inject_Z (Z.of_nat (pred (length (all_masks n)))) * a
        <= l1_norm F)%Q.
 Proof.
-Admitted.
-
-Lemma l1_norm_embed_IP_ge :
-  forall m,
-    (m >= 2)%nat ->
-    (Qpow2 (m - 2) <= l1_norm (embed (@IP_n_func (m+m))))%Q.
-Proof.
-  intros m Hm2.
-  assert (Hm : (m > 0)%nat) by lia.
-  (* lower bound the sum by summing only over nonempty masks *)
-  (* each nonempty term contributes exactly 1 / 2^(m+1) *)
-  (* number of nonempty masks is 2^(2m) - 1 *)
 Admitted.
 
 Theorem hard_family_separates_div2 :
@@ -4670,38 +5109,6 @@ Lemma trace_boolish_poly_elim :
 Proof.
   intros n sq e d Hpoly.
   apply trace_boolish_poly_to_canonical; exact Hpoly.
-Qed.
-
-Lemma l1_sub_bound :
-  forall n (F G : MV n),
-    (l1_norm (mv_sub F G) <= l1_norm F + l1_norm G)%Q.
-Proof.
-  intros n F G.
-  unfold l1_norm, mv_sub.
-
-  eapply Qle_trans.
-  - (* lift pointwise inequality through sum *)
-    apply (@sumQ_map_le (Mask n)
-             (fun U => Qabs (F U + (- G U))%Q)
-             (fun U => (Qabs (F U) + Qabs (G U))%Q)
-             (all_masks n)).
-    intros U HU.
-    (* |x + (-y)| <= |x| + |y| *)
-    eapply Qle_trans.
-    + apply Qabs_triangle.
-    + rewrite Qabs_opp. exact (Qle_refl _).
-  - (* sum of (a+b) = sum a + sum b *)
-    rewrite <- sumQ_map_add.
-    apply Qle_refl.
-Qed.
-
-Lemma mv_sub_cancel_qeq :
-  forall n (G G0 : MV n) m,
-    Qeq (mv_sub G (mv_sub G G0) m) (G0 m).
-Proof.
-  intros n G G0 m.
-  unfold mv_sub, Qminus.
-  ring.
 Qed.
 
 Lemma conv_error_bound_l1 :
@@ -5006,83 +5413,6 @@ Proof.
   unfold and_gens. simpl.
   rewrite concat_app. reflexivity.
 Qed.
-
-(* --- the lemma you need, with the right hypotheses --- *)
-
-Lemma lincomb_embed_conv {n : nat} :
-  forall (cs1 cs2 : list Q)
-         (gs1 gs2 : list (Corner n -> bool)),
-    wf_lincomb cs1 gs1 ->
-    wf_lincomb cs2 gs2 ->
-    mv_conv (lincomb_embed cs1 gs1) (lincomb_embed cs2 gs2)
-    =
-    lincomb_embed (mul_coeffs cs1 cs2) (and_gens gs1 gs2).
-Proof.
-  intros cs1 cs2 gs1 gs2 Hwf1 Hwf2.
-  revert gs1 Hwf1.
-  induction cs1 as [|c cs1 IH]; intros gs1 Hwf1.
-  - destruct gs1 as [|g gs1]; simpl in *.
-    + (* [] [] *)
-      apply functional_extensionality; intro U.
-      unfold mv_conv, mv_zero.
-      (* mv_conv 0 X = 0 *)
-      rewrite sumQ_map_const0. reflexivity.
-    + discriminate.
-  - destruct gs1 as [|g gs1]; simpl in *.
-    + discriminate.
-    + (* main step *)
-      assert (Hwf1' : wf_lincomb cs1 gs1).
-      { unfold wf_lincomb in *; simpl in *; lia. }
-
-      (* unfold head+tail and use bilinearity *)
-      rewrite mv_conv_add_l.
-      rewrite mv_conv_add_r.
-      rewrite mv_conv_scale_l.
-      rewrite mv_conv_scale_r.
-
-      (* identify mv_conv (embed g) (lincomb_embed cs2 gs2) as lincomb with and_gens *)
-      (* We do it by induction on cs2/gs2 inside lincomb_embed, but since we have
-         embed_conv_and, the outer induction is enough using lincomb_embed recursion. *)
-
-      (* Now rewrite RHS using cons structure and your lincomb_embed_app (needs wf!) *)
-      rewrite mul_coeffs_cons.
-      rewrite and_gens_cons.
-
-      (* Split lincomb_embed over ++ using your proved lemma lincomb_embed_app *)
-      (* First, show both parts are wf_lincomb *)
-      assert (Hwf_head : wf_lincomb (map (fun c2 => (c*c2)%Q) cs2)
-                                   (map (and_gen g) gs2)).
-      { unfold wf_lincomb in *.
-        rewrite map_length, map_length. exact Hwf2. }
-
-      assert (Hwf_tail : wf_lincomb (mul_coeffs cs1 cs2) (and_gens gs1 gs2)).
-      { (* this is where you may want a dedicated wf lemma for mul_coeffs/and_gens;
-           but under wf cs1 gs1 and wf cs2 gs2 it’s true because both are cartesian products. *)
-        unfold wf_lincomb in *.
-        (* length mul_coeffs = |cs1|*|cs2|, length and_gens = |gs1|*|gs2| *)
-        (* prove these two length facts once and reuse *)
-        admit.
-      }
-
-      apply functional_extensionality; intro U.
-      (* use lincomb_embed_app pointwise *)
-      rewrite (lincomb_embed_app (n:=n)
-                (cs1:=map (fun c2 => (c*c2)%Q) cs2)
-                (cs2:=mul_coeffs cs1 cs2)
-                (gs1:=map (and_gen g) gs2)
-                (gs2:=and_gens gs1 gs2)
-                Hwf_head Hwf_tail U).
-      (* Now it remains to match the two summands with the LHS decomposition. *)
-
-      (* First summand: c·embed g convolved with lincomb2 *)
-      (* This is exactly “scale then distribute then use embed_conv_and” *)
-      (* Again, best done with a helper lemma:
-           mv_conv (embed g) (lincomb_embed cs2 gs2)
-           = lincomb_embed cs2 (map (and_gen g) gs2)
-         under wf cs2 gs2. *)
-      admit.
-Qed.
-
 
 Lemma boolish_k_le_conv :
   forall n (F G : MV n) k1 k2 d1 d2,

@@ -141,6 +141,76 @@ Fixpoint dag_max_l1 (sq : Vector.t Q n) {k} (d : GA_dag k) : Q :=
            (l1_norm (eval_op sq (eval_dag_env sq d') op))
   end.
 
+(* The dag_max_l1 has the same "output-mass shortcut" problem. Right now:
+
+  dag_max_l1 sq d takes the max over all nodes, including the output node.
+
+  dag_computes pins the output node to embed(f).
+
+  so for IP, dag_max_l1 ≥ ‖embed(IP)‖₁ is immediate, and again doesn’t look inside.
+
+  So even in DAG-land, as long as your headline measure is “max over all nodes” including the output,
+  the booleanish trace hypotheses remain dead weight for IP.
+
+  This is not a failure; it just means the measure needs the same “pre-peak” upgrade in the DAG world.
+
+  ---
+  
+  The one change that makes DAG + boolish + internal dynamics click is a "proper-node peak" (exclude the designated root) 
+
+  In DAGs we even have a clean interface for this because the output is explicit (root : Fin.t k).
+
+  If we define:
+
+    dag_max_l1_except sq d root = max ℓ₁ over all nodes i ≠ root.
+
+  This is the DAG analogue of the max_l1_subexpr idea,
+  and it is much cleaner than the tree version because
+  you don’t need “proper subexpression” bookkeeping—just inequality of indices.
+
+  Once you have that, the output-mass shortcut is gone by construction.
+
+*)
+
+Fixpoint dag_max_l1_except (sq : Vector.t Q n) {k}
+  (d : GA_dag k) (root : Fin.t k) : Q :=
+  match d with
+  | DagNil => 0
+  | DagSnoc d' op =>
+      let prev_env := eval_dag_env sq d' in
+      let newest := eval_op sq prev_env op in
+      (* index of newest node is Fin.F1 in the snoc'd env *)
+      let peak_prev :=
+        (* lift root into the prefix: root is in Fin.t (S k') here;
+           in the prefix it's either the newest (F1) or an FS j. *)
+        match root with
+        | Fin.F1 => dag_max_l1_except sq d' (*some root in prefix*) (*...*)
+        | Fin.FS r' => dag_max_l1_except sq d' r'
+        end
+      in
+      (* include newest only if root ≠ newest *)
+      match root with
+      | Fin.F1 => peak_prev
+      | Fin.FS _ => Qmax peak_prev (l1_norm newest)
+      end
+  end.
+
+(* 
+
+There’s some index plumbing (root in prefix vs root = newest),
+but it’s straightforward because of your Fin.F1/Fin.FS split.
+
+This is exactly the kind of thing that is already set up to handle (already planed to prove eval_dag_env_snoc_F1/FS).
+
+If this is defined, you can state the internal theorem you actually want:
+
+  If a DAG computes IP and has poly-trace boolish (plus a tooth like coefficient-budget or scalar-cost),
+    then dag_max_l1_except is exponential.
+
+That’s “look inside computation” in the circuit model.
+
+*)
+
 Fixpoint dag_max_grade (sq : Vector.t Q n) {k} (d : GA_dag k) : nat :=
   match d with
   | DagNil => 0%nat
