@@ -1,4 +1,240 @@
 (*
+
+  ============================================================
+  Plan
+  ============================================================
+
+
+# Phase 0 — Lock in the goalposts (so you don’t drift)
+
+### Target end state of DAG setup
+
+You want `Cln_DAG.v` to support **three layers** cleanly:
+
+1. **Semantics layer**: evaluate every node; prove snoc/FS/F1 lemmas.
+2. **Measurement layer**: node-wise max grade / max ℓ₁; plus “proper-node peak” (exclude root).
+3. **Trace layer**: node-wise (boolish) trace predicates that quantify over *all nodes*, compatible with flatten/unfold.
+
+Everything else (gadgets, CNF, IP) is downstream.
+
+---
+
+# Phase 1 — Make evaluation rock-solid (do this first)
+
+## 1.1 Prove the snoc evaluation lemmas
+
+These are the “assembly instructions” for every later proof:
+
+* **Newest node evaluation**: value at `Fin.F1` after snoc
+* **Old node evaluation**: value at `Fin.FS i` after snoc
+
+You’ll use these constantly to show “adding a node preserves previous nodes” and to reason by recursion on the DAG.
+
+**Deliverable**: lemmas like
+
+* `eval_dag_env_snoc_F1`
+* `eval_dag_env_snoc_FS`
+
+(Names don’t matter; the pattern does.)
+
+## 1.2 Prove append / composition lemmas
+
+You likely have `dag_append` or similar. Prove:
+
+* `eval_dag_env (append d1 d2)` agrees with `d1` on old indices
+* the “shift” of indices is correct
+* evaluation of nodes coming from the right side is evaluation under the extended environment
+
+**Deliverable**:
+
+* `eval_dag_append_left`
+* `eval_dag_append_right`
+* any index-shifting lemmas you need
+
+> Rule: if an index-shift lemma feels annoying, prove it immediately—these are the core friction points.
+
+---
+
+# Phase 2 — Define the metrics you’ll actually use for lower bounds
+
+## 2.1 Keep your current max metrics
+
+You already have:
+
+* `dag_max_l1`
+* `dag_max_grade`
+
+Keep them—they’re useful baselines.
+
+## 2.2 Add the “proper-node peak” metric (exclude root)
+
+This is the single most important upgrade.
+
+Define:
+
+* `dag_max_l1_except sq d root : Q` = max ℓ₁ over nodes `i` with `i ≠ root`.
+
+Also define the grade version if you want:
+
+* `dag_max_grade_except sq d root : nat`
+
+**Deliverables (lemmas you’ll use constantly):**
+
+1. `dag_max_l1_except_le : dag_max_l1_except ≤ dag_max_l1`
+2. `dag_max_l1_except_spec`:
+
+   * if `i ≠ root`, then `l1_norm(value i) ≤ dag_max_l1_except`
+3. “snoc behavior”:
+
+   * if root is newest, new node excluded
+   * if root is old, new node included
+
+> This is where the output-mass shortcut dies. Make this definition/lemmas airtight before moving on.
+
+---
+
+# Phase 3 — Port trace predicates cleanly to DAG
+
+You likely already did much of this. The checklist:
+
+## 3.1 Nodewise trace predicates quantify over all nodes
+
+You want:
+
+* `dag_trace_boolish_k` means: for every node `i`, `boolish_k_le (value i) k d` (or equivalent)
+* `dag_trace_boolish_poly_size` means: there exists k bounded by poly(size_dag) s.t. trace holds
+
+**Deliverables:**
+
+* monotonicity: `k1 ≤ k2` implies `dag_trace_boolish_k k1 -> dag_trace_boolish_k k2`
+* snoc closure: if trace holds on prefix and newest node satisfies property, trace holds on snoc
+* append closure: trace for append if both parts satisfy (watch index-shifts)
+
+## 3.2 Make “size of DAG” a first-class thing
+
+You need:
+
+* `size_dag : GA_dag k -> nat`
+* `size_dag (snoc d op) = S (size_dag d)` (or similar)
+* `size_dag (append d1 d2) = size_dag d1 + size_dag d2`
+
+This matters later when you bind k by poly(size).
+
+---
+
+# Phase 4 — Tree ↔ DAG bridges (flatten/unfold) as “regression tests”
+
+This phase is how you keep yourself from building a DAG semantics that subtly disagrees with the tree model.
+
+## 4.1 Flatten (tree → DAG)
+
+Prove (even if only for the core ops first):
+
+* `eval_expr sq e = eval_dag_node sq (flatten e).root`
+* `dag_max_l1` bounds tree `max_l1_during` and vice versa (whichever direction is true with your definitions)
+* `trace_boolish` on tree implies `dag_trace_boolish` on flatten, and conversely for unfold
+
+## 4.2 Unfold (DAG → tree) for soundness (optional but powerful)
+
+If you have `unfold`, prove:
+
+* `eval_dag root` equals `eval_expr (unfold d root)`
+* `max_l1_during (unfold ...) ≥ dag_max_l1` (trees can duplicate, so peaks can only go up)
+* similarly for `dag_max_l1_except` vs tree “proper subexpr peak” (if you have it)
+
+> These bridge theorems are your guarantee that DAG work isn’t drifting away from the established semantics.
+
+---
+
+# Phase 5 — Establish “baseline results” in DAG world (quick wins)
+
+These aren’t the “internal-dynamics” theorems yet, but they confirm your DAG machinery is usable.
+
+## 5.1 DAG version of the output-mass bound (trivial but sanity)
+
+Prove:
+
+* If `dag_computes sq d root IP`, then `pow2(m-1) ≤ dag_max_l1 sq d`.
+
+This should be 5–10 lines and confirms “computes” + eval works.
+
+## 5.2 Prove a nontrivial lemma about `dag_max_l1_except` (root forcing)
+
+At the root node, depending on op:
+
+* Add: some input node has ℓ₁ ≥ L/2
+* Mul/Conv: some input node has ℓ₁ ≥ sqrt(L)
+
+This is still output-driven, but it forces you to use node semantics and index constraints, and it exercises the “except root” definition hard.
+
+---
+
+# Phase 6 — Decide your “boolish tooth” (do not skip this)
+
+Before you attempt the real pre-peak tradeoff theorem, pick ONE of these and implement it:
+
+### Option A (cleanest): coefficient budget
+
+Strengthen boolish to include `Σ |c_i| ≤ B` and bind B polynomially.
+
+### Option B: scalar-cost in size
+
+Count rational magnitude/bitlength in `size_expr` / `size_dag`.
+
+### Option C: restrict scalars
+
+Allow only a controlled scalar set.
+
+**Deliverable**: a definition where “trace-poly” actually constrains something that matters for ℓ₁.
+
+Without this, you’ll likely spend weeks chasing a theorem that’s simply false or vacuous.
+
+---
+
+# Phase 7 — State the real target theorem (even if admitted for now)
+
+Once `dag_max_l1_except` exists and your trace has teeth, put the flagship theorem in the file:
+
+> If a DAG computes IP and satisfies poly trace, then some **proper internal node** has exponential ℓ₁.
+
+Something like:
+
+```coq
+Conjecture IP_booleanish_forces_prepeak_DAG :
+  forall d:Q, exists c:nat,
+  forall m sq (D : GA_dag (m+m)) root,
+    dag_computes sq D root IP ->
+    dag_trace_boolish_poly_size sq D d ->
+    Qpow2 (c*m) <= dag_max_l1_except sq D root.
+```
+
+This is the “program succeeds” checkpoint.
+
+---
+
+# What to work on *daily* while finishing `Cln_DAG.v`
+
+Here’s a tight loop you can follow:
+
+1. Prove one semantics lemma (snoc/append/index shift).
+2. Immediately add the corresponding metric lemma (how max changes under snoc/append).
+3. Immediately add the corresponding trace lemma (how trace changes under snoc/append).
+4. Run a regression proof: flatten/unfold lemma that uses the new facts.
+
+This prevents “1k lines of infrastructure” from becoming a tangled pile.
+
+---
+
+# What not to do yet
+
+* Don’t build CNF/IP gadgets on DAG until Phase 1–4 are stable.
+* Don’t chase `prepeak` lower bounds before you’ve chosen the “boolish tooth.”
+* Don’t let placeholder gadgets (`dag_or` etc.) leak into correctness claims.
+
+*)
+
+
+(*
   ============================================================
   File: Cln_DAG.v
   ============================================================
