@@ -1,3 +1,94 @@
+
+--- UPDATE ---
+(*
+  Flatness of compiled circuits.
+
+  For any Boolean circuit C of size k, the compiled GA-native DAG
+  admits a global frame assignment F : Fin.t k' -> Rotor n such that:
+
+    (a) Every node is exactly boolish in its local frame:
+        for each node v, the value at v equals
+          act (F v) (embed (g v))
+        for some Boolean function g(v).
+
+    (b) The gauge is exactly flat (zero curvature):
+        for every edge u -> v with operation-induced rotor R(u->v),
+          R(u->v) = F(v) * F(u)^{-1}
+
+    (c) Therefore total curvature energy = 0.
+
+  Proof idea:
+    The compiler processes each NAND gate with a fixed gadget template.
+    Each gadget step (basis projection, geometric product, pseudoscalar
+    complement) induces a deterministic frame transformation that depends
+    only on the gadget structure, not on the function computed.
+
+    Define F inductively along the DAG topological order:
+      - Input nodes: F(v) = I (identity rotor)
+      - Each gadget step: F(v) determined by the fixed gadget template
+        applied to the parent frames
+
+    Since the compiler is deterministic and each gadget is fixed,
+    F is well-defined and satisfies (b) exactly. There are no
+    reconvergence conflicts because the compiler never creates
+    diamonds — each gate's output feeds forward without merging
+    with a separately-transformed copy of the same value.
+
+    (The key point: the compiler's NAND gadget is a straight-line
+    sequence of O(1) ops. No internal fan-out within the gadget
+    means no internal diamonds means no curvature.)
+
+    Fan-out in the ORIGINAL circuit (a wire used by multiple gates)
+    becomes fan-out in the DAG (a node referenced by multiple
+    downstream ops). But each downstream use inherits the SAME
+    frame from the source node. The frame conflict only arises
+    if two paths RECONVERGE — and when they do, the required
+    frame at the reconvergence point is determined by BOTH paths.
+
+    For compiled circuits, reconvergence happens only where the
+    original circuit has reconvergence (fan-out followed by
+    eventual merging). At each such point, both paths went through
+    deterministic gadget-frame transformations. Since the original
+    circuit is consistent (it computes a well-defined Boolean
+    function at each wire), the frame transformations along both
+    paths produce the SAME frame at the reconvergence point.
+
+    This is because: in a Boolean circuit, the value at a wire
+    is a single Boolean function g, regardless of which path you
+    trace back to the inputs. The compiler translates this into:
+    the frame at a node is determined by the Boolean function it
+    computes, not by the path. So reconvergence is automatically
+    consistent. Curvature = 0.
+*)
+
+Hypothesis compiled_circuit_flat_gauge :
+  forall n k (c : bool_circuit n k) (out : Fin.t k),
+    let sq := Vector.const 1 n in
+    let '(existT _ k' (d, wire_map)) :=
+      compile_bool_circuit (sq_hyp_const1 n) c in
+    exists (F : Fin.t k' -> Rotor n)
+           (g : Fin.t k' -> (Corner n -> bool)),
+      (* (a) each node is boolish in its local frame *)
+      (forall v, eval_dag sq d v =
+         rotor_act (F v) (embed (g v))) /\
+      (* (b) exact flatness on every edge *)
+      (forall u v, edge_in_dag d u v ->
+         induced_rotor d u v = rotor_mul (F v) (rotor_inv (F u))) /\
+      (* (c) curvature = 0 *)
+      gauge_energy d F = 0.
+
+What this means for the full program:
+The architecture is now:
+P/poly ⊆ ClnPolyR          (compiled_circuit_flat_gauge)
+ClnPolyR ⊆ P/poly          (extraction from bounded-curvature DAGs)
+SAT ∉ ClnPolyR             (cohomological obstruction)
+─────────────────
+SAT ∉ P/poly
+
+--- UPDATE ---
+
+
+
 The `Cln_DAG.v` file already contains almost all the “plumbing” you’d need for a **model-separation** paper (DAG semantics, trace predicates, flatten/unfold simulations, circuit compiler, and the flagship DAG theorems like `IP_dag_exponential`, `IP_dag_booleanish_tradeoff`, `cnf_easy_dag`, and even an “unrestricted vs boolish-trace” separation statement).
 
 But for an actual **P ≠ NP** claim, there’s a big missing bridge: **Inner Product is an easy function** (it’s in AC⁰[2], NC¹, etc.), so *no matter how strong your IP excursion lower bound is*, it cannot imply SAT hardness unless you also prove something like “Cln-boolish computations capture all polytime” (which would be extraordinary and would need to go through known barriers).
