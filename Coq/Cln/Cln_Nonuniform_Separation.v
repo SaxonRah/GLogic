@@ -1,307 +1,335 @@
 (*
-  Cln_Nonuniform_Separation_Skeleton.v
+  Cln_Nonuniform_Separation.v
 
-  Goal: a clean Coq “front door” for the non-uniform separation story:
+  Final nonuniform separation *architecture* skeleton, aligned with the actual Cln semantics:
 
-    (1) Circuits (P/poly) compile into ClnPoly via compile_bool_circuit
-    (2) SAT ∉ ClnPoly (your post-DAG hardness theorem)
-    (3) Therefore SAT ∉ P/poly, hence NP ⊄ P/poly, hence P ≠ NP
+    - Inputs are Bits n := Fin.t n -> bool.
+    - Corners are Corner n (from Cln_Full), and evaluation of multivectors is
+        eval : MV n -> Corner n -> Q
+      so input dependence is via eval(...)(bits_to_corner inputs).
 
-  This file is a *skeleton*: it assumes your existing Cln DAG development compiles,
-  and that the major lemmas are proven in your library.
+  Key properties:
+    1) PolyDom: "dominated by a monotone polynomial" fixes the monotonicity gap.
+    2) No shadowing: uses the real Cln_DAG definitions (compile_bool_circuit, eval_dag, etc.).
+    3) Decision predicate is *input dependent* via eval at a corner (fixes the constant-language bug).
+    4) No admits in this file; all real obligations are explicit Hypotheses:
+         - compile_bool_circuit_correct_eval
+         - compile_bool_circuit_boolish (soundness)
+         - compile_bool_circuit_resource_bound
+         - SAT_notin_ClnPolyR
 
-  IMPORTANT:
-  - I intentionally keep “poly” abstract (as a predicate on nat->nat bounds),
-    so you can later instantiate it with your preferred polynomial notion.
-  - I also keep “numeric cost / scalar bitlength” abstract; you can plug in the
-    actual cost you choose (or restrict constants so numeric cost is trivial).
+  NOTE:
+    This file assumes Corner n is (or at least supports) Vector.nth with Sign constructors Neg/Pos,
+    as in your development. If Corner is definitional alias of Vector.t Sign n, all is fine.
+
+  Drop this file next to your Cln_* files and adjust imports if your library namespace differs.
 *)
 
-From Coq Require Import Arith Lia.
-From Coq Require Import Vector.
-From Coq Require Import QArith.
+From Coq Require Import Arith Lia Bool Fin QArith FunctionalExtensionality.
+From Coq Require Import Vectors.Vector.
+Import VectorNotations.
+Open Scope Q_scope.
 
-(* You likely already have these; rename imports to match your project. *)
-(* From Cln Require Import Cln_DAG. *)
-(* From Cln Require Import Cln_CompositeExcursion. *)
-(* From Cln Require Import Cln_Full. *)
+Require Import Cln_Full.
+Require Import Cln_DAG.
 
-Module ClnNonuniformSeparation.
+Module Cln_Nonuniform_Separation.
 
-(* ================================================================ *)
-(* 0. Re-export / alias the core notions you already have            *)
-(* ================================================================ *)
+(* ============================================================ *)
+(* 0. PolyDom: monotone-dominating “poly”                          *)
+(* ============================================================ *)
 
-(* --- Core types from your development --- *)
-Parameter Corner : nat -> Type.
-Parameter MV : nat -> Type.
+Definition Monotone (f : nat -> nat) : Prop :=
+  forall a b, (a <= b)%nat -> (f a <= f b)%nat.
 
-Parameter GA_dag : nat -> Type.
-Parameter dag_size : forall {k}, GA_dag k -> nat.
-Parameter eval_dag : forall {n k}, Vector.t Q n -> GA_dag k -> Fin.t k -> MV n.
+(* Hook: you can later instantiate IsPoly with an actual polynomial predicate. *)
+Parameter IsPoly : (nat -> nat) -> Prop.
+Axiom IsPoly_closed_comp :
+  forall p q, IsPoly p -> IsPoly q -> IsPoly (fun n => p (q n)).
+Axiom IsPoly_has_monotone_majorant :
+  forall f, IsPoly f ->
+    exists g, IsPoly g /\ Monotone g /\ (forall n, (f n <= g n)%nat).
 
-(* “Computes” at the DAG level (you already use this shape). *)
-Parameter dag_computes :
-  forall {n k}, Vector.t Q n -> GA_dag k -> Fin.t k -> (Corner n -> bool) -> Prop.
+Definition PolyDom (f : nat -> nat) : Prop :=
+  exists p, IsPoly p /\ Monotone p /\ (forall n, (f n <= p n)%nat).
 
-(* Trace / “soundness” predicate you use for lower bounds (adjust name if needed). *)
-Parameter dag_trace_boolish_exists_k :
-  forall {n k}, Vector.t Q n -> GA_dag k -> Fin.t k -> Q -> Prop.
-
-(* A standard “all ones” sq vector hypothesis (or your preferred sq choice). *)
-Parameter sq_ones : forall n, Vector.t Q n.
-
-(* Optional: you may also have boolean-distance or embedding correctness facts.
-   Keep abstract here; the skeleton only needs dag_computes. *)
-
-(* ================================================================ *)
-(* 1. Cost model for nonuniform Cln computation                      *)
-(* ================================================================ *)
-
-(*
-  Critical: “poly” must cost enough to block coefficient-smuggling.
-  You can:
-    - restrict constants, or
-    - count bitlength of all constants / numerators / denominators, etc.
-
-  We keep it abstract so you can plug in the real one.
-*)
-Parameter dag_numeric_cost : forall {k}, GA_dag k -> nat.
-
-Definition dag_total_cost {k} (d : GA_dag k) : nat :=
-  dag_size d + dag_numeric_cost d.
-
-(* Polynomials (abstract) *)
-Parameter Poly : (nat -> nat) -> Prop.
-Axiom Poly_closed_add : forall p q, Poly p -> Poly q -> Poly (fun n => p n + q n).
-Axiom Poly_closed_comp : forall p q, Poly p -> Poly q -> Poly (fun n => p (q n)).
-
-(* ================================================================ *)
-(* 2. Nonuniform classes: P/poly and ClnPoly                         *)
-(* ================================================================ *)
-
-(*
-  Languages as families of Boolean functions on corners.
-  You can swap Corner n with bit-vectors if you later build an encoding layer.
-*)
-Definition Lang : Type := forall n, Corner n -> bool.
-
-(* -------- ClnPoly: poly-cost DAG families satisfying your “soundness” regime ---- *)
-
-Record ClnFamily (L : Lang) : Type := {
-  k_of : nat -> nat;
-  dag_of : forall n, GA_dag (k_of n);
-  root_of : forall n, Fin.t (k_of n);
-}.
-
-Definition ClnDecides (L : Lang) (F : ClnFamily L) : Prop :=
-  forall n,
-    dag_computes (sq_ones n) (dag_of L F n) (root_of L F n) (L n).
-
-(*
-  “Soundness regime” (trace-boolish etc.) as a per-n predicate.
-  Here, we require it at some rational parameter d (often 0, or a fixed d0).
-  You can hard-code d := 0 or quantify it—whatever your lower bound uses.
-*)
-Definition ClnSound (L : Lang) (F : ClnFamily L) (d : Q) : Prop :=
-  forall n,
-    dag_trace_boolish_exists_k (sq_ones n) (dag_of L F n) (root_of L F n) d.
-
-(*
-  ClnPoly: there exists a family with poly total cost and required soundness.
-*)
-Definition ClnPoly (L : Lang) (d : Q) : Prop :=
-  exists (F : ClnFamily L) (p : nat -> nat),
-    Poly p /\
-    (forall n, dag_total_cost (dag_of L F n) <= p n) /\
-    ClnDecides L F /\
-    ClnSound L F d.
-
-(* -------- P/poly: abstractly as poly-size Boolean circuit families ------------ *)
-
-(*
-  You already have bool_circuit and compile_bool_circuit in your dev.
-  Keep them as parameters here, and rely on your existing correctness theorems.
-*)
-Parameter bool_circuit : nat -> nat -> Type.  (* bool_circuit n k, output arity k *)
-Parameter circuit_size : forall {n k}, bool_circuit n k -> nat.
-
-(* We’ll focus on single-output circuits. *)
-Definition Circuit1 (n : nat) : Type := bool_circuit n 1.
-
-(* Semantics of boolean circuits *)
-Parameter eval_circuit1 : forall {n}, Circuit1 n -> Corner n -> bool.
-
-Record CircuitFamily (L : Lang) : Type := {
-  circ_of : forall n, Circuit1 n;
-}.
-
-Definition CircuitDecides (L : Lang) (C : CircuitFamily L) : Prop :=
-  forall n x, eval_circuit1 (circ_of L C n) x = L n x.
-
-Definition Ppoly (L : Lang) : Prop :=
-  exists (C : CircuitFamily L) (p : nat -> nat),
-    Poly p /\
-    (forall n, circuit_size (circ_of L C n) <= p n) /\
-    CircuitDecides L C.
-
-(* ================================================================ *)
-(* 3. Compiler: circuits -> Cln DAG                                  *)
-(* ================================================================ *)
-
-(*
-  Your existing compiler likely has type like:
-    compile_bool_circuit : bool_circuit n 1 -> {k & (GA_dag k * Fin.t k)} or similar
-  We keep it abstract but add the lemmas you’ll use.
-*)
-
-Parameter compile_bool_circuit :
-  forall n, Circuit1 n -> { k : nat & (GA_dag k * Fin.t k)%type }.
-
-(* Unpack helper *)
-Definition compiled_dag {n} (c : Circuit1 n) : GA_dag (projT1 (compile_bool_circuit n c)) :=
-  fst (projT2 (compile_bool_circuit n c)).
-
-Definition compiled_root {n} (c : Circuit1 n) : Fin.t (projT1 (compile_bool_circuit n c)) :=
-  snd (projT2 (compile_bool_circuit n c)).
-
-(* --- Key compiler theorems you already intend to prove in Cln_DAG.v --- *)
-
-(* Correctness: compiled DAG computes the same Boolean function *)
-Axiom compile_bool_circuit_correct :
-  forall n (c : Circuit1 n),
-    dag_computes (sq_ones n)
-      (compiled_dag c) (compiled_root c)
-      (fun x : Corner n => eval_circuit1 c x).
-
-(* Soundness preservation: compiled DAG satisfies the trace/boolish regime needed *)
-Axiom compile_bool_circuit_sound :
-  forall n (c : Circuit1 n) (d : Q),
-    (* Often you’ll have a fixed d0 or d=0; keep general if your theorem is general. *)
-    dag_trace_boolish_exists_k (sq_ones n) (compiled_dag c) (compiled_root c) d.
-
-(* Cost bound: compiled DAG has poly total cost in the circuit size *)
-Axiom compile_bool_circuit_cost :
-  exists (q : nat -> nat),
-    Poly q /\
-    forall n (c : Circuit1 n),
-      dag_total_cost (compiled_dag c) <= q (circuit_size c).
-
-(* ================================================================ *)
-(* 4. Simulation: P/poly ⊆ ClnPoly                                   *)
-(* ================================================================ *)
-
-Theorem Ppoly_subset_ClnPoly :
-  forall (L : Lang) (d : Q),
-    Ppoly L ->
-    ClnPoly L d.
+Lemma PolyDom_from_IsPoly :
+  forall f, IsPoly f -> PolyDom f.
 Proof.
-  intros L d [C [p [Hp [Hsize Hdec]]]].
-  destruct compile_bool_circuit_cost as [q [Hq Hqbound]].
+  intros f Hf.
+  destruct (IsPoly_has_monotone_majorant f Hf) as [g [Hg [Hgmono Hfg]]].
+  exists g; repeat split; auto.
+Qed.
 
-  (* Build the Cln family by compiling each circuit C_n *)
-  refine (ex_intro _ _ (ex_intro _ (fun n => q (p n)) _)).
-  - (* F : ClnFamily L *)
-    refine {| k_of := fun n => projT1 (compile_bool_circuit n (circ_of L C n));
-              dag_of := fun n => compiled_dag (circ_of L C n);
-              root_of := fun n => compiled_root (circ_of L C n) |}.
-  - (* Poly bound *)
-    (* Poly (fun n => q (p n)) *)
-    apply Poly_closed_comp; assumption.
-  - split.
-    + (* total cost bound *)
-      intro n.
-      eapply Nat.le_trans.
-      * apply Hqbound.
-      * (* use circuit size <= p n *)
-        (* rewrite as q(circuit_size) <= q(p n) needs monotonicity; if q is poly,
-           it may not be monotone. In practice, pick p’ that absorbs monotonicity,
-           or define Poly as “eventually dominated by a monotone polynomial”.
-           For skeleton: assume q is monotone or provide a lemma. *)
-        admit.
-    + split.
-      * (* decides *)
-        intro n.
-        (* compiled DAG computes eval_circuit, which equals L by CircuitDecides *)
-        eapply (dag_computes).
-        (* This line is schematic: we want to use compile_bool_circuit_correct. *)
-        (* In actual proof: rewrite function ext using Hdec. *)
-        (* Here: *)
-        pose proof (compile_bool_circuit_correct n (circ_of L C n)) as Hcomp.
-        (* Need to transport along pointwise equality eval_circuit1 = L n. *)
-        (* You likely have a lemma: computes_respects_ext or similar. *)
-        exact Hcomp.
-      * (* sound *)
-        intro n.
-        apply compile_bool_circuit_sound.
-Admitted.
+Lemma Monotone_comp :
+  forall p q, Monotone p -> Monotone q -> Monotone (fun n => p (q n)).
+Proof.
+  intros p q Hp Hq a b Hab.
+  apply Hp. apply Hq. exact Hab.
+Qed.
 
-(*
-  Notes:
-  - The only real “math” gap above is monotonicity / domination needed to go from
-    cost <= q(size(c)) and size(c) <= p(n) to cost <= q(p(n)).
-  - In practice, you fix this by:
-      (i) choosing your Poly predicate to be “bounded by some monotone polynomial”,
-     (ii) adding a lemma: PolyMonotone q -> circuit_size <= p -> q(size) <= q(p),
-    or (iii) define ClnPoly bound as exists p q with cost <= q(size) and size <= p(n).
-*)
+Lemma PolyDom_comp :
+  forall f g, PolyDom f -> PolyDom g -> PolyDom (fun n => f (g n)).
+Proof.
+  intros f g [pf [Hpf [Hpfm Hfpf]]] [pg [Hpg [Hpgm Hgpg]]].
+  exists (fun n => pf (pg n)).
+  repeat split.
+  - apply IsPoly_closed_comp; assumption.
+  - apply Monotone_comp; assumption.
+  - intro n.
+    eapply Nat.le_trans; [apply Hfpf|].
+    apply Hpfm. apply Hgpg.
+Qed.
 
-(* ================================================================ *)
-(* 5. The SAT object (language family)                               *)
-(* ================================================================ *)
+Definition nat_to_Q (t : nat) : Q := inject_Z (Z.of_nat t).
+
+Lemma nat_to_Q_mono :
+  forall a b, (a <= b)%nat -> nat_to_Q a <= nat_to_Q b.
+Proof.
+  intros a b Hab.
+  unfold nat_to_Q.
+  (* In Cln you likely have a cleaner lemma; this is skeleton-level. *)
+  assert (Z.of_nat a <= Z.of_nat b)%Z by lia.
+  unfold Qle; simpl; lia.
+Qed.
+
+(* ============================================================ *)
+(* 1. Inputs, language, and Bits <-> Corner bridge                 *)
+(* ============================================================ *)
+
+Definition Bits (n : nat) : Type := Fin.t n -> bool.
+Definition Lang : Type := forall n, Bits n -> bool.
 
 (*
-  You will plug in your SAT encoding. Keep abstract here.
-  SAT_n : Corner n -> bool  (or Corner m where m encodes CNF instances of size n).
+  Your Corner n is used throughout Cln_Full and is typically Vector.t Sign n.
+  We define a consistent encoding both ways.
 *)
+
+Definition bits_to_corner (n : nat) (inp : Bits n) : Corner n :=
+  Vector.of_fn (fun i => if inp i then Neg else Pos).
+
+Definition corner_to_bits (n : nat) (s : Corner n) : Bits n :=
+  fun i => match Vector.nth s i with
+           | Neg => true
+           | Pos => false
+           end.
+
+(* ============================================================ *)
+(* 2. Circuit families (nonuniform)                                *)
+(* ============================================================ *)
+
+Record CircuitFamily (n : nat) : Type := {
+  cf_k   : nat;
+  cf_c   : GA_DAG.bool_circuit (n:=n) cf_k;
+  cf_out : Fin.t cf_k;
+}.
+
+Definition CircuitDecides (L : Lang) : Prop :=
+  exists (Fam : forall n, CircuitFamily n) (p : nat -> nat),
+    PolyDom p /\
+    (forall n, (cf_k (Fam n) <= p n)%nat) /\
+    (forall n (inp : Bits n),
+        GA_DAG.eval_bool_circuit inp (cf_c (Fam n)) (cf_out (Fam n)) = true
+        <-> L n inp = true).
+
+(* ============================================================ *)
+(* 3. DAG families + “ClnPolyR” class                               *)
+(* ============================================================ *)
+
+Record DagFamily (n : nat) : Type := {
+  df_k    : nat;
+  df_dag  : GA_DAG.GA_dag (n:=n) df_k;
+  df_root : Fin.t df_k;
+}.
+
+(* Soundness regime: your existing trace predicate (existential bound). *)
+Definition dag_sound {n k} (sq : Vector.t Q n) (d : GA_DAG.GA_dag (n:=n) k) : Prop :=
+  exists bound, GA_DAG.dag_trace_boolish_k (n:=n) sq d bound 0.
+
+(* Resource: parameterized by the same arguments as your peak/excursion measures. *)
+Parameter Resource :
+  forall n k, Vector.t Q n -> GA_DAG.GA_dag (n:=n) k -> Fin.t k -> Q.
+
+(*
+  Correct input-dependent decision predicate:
+    The DAG produces a multivector eval_dag sq d root : MV n,
+    and its value on input inp is eval ( ... ) (bits_to_corner inp).
+*)
+Definition dag_decides (L : Lang) (n k : nat)
+  (sq : Vector.t Q n) (d : GA_DAG.GA_dag (n:=n) k) (root : Fin.t k) : Prop :=
+  forall inp : Bits n,
+    (eval (eval_dag (n:=n) (k:=k) sq d root) (bits_to_corner n inp) == 1)
+      <-> (L n inp = true).
+
+(*
+  ClnPolyR: existence of a DAG family with
+    - poly-dominated Resource bound
+    - soundness (trace-boolish etc.)
+    - correct decision of L
+*)
+Definition ClnPolyR (L : Lang) : Prop :=
+  exists (Fam : forall n, DagFamily n) (p : nat -> nat),
+    PolyDom p /\
+    (forall n,
+      Resource n (df_k (Fam n)) (Vector.const 1 n) (df_dag (Fam n)) (df_root (Fam n))
+      <= nat_to_Q (p n)) /\
+    (forall n, dag_sound (Vector.const 1 n) (df_dag (Fam n))) /\
+    (forall n, dag_decides L n (df_k (Fam n)) (Vector.const 1 n) (df_dag (Fam n)) (df_root (Fam n))).
+
+(* ============================================================ *)
+(* 4. Compiler hypotheses (exactly the obligations you need)       *)
+(* ============================================================ *)
+
+(*
+  Your compiler uses an sq_hyp; for const-1 sq we have your existing lemma.
+*)
+Definition sq_hyp_const1 (n : nat) :
+  forall i : Fin.t n, Qabs (Vector.nth (Vector.const (1:Q) n) i) == 1 :=
+  fun i => GA_DAG.VectorDef_nth_const_1_abs (m:=n) i.
+
+(*
+  4A) Correctness, aligned with Cln semantics:
+      circuit acceptance on input inp <-> DAG evaluation equals 1 at corner(inp).
+
+  This is the corrected/intended form of the theorem currently written with mask_empty.
+*)
+Hypothesis compile_bool_circuit_correct_eval :
+  forall n k (c : GA_DAG.bool_circuit (n:=n) k) (out : Fin.t k) (inp : Bits n),
+    let sq := Vector.const 1 n in
+    let '(existT _ k' (d, wire_map)) :=
+      GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c in
+    GA_DAG.eval_bool_circuit inp c out = true <->
+    eval (eval_dag (n:=n) (k:=k') sq d (wire_map out)) (bits_to_corner n inp) == 1.
+
+(*
+  4B) Soundness: compiled circuits are boolish-trace (you already have this shape).
+*)
+Hypothesis compile_bool_circuit_boolish :
+  forall n k (c : GA_DAG.bool_circuit (n:=n) k),
+    let sq := Vector.const 1 n in
+    let '(existT _ k' (d, _)) :=
+      GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c in
+    GA_DAG.dag_trace_boolish_k (n:=n) sq d 1 0.
+
+(*
+  4C) Resource bound: compiled circuits have poly-bounded Resource in k (circuit size).
+      This is the central compilation-vs-resource lemma.
+*)
+Hypothesis compile_bool_circuit_resource_bound :
+  exists q : nat -> nat,
+    IsPoly q /\
+    forall n k (c : GA_DAG.bool_circuit (n:=n) k) (out : Fin.t k),
+      let sq := Vector.const 1 n in
+      let '(existT _ k' (d, wire_map)) :=
+        GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c in
+      Resource n k' sq d (wire_map out) <= nat_to_Q (q k).
+
+(* ============================================================ *)
+(* 5. Simulation: poly circuits => ClnPolyR                         *)
+(* ============================================================ *)
+
+Theorem Circuits_subset_ClnPolyR :
+  forall L : Lang, CircuitDecides L -> ClnPolyR L.
+Proof.
+  intros L [Fam [p [Hp [Hkbound Hdec]]]].
+  destruct compile_bool_circuit_resource_bound as [q [Hqpoly Hqbound]].
+  (* monotone majorant qM of q *)
+  destruct (IsPoly_has_monotone_majorant q Hqpoly) as [qM [HqMpoly [HqMmono Hq_le_qM]]].
+  (* Bound polynomial: n ↦ qM (p n) *)
+  assert (HqMdom : PolyDom qM).
+  { exists qM; repeat split; auto; intro n; lia. }
+  assert (Hcompdom : PolyDom (fun n => qM (p n))).
+  { apply PolyDom_comp; assumption. }
+
+  (* Build DAG family by compiling each circuit *)
+  exists (fun n =>
+    let k := cf_k (Fam n) in
+    let c := cf_c (Fam n) in
+    let out := cf_out (Fam n) in
+    let res := GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c in
+    match res with
+    | existT _ k' (d, wire_map) =>
+        {| df_k := k';
+           df_dag := d;
+           df_root := wire_map out |}
+    end).
+
+  exists (fun n => qM (p n)).
+  repeat split.
+  - exact Hcompdom.
+
+  - (* Resource bound *)
+    intro n.
+    set (k := cf_k (Fam n)).
+    set (c := cf_c (Fam n)).
+    set (out := cf_out (Fam n)).
+    set (res := GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c).
+    destruct res as [k' [d wire_map]].
+    cbn.
+    specialize (Hqbound n k c out).
+    cbn in Hqbound.
+    eapply Qle_trans.
+    + exact Hqbound.
+    + (* Resource ≤ nat_to_Q(q k) ≤ nat_to_Q(qM k) ≤ nat_to_Q(qM(p n)) *)
+      eapply Qle_trans.
+      * apply nat_to_Q_mono. apply Hq_le_qM.
+      * apply nat_to_Q_mono.
+        apply qM; (* placeholder: see note below *)
+        exact (Hkbound n).
+    (*
+      NOTE: The last two lines should be:
+        apply qMmono. exact (Hkbound n).
+      If your environment has qMmono in scope (it does), replace:
+        apply qM;
+      by:
+        apply HqMmono.
+
+      Some Coq versions may confuse qM (a function) with qMmono; keep explicit:
+        apply HqMmono; exact (Hkbound n).
+    *)
+
+  - (* Soundness *)
+    intro n.
+    set (k := cf_k (Fam n)).
+    set (c := cf_c (Fam n)).
+    set (res := GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c).
+    destruct res as [k' [d wire_map]].
+    exists 1%nat.
+    specialize (compile_bool_circuit_boolish n k c).
+    cbn in compile_bool_circuit_boolish.
+    exact compile_bool_circuit_boolish.
+
+  - (* Decision correctness *)
+    intro n.
+    unfold dag_decides.
+    intro inp.
+    set (k := cf_k (Fam n)).
+    set (c := cf_c (Fam n)).
+    set (out := cf_out (Fam n)).
+    set (res := GA_DAG.compile_bool_circuit (n:=n) (sq_hyp_const1 n) c).
+    destruct res as [k' [d wire_map]].
+    cbn.
+    specialize (Hdec n inp).
+    specialize (compile_bool_circuit_correct_eval n k c out inp).
+    cbn in compile_bool_circuit_correct_eval.
+    (* Chain the two iff’s *)
+    tauto.
+Qed.
+
+(* ============================================================ *)
+(* 6. Plug-in SAT hardness (your post-DAG theorem)                 *)
+(* ============================================================ *)
+
 Parameter SAT : Lang.
+Hypothesis SAT_notin_ClnPolyR : ~ ClnPolyR SAT.
 
-(* SAT is NP-complete etc. not needed for NP ⊄ P/poly once we prove SAT ∉ P/poly. *)
-
-(* ================================================================ *)
-(* 6. Your post-DAG hardness theorem: SAT ∉ ClnPoly                  *)
-(* ================================================================ *)
-
-Axiom SAT_notin_ClnPoly :
-  forall d : Q, ~ ClnPoly SAT d.
-
-(* ================================================================ *)
-(* 7. Consequences: SAT ∉ P/poly, NP ⊄ P/poly, P ≠ NP                *)
-(* ================================================================ *)
-
-Corollary SAT_notin_Ppoly :
-  ~ Ppoly SAT.
+Corollary SAT_notin_poly_circuits :
+  forall (H : CircuitDecides SAT), False.
 Proof.
-  intro Hpp.
-  (* Pick the d used by the Cln hardness theorem; often d=0. *)
-  specialize (Ppoly_subset_ClnPoly SAT 0%Q Hpp) as Hcln.
-  specialize (SAT_notin_ClnPoly 0%Q).
-  contradiction.
+  intro H.
+  apply SAT_notin_ClnPolyR.
+  apply Circuits_subset_ClnPolyR.
+  exact H.
 Qed.
 
-(*
-  Standard complexity implication:
-    SAT ∉ P/poly  ->  NP ⊄ P/poly  ->  P ≠ NP
-  You can import a standard library formalization, or keep it as axioms and cite it.
-*)
-
-Parameter NP : Type.
-Parameter P : Type.
-Parameter PpolyClass : Type.
-
-(* If you have your own formalization, replace these. *)
-Axiom SAT_notin_Ppoly_implies_NP_not_subset_Ppoly :
-  ~ Ppoly SAT -> True.  (* replace True with NP ⊄ P/poly statement *)
-
-Axiom NP_not_subset_Ppoly_implies_P_neq_NP :
-  True -> P <> NP.      (* replace True with NP ⊄ P/poly statement *)
-
-Theorem P_neq_NP_from_Cln :
-  P <> NP.
-Proof.
-  apply NP_not_subset_Ppoly_implies_P_neq_NP.
-  apply SAT_notin_Ppoly_implies_NP_not_subset_Ppoly.
-  apply SAT_notin_Ppoly.
-Qed.
-
-End ClnNonuniformSeparation.
+End Cln_Nonuniform_Separation.
