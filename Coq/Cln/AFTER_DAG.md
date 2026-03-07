@@ -87,6 +87,322 @@ SAT ∉ P/poly
 
 --- UPDATE ---
 
+What follows is a concrete roadmap consistent with:
+
+* GA-native model
+* global frame assignment
+* curvature (holonomy) as intrinsic invariant
+* compiled circuits are flat (zero curvature)
+* SAT hardness = curvature obstruction
+* final goal: SAT ∉ P/poly
+
+I will separate this into phases so you know exactly what must be built, what is structural, and what is the true “hard core”.
+
+---
+
+# PHASE 0 — Clean Logical Architecture
+
+You want the following chain:
+
+```
+(1)  P/poly ⊆ ClnPolyR        (compiled_circuit_flat_gauge)
+(2)  SAT ∉ ClnPolyR           (GA-native curvature obstruction)
+────────────────────────────────────────────
+      SAT ∉ P/poly
+```
+
+Extraction `ClnPolyR ⊆ P/poly` is optional for the implication but valuable for robustness.
+
+Everything hinges on:
+
+* a precise definition of curvature,
+* a precise definition of frame-consistent boolish trace,
+* and a provable flatness theorem for compiled circuits.
+
+---
+
+# PHASE 1 — Make the GA-native model mathematically precise
+
+This is foundational. No shortcuts.
+
+## 1.1 Define induced rotor semantically
+
+You must define:
+
+```
+induced_rotor d u v : Rotor n
+```
+
+This cannot be arbitrary.
+
+It must be:
+
+* determined by the GA operation at node v,
+* derived from how multivector values interact,
+* not an annotation chosen by you.
+
+For each edge `u → v`, induced_rotor must be extracted from:
+
+* the operation at v (geometric product, basis projection, complement, etc.),
+* the relation between eval_dag at u and at v.
+
+This is the semantic heart.
+
+---
+
+## 1.2 Define global frame assignment and curvature
+
+Define:
+
+```
+F : Fin.t k -> Rotor n
+```
+
+Define curvature / gauge energy:
+
+```
+gauge_energy d F :=
+  sum over edges (distance( induced_rotor d u v,
+                            F v * (F u)^-1 ))
+```
+
+Then define intrinsic curvature:
+
+```
+curvature d := inf over F (gauge_energy d F)
+```
+
+ClnPolyR must require:
+
+* boolish in local frame
+* curvature ≤ poly(n)
+
+Now curvature is a real invariant.
+
+---
+
+## 1.3 Strengthened boolish trace
+
+Define:
+
+For each node v, there exists g_v such that:
+
+```
+eval_dag v = rotor_act (F v) (embed g_v)
+```
+
+Critically:
+
+* F is global
+* not existential per-node
+* one F must work for entire DAG
+
+This is what makes curvature cohomological.
+
+---
+
+# PHASE 2 — Prove compiled circuits are flat
+
+This is your `compiled_circuit_flat_gauge` theorem.
+
+You must prove, not assume:
+
+For compiled DAG:
+
+* There exists F and g
+* eval_dag v = rotor_act(F v)(embed g_v)
+* induced_rotor d u v = F v * F u^{-1}
+* gauge_energy = 0
+
+### How to actually prove it
+
+You cannot argue by “circuit is well-defined.”
+
+You must construct F explicitly.
+
+Procedure:
+
+1. Topologically order compiled DAG.
+2. Define F(v) inductively:
+
+   * Input nodes: identity
+   * For each gadget step: F(v) := gadget_frame_update(F(parent nodes))
+3. Prove for each node:
+
+   * eval_dag v equals rotor_act(F v)(embed g_v)
+4. Prove for each edge:
+
+   * induced_rotor matches F(v)F(u)^{-1}
+
+Key technical point:
+
+You must control stabilizers:
+
+* Show embed(g) for gadget-produced g has trivial or controlled stabilizer.
+* Or define F canonically using gadget trace.
+
+Without stabilizer control, flatness fails.
+
+This is where grade structure and pseudoscalar may be crucial.
+
+---
+
+# PHASE 3 — (Optional but desirable) Extraction theorem
+
+Prove:
+
+```
+ClnPolyR ⊆ P/poly
+```
+
+Sketch:
+
+If curvature ≤ poly(n), then:
+
+1. There exists near-global frame F.
+2. Gauge-fix the DAG into that frame.
+3. In that frame, every node is near embed(g_v).
+4. Local GA operations reduce to Boolean NAND operations.
+5. Extract Boolean circuit computing same function.
+6. Circuit size polynomial in DAG size + curvature bound.
+
+This gives robustness:
+ClnPolyR is exactly P/poly in GA language.
+
+Even if not needed logically, it strengthens credibility.
+
+---
+
+# PHASE 4 — The Core: SAT Curvature Obstruction
+
+This is the real work.
+
+You must prove:
+
+```
+SAT_notin_ClnPolyR :
+  ~ exists DAG family with curvature ≤ poly(n)
+    deciding SAT
+```
+
+Structure of proof must use GA-native facts:
+
+### 4.1 Identify algebraic constraint
+
+Show:
+
+At reconvergence points, compatibility requires:
+
+* F(v) constrained to lie in stabilizer intersection of multiple subspaces.
+* Each clause interaction shrinks allowable rotor degrees of freedom.
+
+This becomes:
+
+* stabilizer dimension drops under conjunction of constraints.
+
+### 4.2 Show SAT forces exponential constraint accumulation
+
+SAT structure:
+
+* many clauses
+* variable reuse
+* reconvergence across disjoint variable subsets
+
+Prove:
+
+* any frame assignment satisfying all constraints must have large accumulated defect (curvature),
+  OR
+* no flat assignment exists.
+
+This must not reduce to ℓ₁/Fourier arguments.
+
+It must use:
+
+* Spin(n) geometry
+* grade-preservation
+* stabilizer intersections
+
+### 4.3 Formalize obstruction as holonomy
+
+Equivalent rephrase:
+
+* There exists a cycle in the DAG whose rotor product is forced away from identity by SAT combinatorics.
+
+That is monodromy.
+
+Show that for SAT:
+
+* every computation trace induces nontrivial holonomy,
+* bounded curvature cannot cancel it.
+
+This is the conceptual climax.
+
+---
+
+# PHASE 5 — Conclude SAT ∉ P/poly
+
+Use:
+
+* compiled_circuit_flat_gauge
+* SAT_notin_ClnPolyR
+
+By contrapositive:
+
+If SAT had poly-size circuits,
+compiled DAG would be flat,
+contradiction with obstruction.
+
+Therefore SAT ∉ P/poly.
+
+---
+
+# What is actually hard
+
+There are exactly three hard points:
+
+1. Defining induced_rotor rigorously from GA semantics.
+2. Proving flatness for compiled circuits in presence of diamonds (stabilizers!).
+3. Proving SAT forces curvature via stabilizer dimension collapse.
+
+Everything else is bookkeeping.
+
+---
+
+# What you should do next
+
+1. Formalize induced_rotor.
+2. Prove flatness lemma fully in Coq (no Hypothesis).
+3. Write down stabilizer of embed(g) explicitly.
+4. Prove stabilizer intersection shrinks under conjunction.
+5. Attempt obstruction first for a simpler NP-hard function (e.g., parity-of-clauses toy model).
+6. Only then attack SAT.
+
+---
+
+# Final Reality Check
+
+If you succeed:
+
+* You have proven SAT ∉ P/poly.
+* You have proven P ≠ NP.
+
+Because P ⊆ P/poly.
+
+There is no intermediate interpretation.
+
+The GA reformulation does not weaken the statement —
+it changes the proof language.
+
+The burden is exactly that heavy.
+
+But now the program is clear.
+
+--- UPDATE ---
+
+
+
+--- UPDATE ---
+
 
 
 The `Cln_DAG.v` file already contains almost all the “plumbing” you’d need for a **model-separation** paper (DAG semantics, trace predicates, flatten/unfold simulations, circuit compiler, and the flagship DAG theorems like `IP_dag_exponential`, `IP_dag_booleanish_tradeoff`, `cnf_easy_dag`, and even an “unrestricted vs boolish-trace” separation statement).
